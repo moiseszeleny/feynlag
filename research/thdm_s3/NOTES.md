@@ -265,7 +265,7 @@ scalar case, where $\lambda_4$ flipped sign).
 All five terms pass gauge and S₃ invariance in feynlag. `suggest_yukawa`,
 enumerating independently, returns exactly five structures — matching
 $Y_1^\ell\ldots Y_5^\ell$. Character theory agrees: the trivial rep appears once
-in $\mathbf{2\otimes3}$, and over the eight $(\bar L,H,e_R)$ irrep assignments
+in $\mathbf2^{\otimes3}$, and over the eight $(\bar L,H,e_R)$ irrep assignments
 exactly five invariants exist.
 
 **Gap:** the draft declares $\nu_{1R},\nu_{2R}$ (a $\mathbf2$) and $\nu_{SR}$ (a

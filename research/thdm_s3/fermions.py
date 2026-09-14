@@ -153,29 +153,36 @@ def _yukawa_terms(left, right, scalars, tilde=False, ncolors=1):
     """The five S₃-invariant Yukawa structures, in **feynlag's** doublet basis.
 
     With ``L = (L₁,L₂)``, ``R = (R₁,R₂)`` S₃ doublets and ``L_S``, ``R_S``,
-    ``H_S`` singlets, and writing ``[X]_k`` for the k-th CG channel of 2⊗2
-    (`S3.doublet_product`):
+    ``H_S`` singlets.  Contractions act on the S₃ index only; the SU(2) sandwich
+    is ``x_ij = L̄_i·H_j`` (i, j ∈ {1, 2, S}).  Notation, as in
+    `02_s3_fermion_sector.ipynb` §2:
 
-    ==  ============================================  =====================
-    k   structure                                     CG channel
-    ==  ============================================  =====================
-    1   ``(L̄ · R)₁ H_S``                              1 of L̄⊗R
-    2   ``[L̄ ⊗ H]₂ · R``                              the unique 1 of 2⊗2⊗2
-    3   ``L̄_S H_S R_S``                               all singlets
-    4   ``L̄_S (H · R)₁``                              1 of H⊗R
-    5   ``(L̄ · H)₁ R_S``                              1 of L̄⊗H
-    ==  ============================================  =====================
+    * ``{a ⊗ b}_r`` is channel r of 2⊗2 (`S3.doublet_product(a, b)["r"]`); the
+      2 channel is the doublet ``(a₁b₁ − a₂b₂, −(a₁b₂ + a₂b₁))``;
+    * ``a · b ≡ {a ⊗ b}_1 = a₁b₁ + a₂b₂`` — the dot *is* the singlet channel.
+
+    The draft writes ``[·]_r`` for the braces and ``(L̄·H)₁`` for ``L̄·H``.
+
+    ==  =======================  =======================================
+    k   structure                written out
+    ==  =======================  =======================================
+    1   ``(L̄ · R) H_S``          ``x_1S R₁ + x_2S R₂``
+    2   ``{L̄ ⊗ H}_2 · R``        ``(x₁₁ − x₂₂) R₁ − (x₁₂ + x₂₁) R₂``
+    3   ``L̄_S H_S R_S``          ``x_SS R_S``
+    4   ``L̄_S (H · R)``          ``x_S1 R₁ + x_S2 R₂``
+    5   ``(L̄ · H) R_S``          ``(x₁₁ + x₂₂) R_S``
+    ==  =======================  =======================================
 
     Structures 1, 3, 4, 5 are dot products of two doublets and are invariant
-    under *any* orthogonal change of doublet basis; only structure 2 is
-    basis-sensitive (see the module docstring).
+    under *any* orthogonal change of doublet basis; only structure 2 — the
+    unique singlet of 2⊗2⊗2 — is basis-sensitive (see the module docstring).
     """
     L1, L2, LS = left
     R1, R2, RS = right
     H1, H2, HS = scalars
     S = lambda Lf, Hf, Rf: _sandwich(Lf, Hf, Rf, tilde, ncolors)
 
-    # [L̄ ⊗ H]₂ = (x₁₁ − x₂₂, −(x₁₂ + x₂₁)) in feynlag's real orthogonal basis
+    # {L̄ ⊗ H}_2 = (x₁₁ − x₂₂, −(x₁₂ + x₂₁)) in feynlag's real orthogonal basis
     return {
         1: S(L1, HS, R1) + S(L2, HS, R2),
         2: ((S(L1, H1, R1) - S(L2, H2, R1))
