@@ -61,15 +61,22 @@ QED benchmark is untouched.
 
 ## SU(N) Groups Tutorial
 
-A gentle, self-contained introduction to gauge representations for a reader
-new to particle physics (linear algebra + basic QM only). Builds up from
-"what is a generator?" through the Lie algebra and representations to
-`feynlag`'s dynamic any-SU(N)/any-irrep machinery: Dynkin labels and the Weyl
-dimension formula, a peek at the highest-weight/ladder (Gelfand–Tsetlin)
-construction (with the tell-tale `√2` ladder entries of the **6** of SU(3)),
-conjugate representations `T̄ = −T*`, and anomaly coefficients — culminating in
-the SU(5) `5̄ + 10` anomaly cancellation and a gauge-invariance check of a
-scalar in the fundamental of SU(4).
+The continuous counterpart to the discrete-groups notebook, for a reader new to
+particle physics (linear algebra + basic QM only), in the same *derive, then
+check* style: every section predicts a result before a cell settles it, and every
+claim is an assertion. The structure constants are derived from the generator
+matrices and the adjoint is built from them; Dynkin labels and the Weyl
+dimension formula (with the ambiguous **15** of SU(3)); weights and the
+Gelfand–Tsetlin ladder of the **6**; what survives a change of basis (weights,
+`C₂`, the Dynkin index, anomalies — never generator entries); conjugates
+`T̄ = −T*` and the three kinds of reality, including the pseudo-real SU(2)
+doublet behind `H̃ = iσ₂H*`. Its core question — which terms can be singlets —
+is answered before building them: `C₂` eigenspaces of tensor products, checked
+against the null space, give mesons, baryons (the singlet *is* `ε_ijk`) and no
+diquarks. Closes with the SU(5) `5̄ + 10` anomaly cancellation, a gauge-invariance
+check in the fundamental of SU(4), and a capstone that builds the **6** of SU(3)
+by hand from `3 ⊗ 3` and matches it to the library's construction on every
+invariant. With a verified reference list.
 
 ## Discrete Groups Tutorial
 
