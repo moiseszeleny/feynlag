@@ -4,8 +4,9 @@ import sympy as sp
 
 from feynlag import (
     ExternalParameter, InternalParameter, Lagrangian, ParameterSet, Rotation,
-    Scalar, SU2, Vertex, rotation_2x2,
+    Scalar, SU2, Vertex, WeylFermion, diracPR, rotation_2x2,
 )
+from feynlag.vertices.bilinear import Bilinear
 
 
 def _assert_latex(s):
@@ -61,6 +62,25 @@ def test_lagrangian_repr_latex():
     L.add(-lam * phi**4 / 24, sector="potential")
     tex = _assert_latex(L._repr_latex_())
     assert r"\mathcal{L}" in tex
+
+
+def test_bilinear_latex_bars_the_field_once():
+    # a registered fermion: the bar leg prints as the partner field under ONE
+    # overline -- not SymPy's "bar"-suffix modifier plus a second \bar
+    nu = WeylFermion("nu_1L", reps={}, chirality="L", nflavors=1,
+                     component_names=["nu_1L"])
+    e = WeylFermion("e_1R", reps={}, chirality="R", nflavors=1,
+                    component_names=["e_1R"])
+    B = Bilinear(nu.bar_components[0][0], diracPR, e.components[0][0])
+    tex = sp.latex(B)
+    assert tex.startswith(r"\overline{{\nu_{1L}}_{0}}")
+    assert r"{e_{1R}}_{0}" in tex
+    assert tex.count("bar") == 0
+
+    # an unregistered "<name>bar" IndexedBase (e.g. a rotated mass-basis leg)
+    loose = Bilinear(sp.IndexedBase("tau_Lbar")[0], diracPR,
+                     sp.IndexedBase("tau_R")[0])
+    assert sp.latex(loose).startswith(r"\overline{{\tau_{L}}_{0}}")
 
 
 def test_rotation_repr_latex():
