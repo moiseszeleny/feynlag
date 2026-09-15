@@ -42,6 +42,31 @@ __all__ = ["Bilinear", "MajoranaBilinear", "expand_bilinear",
            "majorana_mass_matrix", "majorana_feynman_rule"]
 
 
+def _bar_leg_latex(bar, printer):
+    """``\\overline{ψ}_i`` for a bar leg, printed from the *field* it bars.
+
+    A bar component is an ``IndexedBase`` named ``<field>bar``, and SymPy's
+    printer reads that suffix as a ``\\bar`` modifier on the name's last
+    part — so printing the leg itself gives ``\\bar{eL}`` or, for a
+    subscripted name, ``\\nu_{\\bar{1L}}``, and wrapping that in another bar
+    doubles it.  Print the partner field leg under one ``\\overline`` instead:
+    the partner comes from the ``bar_partner`` registry, or, for a bare
+    ``IndexedBase`` built outside a ``Fermion`` (e.g. a rotated mass-basis
+    leg), from stripping the ``bar`` suffix.  Anything else prints as before.
+    """
+    if isinstance(bar, sp.Indexed):
+        base = bar.base
+        try:
+            partner = bar_partner(base)
+        except KeyError:
+            label = str(base.label)
+            partner = (sp.IndexedBase(label[:-3])
+                       if label.endswith("bar") and len(label) > 3 else None)
+        if partner is not None:
+            return rf"\overline{{{printer.doprint(partner[bar.indices])}}}"
+    return rf"\bar{{{printer.doprint(bar)}}}"
+
+
 class Bilinear(Function):
     """``Bilinear(ψ̄_a[i], Γ, χ_b[j])`` — an opaque fermion sandwich.
 
@@ -72,7 +97,7 @@ class Bilinear(Function):
         return self.args[2]
 
     def _latex(self, printer):
-        return (rf"\bar{{{printer.doprint(self.bar)}}}"
+        return (rf"{_bar_leg_latex(self.bar, printer)}"
                 rf"\,{printer.doprint(self.gamma)}\,"
                 rf"{printer.doprint(self.field)}")
 
