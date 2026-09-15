@@ -1,5 +1,5 @@
 {
-  "description": "S3-3HDM quark sector with soft S3 breaking. Exact S3 forces r = v1/v2 = sqrt(3) and V_us = 0; releasing r reproduces the observed Cabibbo angle. Demonstration of the MECHANISM, not a global fit: V_ub, V_cb and the CP phase are not targeted, and the converged solution puts |V_cb| ~ 0.98 against a measured 0.0408 -- see finding 7 of the notebook.",
+  "description": "S3-3HDM quark sector with soft S3 breaking (mu5 = mu4 ansatz). Exact S3 forces |r| = |v1/v2| = sqrt(3) and V_us = 0; releasing r reproduces the observed Cabibbo angle. Demonstration of the MECHANISM, not a global fit: V_ub, V_cb and the CP phase are not targeted, and the converged solution puts |V_ub| = 0.96 and |V_cb| = 0.032 against measured ~0.004 and 0.0408 -- see finding 6 of notebook 02.",
   "targets": {
     "m_u": 0.00216,
     "m_c": 1.27,

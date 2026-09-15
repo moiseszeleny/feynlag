@@ -37,8 +37,8 @@ from dataclasses import dataclass, field as _field
 
 import sympy as sp
 
-from feynlag import (Bilinear, ExternalParameter, S3, SU2, SU3, Scalar, U1,
-                     WeylFermion, diracPL, diracPR)
+from feynlag import (Bilinear, ExternalParameter, S3, WeylFermion, diracPL,
+                     diracPR)
 from feynlag.vertices.bilinear import expand_bilinear
 
 __all__ = [
@@ -86,15 +86,29 @@ def tex_basis_map(s3: S3 | None = None):
 # field content
 # --------------------------------------------------------------------------
 
+def _leg(components, slot, color=0, ncolors=1):
+    """The flavour-0 ``Indexed`` leg at SU(2) ``slot`` and ``color``.
+
+    Components span the gauge Kronecker product with the SU(2) slot outer and
+    colour inner (the order `_declare` builds), so the flat position is
+    ``slot·ncolors + color``.  Works for ``components`` and ``bar_components``.
+    """
+    return components[slot * ncolors + color][0]
+
+
 @dataclass(eq=False)
 class FermionSector:
     """One S₃-structured Yukawa sector: (2 ⊕ 1) left, (2 ⊕ 1) right."""
 
+    #: The draft's prefactors: 1/√2 on every structure except Y₃.
+    DRAFT_PREFACTORS = {1: 1 / sp.sqrt(2), 2: 1 / sp.sqrt(2), 3: sp.Integer(1),
+                        4: 1 / sp.sqrt(2), 5: 1 / sp.sqrt(2)}
+
     name: str
-    left: tuple                 # (F1, F2, FS)  — the SU(2) doublets
-    right: tuple                # (R1, R2, RS)  — the SU(2) singlets
-    couplings: dict             # {1..5: ExternalParameter}
-    terms: dict                 # {1..5: expression}  (no h.c.)
+    left: tuple[WeylFermion, ...]           # (F1, F2, FS) — the SU(2) doublets
+    right: tuple[WeylFermion, ...]          # (R1, R2, RS) — the SU(2) singlets
+    couplings: dict[int, ExternalParameter]  # {1..5: Y_k}
+    terms: dict[int, sp.Expr]               # {1..5: T_k}  (no h.c.)
     tilde: bool                 # built with H̃ (up-type) rather than H
     su2_slot: int               # which SU(2) component carries the mass term
     ncolors: int = 1
@@ -113,19 +127,23 @@ class FermionSector:
                    for k in range(1, 6))
         return -(core + sp.conjugate(core))
 
-    #: The draft's prefactors: 1/√2 on every structure except Y₃.
-    DRAFT_PREFACTORS = {1: 1 / sp.sqrt(2), 2: 1 / sp.sqrt(2), 3: sp.Integer(1),
-                        4: 1 / sp.sqrt(2), 5: 1 / sp.sqrt(2)}
-
     @property
     def coupling_symbols(self):
         return [self.couplings[k].s for k in range(1, 6)]
 
+    def table(self):
+        """``[(Y_k, T_k)]`` for k = 1…5 — feed to ``derive.rows`` to display."""
+        return [(self.couplings[k].s, self.terms[k]) for k in range(1, 6)]
+
     def mass_legs(self):
-        """(bar_legs, field_legs) — the 3+3 `Indexed` legs of the mass term."""
-        bars = [f.bar_components[self.su2_slot * self.ncolors][0]
+        """(bar_legs, field_legs) — the 3+3 `Indexed` legs of the mass term.
+
+        Colour 0 only: the mass matrix is colour-diagonal, so one colour
+        component carries it.
+        """
+        bars = [_leg(f.bar_components, self.su2_slot, 0, self.ncolors)
                 for f in self.left]
-        fields = [r.components[0][0] for r in self.right]
+        fields = [_leg(r.components, 0, 0, self.ncolors) for r in self.right]
         return bars, fields
 
 
@@ -138,14 +156,14 @@ def _sandwich(Lf, Hf, Rf, tilde=False, ncolors=1, color=None):
     """
     Hp, H0 = Hf.components
     upper, lower = (sp.conjugate(H0), -sp.conjugate(Hp)) if tilde else (Hp, H0)
-    bar = Lf.bar_components
     cols = range(ncolors) if color is None else [color]
     out = 0
     for c in cols:
-        # component order is (SU(2) slot outer, colour inner)
-        out += (upper * Bilinear(bar[c][0], diracPR, Rf.components[c][0])
-                + lower * Bilinear(bar[ncolors + c][0], diracPR,
-                                   Rf.components[c][0]))
+        right = _leg(Rf.components, 0, c, ncolors)
+        out += (upper * Bilinear(_leg(Lf.bar_components, 0, c, ncolors),
+                                 diracPR, right)
+                + lower * Bilinear(_leg(Lf.bar_components, 1, c, ncolors),
+                                   diracPR, right))
     return out
 
 
@@ -193,61 +211,74 @@ def _yukawa_terms(left, right, scalars, tilde=False, ncolors=1):
     }
 
 
-def _declare(prefix, s3, reps_L, reps_R, comp_L, comp_R, ncolors):
+GENERATIONS = ("1", "2", "S")      # S₃: (1, 2) the doublet, S the singlet
+
+
+def _declare(s3, left_prefix, right_prefix, reps_L, reps_R, stems_L, stems_R,
+             ncolors, left=None):
     """Three left doublets and three right singlets, assigned to 2 ⊕ 1.
 
-    Component names span the full gauge Kronecker product, SU(2) slot outer and
-    colour inner — the ordering `_sandwich` assumes.
+    Field names are ``{left_prefix}{g}`` and ``{right_prefix}{g}R`` for
+    ``g ∈ {1, 2, S}`` (e.g. ``L1`` / ``e1R``).  Component names use SymPy's
+    ``name^sup_sub`` syntax so they print as physics symbols: ``nu_1L`` → ν₁L,
+    ``u^2_1L`` → u²₁L (colour as the superscript).  They span the full gauge
+    Kronecker product, SU(2) slot outer and colour inner — the order `_leg`
+    assumes.
+
+    ``left`` reuses already-declared (and already S₃-assigned) doublets, so two
+    sectors can share one left-handed multiplet (up and down quarks share Q_L).
     """
-    def names(stems, tag):
+    def names(stems, g, chirality):
         if ncolors == 1:
-            return [f"{c}{tag}" for c in stems]
-        return [f"{c}{tag}_{k + 1}" for c in stems for k in range(ncolors)]
+            return [f"{st}_{g}{chirality}" for st in stems]
+        return [f"{st}^{c + 1}_{g}{chirality}"
+                for st in stems for c in range(ncolors)]
 
-    def mk(name, reps, chirality, comp_names):
+    def mk(name, reps, chirality, stems, g):
         return WeylFermion(name, reps=reps, chirality=chirality, nflavors=1,
-                           component_names=comp_names)
+                           component_names=names(stems, g, chirality))
 
-    left, right = [], []
-    for tag in ("1", "2", "S"):
-        nm = f"{prefix}{tag}"
-        left.append(mk(nm, reps_L, "L", names(comp_L, nm)))
-        rn = f"{prefix}{tag}R"
-        right.append(mk(rn, reps_R, "R", names(comp_R, rn)))
-    s3.assign("2", left[0], left[1]); s3.assign("1", left[2])
+    right = tuple(mk(f"{right_prefix}{g}R", reps_R, "R", stems_R, g)
+                  for g in GENERATIONS)
     s3.assign("2", right[0], right[1]); s3.assign("1", right[2])
-    return tuple(left), tuple(right)
+    if left is None:
+        left = tuple(mk(f"{left_prefix}{g}", reps_L, "L", stems_L, g)
+                     for g in GENERATIONS)
+        s3.assign("2", left[0], left[1]); s3.assign("1", left[2])
+    return tuple(left), right
 
 
-def build_lepton_sector(s3, SU2L, U1Y, scalars, tex=False):
-    """L_i = (ν_i, ℓ_i) doublets + ℓ_iR singlets, S₃ 2 ⊕ 1 — [LFVHD] Eq. (2)."""
+def build_lepton_sector(s3, SU2L, U1Y, scalars):
+    """L_i = (ν_i, e_i) doublets + e_iR singlets, S₃ 2 ⊕ 1 — [LFVHD] Eq. (2)."""
     left, right = _declare(
-        "L", s3,
+        s3, "L", "e",
         {SU2L: 2, U1Y: -sp.Rational(1, 2)}, {U1Y: -1},
         ["nu", "e"], ["e"], 1)
-    Y = {k: ExternalParameter(f"Yl{k}", 0.01 * k, real=True) for k in range(1, 6)}
+    Y = {k: ExternalParameter(f"Y^ell_{k}", 0.01 * k, real=True)
+         for k in range(1, 6)}
     terms = _yukawa_terms(left, right, scalars, tilde=False, ncolors=1)
     return FermionSector("lepton", left, right, Y, terms,
                          tilde=False, su2_slot=1, ncolors=1)
 
 
-def build_quark_sector(s3, SU2L, U1Y, SU3c, scalars, kind):
+def build_quark_sector(s3, SU2L, U1Y, SU3c, scalars, kind, share_left=None):
     """Q_i doublets + u_iR / d_iR singlets, S₃ 2 ⊕ 1 — the analogue of [LFVHD].
 
     ``kind='down'`` uses H (mass from the lower SU(2) slot); ``kind='up'`` uses
-    H̃ (mass from the upper slot).  The left-handed doublets are declared once
-    per call, so build the down sector first and pass its ``left`` back in via
-    `share_left` if a single Q_L is wanted for both.
+    H̃ (mass from the upper slot).  Physically there is ONE left-handed quark
+    doublet: build the down sector first and pass ``share_left=down.left`` to
+    the up sector.  Without it each call declares its own ``Q1, Q2, QS`` —
+    same-named symbols, so never do that twice in one model.
     """
     if kind not in ("up", "down"):
         raise ValueError("kind must be 'up' or 'down'")
     hyper = sp.Rational(2, 3) if kind == "up" else -sp.Rational(1, 3)
     tag = "u" if kind == "up" else "d"
     left, right = _declare(
-        f"Q{tag}", s3,
+        s3, "Q", tag,
         {SU2L: 2, U1Y: sp.Rational(1, 6), SU3c: 3}, {U1Y: hyper, SU3c: 3},
-        ["uL", "dL"], [tag], 3)
-    Y = {k: ExternalParameter(f"Y{tag}{k}", 0.01 * k, real=True)
+        ["u", "d"], [tag], 3, left=share_left)
+    Y = {k: ExternalParameter(f"Y^{tag}_{k}", 0.01 * k, real=True)
          for k in range(1, 6)}
     terms = _yukawa_terms(left, right, scalars, tilde=(kind == "up"), ncolors=3)
     return FermionSector(f"quark-{kind}", left, right, Y, terms,
@@ -286,7 +317,7 @@ def mass_matrix_from_bilinears(L_yuk, bar_legs, field_legs, vacuum,
 def o12_angle(r):
     """ψ with ``tan 2ψ = −r``, the angle that block-diagonalizes the 1–2 sector.
 
-    The upper-left block is ``B = μ₁·1 + a₂[[1, r],[r, −1]]`` with
+    The upper-left block is ``B = μ₁·1 + μ₂[[1, r],[r, −1]]`` with
     ``r = v₁/v₂``, so the diagonalizing angle depends on **the vacuum alone** —
     not on the Yukawa couplings.  That is what makes ``O₁₂`` universal across
     the charged-lepton, up- and down-quark sectors, and hence what forces the
@@ -313,10 +344,11 @@ def o23(theta):
 def two_stage_diagonalize(M, r=sp.sqrt(3), simplify=True):
     """``(O, D, theta)`` with ``O = O₁₂O₂₃`` and ``D = OᵀMO`` diagonal.
 
-    Only valid when the residual 2×2 block is symmetric — which the draft shows
-    is forced by matching the singular values to the physical masses
-    (``μ₅ = μ₄``).  Raises if it is not, rather than silently returning a
-    non-diagonal ``D``.
+    Only valid when the residual 2×2 block is symmetric, ``μ₅ = μ₄`` — the
+    draft's ``O_L = O_R`` *ansatz*.  The masses do not force it: matching them
+    to eigenvalues is what imposes it (`02_s3_fermion_sector.ipynb` §5.1); a
+    non-symmetric block needs separate left and right rotations.  Raises if the
+    block is not symmetric, rather than silently returning a non-diagonal ``D``.
     """
     O1 = o12(r)
     B = O1.T * M * O1

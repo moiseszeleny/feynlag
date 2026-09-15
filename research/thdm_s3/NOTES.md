@@ -285,19 +285,31 @@ masses, the $\nu_R$ being gauge singlets). Enumerated in
    $v=246$ GeV in $m_W$. **Harmless downstream** — the $\mu$'s are eliminated
    for physical masses, so $M_\ell$, $G_k$ and $Q_i$ are unaffected; it matters
    only if one wants the Yukawa couplings themselves.
-2. **Eq. (muil_equations) line 3 was circular.** The correct general relation is
-   $(m_\tau-m_\mu)^2=(2\mu_3-m_\mu-m_\tau)^2+4(\mu_4+\mu_5)^2$, not
-   $+16\mu_4\mu_5$; the printed form already presupposes the $\mu_4=\mu_5$ it is
-   then used to derive. The conclusion survives by a non-circular route
-   (patched, along with Eq. muil_sols line 3 and the $\mu_4\mu_5\ge0$ remark,
-   which is now automatic).
+2. **Eq. (muil_equations) line 3 mixed eigenvalues and singular values.** The
+   singular-value relation is
+   $(m_\tau-m_\mu)^2=(2\mu_3-m_\mu-m_\tau)^2+4(\mu_4+\mu_5)^2$; the printed
+   $+16\mu_4\mu_5$ is the *eigenvalue* gap $(\mathrm{tr}A)^2-4\det A$ (patched,
+   along with Eq. muil_sols line 3 and the $\mu_4\mu_5\ge0$ remark). **Caveat
+   (audit, 2026-09-15):** the patched derivation of $\mu_5=\mu_4$ still uses
+   $m_\mu+m_\tau=\mathrm{tr}A$, i.e. eigenvalue matching. Together with the
+   singular-value relations that is *equivalent* to $\mu_4=\mu_5$
+   ($\mathrm{tr}A^{\mathsf T}A-[(\mathrm{tr}A)^2-2\det A]=4(\mu_4-\mu_5)^2$), so
+   $\mu_5=\mu_4$ is the ansatz $O_L=O_R$, not a consequence of the masses. The
+   draft should say so; it has not been changed there yet (notebook 02 §5.1).
 3. **A coefficient slip:** $\mathrm{tr}(N)=4\mu_4^2+m_\mu^2+m_\tau^2$, not
    $2\mu_4^2+\ldots$. The conclusion $\mu_4=0$ is unaffected.
 
 Everything else checks out: $R_S=R_AR_H$ identically, the $O_{12}$
 block-diagonalization with $m_e=\mu_1-2\mu_2$, $\tan2\theta_\ell$ and the
-$p_{1,2}$ closed forms, and $Q_1(A)=\mathrm{diag}(m)/v$ — the last an *exact
-identity* (the first column of $R_A$ is the vacuum direction), not a fit.
+$p_{1,2}$ closed forms, and $Q_1(A)=\mathrm{diag}(m)/v$. The last is an *exact
+identity* that holds for any rotation (the first column of $R_A$ is the vacuum
+direction), so it does not test $O$; the $G_k$ split is checked separately, with
+$v_1$ kept explicit so that $G_1\neq0$.
+
+The basis map sends feynlag's aligned vacuum $(v_1,\sqrt3v_1)$ to
+$(\sqrt3v_1,-v_1)$ in the draft basis, i.e. $r=v_1/v_2=-\sqrt3$. That sign is
+harmless: $M(-r)=P\,M(r)\,P$ with $P=\mathrm{diag}(-1,1,1)$, a sign flip of the
+first-generation fields (notebook 02 §4.2).
 
 ### 9. Exact S₃ forces $V_{us}=0$; soft breaking is what turns it on
 
@@ -308,14 +320,18 @@ are real. $M_u$ and $M_d$ therefore have **identical structure**.
 The 1–2 block-diagonalizing rotation satisfies $\tan2\psi=-r$ with $r=v_1/v_2$:
 it depends on the **vacuum alone**, never on the Yukawas, so the same $O_{12}$
 acts in every sector. The first generation decouples **iff**
-$r^2-\sqrt{r^2+1}-1=0$, whose only positive root is $r=\sqrt3$ — exactly the
+$r\,(2-\sqrt{r^2+1})=0$, i.e. $|r|=\sqrt3$ — exactly the
 vacuum that preserves the residual $\mathbb Z_2$. Hence with exact S₃
 
 $$V_{\rm CKM}=O_{23}(\theta_u)^{\mathsf T}O_{23}(\theta_d)\ \Longrightarrow\
 V_{us}=V_{ub}=V_{cd}=V_{td}=0,$$
 
-against $|V_{us}|=0.2243$. This is [DasDeyPal16]'s "unbroken $\mathbb Z_2$ ⟹
-approximate CKM block structure", derived here independently.
+against $|V_{us}|=0.2243$. The mechanism is [DasDeyPal16]'s ("unbroken
+$\mathbb Z_2$ ⟹ approximate CKM block structure"), **but the block differs**.
+There the Cabibbo block stays free and soft breaking generates only the small
+(Wolfenstein $\mathcal O(\lambda^2)$ and higher) elements. Here the draft's
+assignment gives a 2–3 block, so $V_{us}$ itself vanishes. ($V_{us}=0$ does not
+depend on the $\mu_5=\mu_4$ ansatz: at $|r|=\sqrt3$ both entries decouple.)
 
 **Soft breaking fixes it, and costs nothing elsewhere.** Being dimension-2 by
 definition it touches no quartic, so *every* boundedness/unitarity result of
@@ -325,11 +341,12 @@ S₃-breaking quadratics (the $\mathbf2$ pair and the $H_S^\dagger H_{1,2}$ pair
 the hermitian quadratic space is 6-dimensional in the real symmetric case, of
 which 2 are invariant), and the tadpole system stops being over-constrained.
 A bounded fit then reproduces all six quark masses and the Cabibbo angle at a
-misalignment of only $r-\sqrt3\approx-0.06$ (`results/quark_soft_fit.json`).
+misalignment of $r-\sqrt3\approx-0.29$ (`results/quark_soft_fit.json`).
 
 **Caveat, and it is a big one.** That fit targets six masses and $|V_{us}|$ only.
-The untargeted elements come out badly wrong — $|V_{cb}|\approx0.98$ against a
-measured $0.0408$, i.e. near-maximal 2–3 mixing. So finding 9 establishes the
+The untargeted elements come out badly wrong: at the converged point
+$|V_{ub}|\approx0.96$ (measured $\sim0.004$) and $|V_{cb}|\approx0.032$ (measured
+$0.0408$), i.e. near-maximal 1–3 mixing. So finding 9 establishes the
 *mechanism* by which soft breaking generates the Cabibbo angle, **not** that this
 model reproduces the observed CKM matrix. A genuine global fit (all four CKM
 parameters and six masses at once) may well fail, since the two-stage structure
