@@ -3,13 +3,23 @@
 ## Install
 
 ```bash
+pip install feynlag
+```
+
+`feynlag` depends on SymPy and NumPy at runtime (NumPy is used only by the
+numeric integration in `feynlag.pheno`). The optional `numeric` extra adds
+SciPy for adaptive quadrature in the off-shell decay widths.
+
+For development, install from a clone:
+
+```bash
 pip install -e .[dev]
 pytest
 ```
 
-`feynlag` depends only on SymPy at runtime. The `dev` extra adds pytest,
-numpy (for the numeric cross-checks in `feynlag.verify`), and nbstripout
-(notebook diff hygiene — see the repo's `CLAUDE.md`).
+The `dev` extra adds pytest, SciPy, matplotlib (for authoring the tutorial
+notebooks) and nbstripout (notebook diff hygiene — see the repo's
+`CLAUDE.md`).
 
 ## Quick tour
 
@@ -41,9 +51,11 @@ m = Model("SM", gauge_groups=[SU2L, U1Y],
           parameters=[gw, g1, v, lam, mu2], lagrangian=L)
 
 m.check_invariance()          # gauge invariance, hermiticity, dim <= 4
-m.solve_tadpoles([mu2])       # mu2 = lam v^2, registered as internal
-m.mass_matrix([sp.Symbol("H0_r", real=True)])   # [[2 lam v^2]]
-m.feynman_rules([...])        # vertices, momentum-space, i x n! included
+m.solve_tadpoles([mu2])       # {mu2: lam v^2}, registered as internal
+
+h = sp.Symbol("H0_r", real=True)
+m.mass_matrix([h])            # Matrix([[2 lam v^2]])
+m.feynman_rules([h])          # {(h,h,h): -6i lam v, (h,h,h,h): -6i lam}
 ```
 
 Every stage above corresponds to one chapter of the

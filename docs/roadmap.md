@@ -7,7 +7,12 @@ plan file, this is committed and discoverable in any future session.
 
 ## Status
 
-Completed (branch `explore/adoption-roadmap`, 244 tests green, `pytest` ~6 min):
+**v0.1.0 (first release)** ships everything listed below, plus the
+`feynlag.pheno` decay and 2→2 scattering tracks (sections F and G), the
+reusable SM builders (`feynlag.models`) and the any-SU(N) irrep support —
+414 tests green, `pytest` ~4 min. See `CHANGELOG.md` for the release notes.
+
+Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
   workflow; `DiracFermion` fails fast with a pointer to the two-`WeylFermion`
@@ -49,8 +54,8 @@ Completed (branch `explore/adoption-roadmap`, 244 tests green, `pytest` ~6 min):
 
 ### How to resume
 
-1. Check out `explore/adoption-roadmap` (or branch fresh off `main` if it has
-   been merged) and run `pytest` — confirm still green before starting.
+1. Branch fresh off `main` and run `pytest` — confirm still green before
+   starting.
 2. Read `CLAUDE.md` for architecture and the accumulated gotchas; the project's
    auto-memory file (outside this repo, in the Claude Code memory store)
    carries a session-by-session account of every phase and the bugs found
@@ -87,9 +92,9 @@ extraction design" for the full account.
 The biggest remaining gap; expect a dedicated multi-session plan rather than a
 single pass.
 
-- **Decide first**: the README advertises a `FieldStrength` building block that
-  was never implemented (`operators.py:10` defers it perpetually) — either
-  build it now (the natural home for ghost-kinetic and gauge-fixing terms) or
+- **Decide first**: a `FieldStrength` building block was once advertised but
+  never implemented (`operators.py:10` defers it; the README no longer
+  mentions it) — either build it now (the natural home for ghost-kinetic and gauge-fixing terms) or
   keep bolting gauge-fixing onto the existing group-theoretic route
   (`vertices/yangmills.py` builds VVV/VVVV from structure constants directly,
   never from a `−¼F_{μν}F^{μν}` Lagrangian term).
