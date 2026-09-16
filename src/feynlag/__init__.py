@@ -121,3 +121,12 @@ __all__ = [
     "charged_current_rotation", "electroweak_scaffold", "to_physical_basis",
     "standard_model",
 ]
+
+
+def __getattr__(name):
+    # ``feynlag.pheno`` is imported on first access, so ``import feynlag``
+    # stays free of the numeric/phenomenology stack.
+    if name == "pheno":
+        import importlib
+        return importlib.import_module(".pheno", __name__)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
