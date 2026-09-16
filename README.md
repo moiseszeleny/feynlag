@@ -32,7 +32,7 @@ Full docs, including an **Algorithms Manual** deriving the physics and
 design of every pipeline stage (invariance checking, EWSB/tadpoles, mass
 matrices, diagonalization, vertex extraction, export), tutorial notebooks,
 an examples gallery, and the API reference:
-**https://moiseszeleny.github.io/lagrangian/**
+**https://moiseszeleny.github.io/feynlag/**
 
 ## Install
 
@@ -94,7 +94,7 @@ mixing), `fermi_theory.py` (four-fermion muon decay), `sm_weinberg.py` and
 `sm_seesaw.py` (Majorana neutrino masses), `sm_decays.py` and
 `sm_higgs_decays.py` (widths and the full Higgs branching-ratio table), and
 `ee_to_ff.py` (2→2 scattering). The
-[docs site](https://moiseszeleny.github.io/lagrangian/) walks these models
+[docs site](https://moiseszeleny.github.io/feynlag/) walks these models
 stage by stage in ten executed tutorial notebooks.
 
 ## Validation
