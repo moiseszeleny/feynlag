@@ -23,7 +23,7 @@ Strategy (see plan): **explicit component transformation**.
 import sympy as sp
 
 from .fields import Fermion
-from .operators import PartialMu, expand_derivatives
+from .operators import D_linear, PartialMu
 from .vertices.bilinear import Bilinear, MajoranaBilinear, expand_bilinear
 
 __all__ = ["gauge_variation", "check_gauge_invariance",
@@ -65,23 +65,66 @@ def _transform_map(fields, group, alphas):
     return sub
 
 
+def _is_atomic_derivative_arg(arg):
+    """Whether ``PartialMu(arg)`` is already atomic: a bare component or its
+    conjugate."""
+    return arg.is_Symbol or (isinstance(arg, sp.conjugate)
+                             and arg.args[0].is_Symbol)
+
+
+def _normalize_derivatives(expr, components=()):
+    """Leibniz-expand every *compound* ``PartialMu(product)`` over
+    ``components`` (:func:`~feynlag.operators.D_linear`), then ``expand``.
+
+    An atomic ``PartialMu(φ)`` / ``PartialMu(conjugate(φ))`` is kept as is,
+    even when ``φ`` is not among ``components``: ``D_linear`` treats anything
+    outside its field list as a constant and would zero it, which silently
+    drops the derivative of every field the symmetry does not act on (the
+    Higgs kinetic term under a singlet-only ``Z2``) — and of every
+    conjugated component.
+    """
+    if not components or not expr.has(PartialMu):
+        return sp.expand(expr)
+    return expr.replace(
+        PartialMu,
+        lambda arg: PartialMu(arg) if _is_atomic_derivative_arg(arg)
+        else D_linear(arg, components)).expand()
+
+
+def _with_conjugate_derivatives(sub):
+    """Add ``PartialMu(conjugate(φ)) → conjugate(image)`` for every
+    ``PartialMu(φ)`` key of ``sub``.
+
+    ``∂_μ`` is real and the transformation parameters are spacetime-constant
+    (real ``α`` for gauge groups, constant matrices for discrete ones), so the
+    conjugated derivative transforms with the conjugated image.  Without these
+    keys ``xreplace`` would rewrite ``PartialMu(conjugate(φ))`` into an
+    opaque, never-cancelling ``PartialMu(conjugate(<image>))``.
+    """
+    out = dict(sub)
+    for key, image in sub.items():
+        if isinstance(key, PartialMu):
+            ckey = PartialMu(sp.conjugate(key.args[0]))
+            out.setdefault(ckey, sp.conjugate(image))
+    return out
+
+
 def _apply_field_map(expr, sub, components=()):
     """Apply a component substitution, also inside ``PartialMu`` heads.
 
-    ``expr`` is first Leibniz-expanded (:func:`~feynlag.operators.
-    expand_derivatives`) so any compound ``PartialMu(product)`` is reduced to
-    atomic ``PartialMu(component)`` terms matching ``sub``'s keys — ``Dmu``
-    already only ever wraps atomic components, but this guards hand-written
-    terms too.  A single ``xreplace`` then handles both plain components and
-    their ``PartialMu`` counterparts (``sub`` carries both); it also
-    traverses inside ``conjugate(...)`` so conjugated components transform
+    ``expr`` is first normalized (:func:`_normalize_derivatives`) so any
+    compound ``PartialMu(product)`` is reduced to atomic
+    ``PartialMu(component)`` terms matching ``sub``'s keys — ``Dmu`` already
+    only ever wraps atomic components, but this guards hand-written terms
+    too.  A single ``xreplace`` then handles both plain components and their
+    ``PartialMu`` counterparts (``sub`` carries both); it also traverses
+    inside ``conjugate(...)`` so conjugated components transform
     consistently.
     """
     if not sub:
         return expr
-    if components:
-        expr = expand_derivatives(expr, components)
-    return expr.xreplace(sub)
+    return _normalize_derivatives(expr, components).xreplace(
+        _with_conjugate_derivatives(sub))
 
 
 def _fermion_transform(expr, fields, group, alphas):
@@ -179,14 +222,15 @@ def gauge_variation(term, fields, group):
     components = [c for f in fields for c in getattr(f, "components", ())
                  if not isinstance(f, Fermion)]
     # Leibniz-expand derivatives once; the per-generator xreplace reuses it.
-    base = expand_derivatives(term, components) if components else term
+    base = _normalize_derivatives(term, components) if components else term
 
     coeffs = []
     for a in range(n):
         alpha = sp.Dummy(f"alpha_{group.name}_{a}", real=True)
         alphas = [sp.S.Zero] * n
         alphas[a] = alpha
-        sub = _transform_map(fields, group, alphas)
+        sub = _with_conjugate_derivatives(
+            _transform_map(fields, group, alphas))
         transformed = base.xreplace(sub) if sub else base
         if has_fermion_content:
             transformed = _fermion_transform(transformed, fields, group, alphas)
@@ -218,13 +262,16 @@ def check_discrete_invariance(term, group):
     violations = []
     components = group.components()
     has_fermion_content = term.has(Bilinear) or term.has(MajoranaBilinear)
+    # compare against the same derivative-normalized form the transform sees
+    base = _normalize_derivatives(term, components)
     for gen_index, sub in enumerate(group.generator_maps()):
-        transformed = _apply_field_map(term, sub, components=components)
+        sub = _with_conjugate_derivatives(sub)
+        transformed = base.xreplace(sub) if sub else base
         if has_fermion_content:
             transformed = _fermion_transform_discrete(transformed, group,
                                                        gen_index)
             transformed = expand_bilinear(transformed)
-        residual = sp.expand(transformed - term)
+        residual = sp.expand(transformed - base)
         if residual != 0:
             residual = sp.simplify(residual)  # ω-phases need simplification
         if residual != 0:
