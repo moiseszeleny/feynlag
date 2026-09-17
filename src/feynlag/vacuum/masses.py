@@ -26,9 +26,15 @@ def build_mass_matrix(potential, fields1, fields2=None):
     return elements.tomatrix()
 
 
-def _at_vacuum_matrix(M, vacuum, tadpole_subs=None):
-    """Evaluate a matrix at the vacuum and apply tadpole substitutions."""
-    M = M.applyfunc(vacuum.at_vacuum)
+def _at_vacuum_matrix(M, vacuum, tadpole_subs=None, shifted=False):
+    """Evaluate a matrix at the vacuum and apply tadpole substitutions.
+
+    ``shifted=True`` means ``M`` was built from an already-shifted potential,
+    so only the fluctuations are zeroed — shifting again would evaluate a
+    real VEV'd scalar at ``2v``.
+    """
+    M = M.applyfunc(vacuum.zero_fluctuations if shifted
+                    else vacuum.at_vacuum)
     if tadpole_subs:
         M = M.applyfunc(lambda e: sp.expand(e.subs(tadpole_subs)))
     return M.applyfunc(lambda e: sp.factor(sp.expand(e))
@@ -49,7 +55,7 @@ def scalar_mass_matrix(potential, vacuum, fields, tadpole_subs=None):
     """
     V_shifted = vacuum.shift(potential)
     M = build_mass_matrix(V_shifted, fields)
-    return _at_vacuum_matrix(M, vacuum, tadpole_subs)
+    return _at_vacuum_matrix(M, vacuum, tadpole_subs, shifted=True)
 
 
 def charged_mass_matrix(potential, vacuum, fields, tadpole_subs=None):
