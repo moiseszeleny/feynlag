@@ -4,10 +4,10 @@ import sympy as sp
 import pytest
 
 from feynlag import (
-    Bilinear, Dmu, ExternalParameter, Lagrangian, Model, S3, Scalar, SU2,
-    U1, WeylFermion, ZN, check_discrete_invariance, check_gauge_invariance,
-    check_hermiticity, check_mass_dimension, dag, diracPL, diracPR,
-    fermion_gauge_current,
+    Bilinear, Dmu, ExternalParameter, Lagrangian, Model, PartialMu, S3,
+    Scalar, SU2, U1, WeylFermion, ZN, check_discrete_invariance,
+    check_gauge_invariance, check_hermiticity, check_mass_dimension, dag,
+    diracPL, diracPR, fermion_gauge_current,
 )
 
 
@@ -130,6 +130,78 @@ class TestDiscreteInvariance:
         # x1^3 alone is not invariant
         ok, _ = check_discrete_invariance(x1**3, s3)
         assert not ok
+
+
+class TestDiscreteInvarianceDerivatives:
+    """Derivative terms under a discrete group.
+
+    Derivatives of fields the group does not act on, and conjugated
+    derivatives, used to be zeroed by the Leibniz expansion on the
+    transformed side only, so a ``Dmu`` kinetic term false-failed.
+    """
+
+    @pytest.fixture
+    def singlet(self):
+        S = Scalar("dS", reps={}, component_names=["dS"], real=True)
+        return S, S.components[0]
+
+    def test_higgs_kinetic_invariant_under_singlet_z2(self, ew, singlet):
+        S, s0 = singlet
+        H = sm_higgs(ew)
+        kin = (dag(Dmu(H)) * Dmu(H))[0]
+        Z2 = ZN("Z2", 2)
+        Z2.assign(1, S)
+        ok, violations = check_discrete_invariance(kin, Z2)
+        assert ok, violations
+        # also with H explicitly assigned the trivial charge
+        Z2b = ZN("Z2b", 2)
+        Z2b.assign(1, S)
+        Z2b.assign(0, H)
+        ok, violations = check_discrete_invariance(kin, Z2b)
+        assert ok, violations
+
+    def test_kinetic_of_odd_doublet_invariant(self, ew):
+        H = sm_higgs(ew)
+        Z2 = ZN("Z2", 2)
+        Z2.assign(1, H)
+        ok, violations = check_discrete_invariance(
+            (dag(Dmu(H)) * Dmu(H))[0], Z2)
+        assert ok, violations
+
+    def test_odd_derivative_terms_still_fail(self, ew, singlet):
+        S, s0 = singlet
+        h0 = sm_higgs(ew).components[1]
+        Z2 = ZN("Z2", 2)
+        Z2.assign(1, S)
+        odd = s0 * PartialMu(h0) * PartialMu(sp.conjugate(h0))
+        assert not check_discrete_invariance(odd, Z2)[0]
+        assert not check_discrete_invariance(PartialMu(s0) * h0, Z2)[0]
+
+    def test_compound_derivative_argument(self, singlet):
+        S, s0 = singlet
+        Z2 = ZN("Z2", 2)
+        Z2.assign(1, S)
+        assert check_discrete_invariance(PartialMu(s0**2)**2, Z2)[0]
+        assert not check_discrete_invariance(
+            PartialMu(s0**2) * PartialMu(s0), Z2)[0]
+
+    def test_model_with_declared_z2(self, ew, singlet):
+        S, s0 = singlet
+        SU2L, U1Y = ew
+        H = sm_higgs(ew)
+        Z2 = ZN("Z2", 2)
+        Z2.assign(1, S)
+        lamHS = sp.Symbol("lamHS", real=True)
+        HdH = (dag(H) * H.mat)[0]
+        L = (Lagrangian()
+             .add((dag(Dmu(H)) * Dmu(H))[0], sector="kinetic")
+             .add(sp.Rational(1, 2) * PartialMu(s0)**2, sector="kinetic")
+             .add(-lamHS / 2 * HdH * s0**2, sector="potential"))
+        model = Model("xsm", gauge_groups=[SU2L, U1Y], discrete_groups=[Z2],
+                      fields=[H, S, SU2L.bosons(), U1Y.bosons()],
+                      lagrangian=L)
+        report = model.check_invariance(hermiticity=False, dimension=False)
+        assert report.ok, report.failures
 
 
 class TestHermiticityAndDimension:
