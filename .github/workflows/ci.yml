@@ -3,6 +3,7 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
   workflow_dispatch: {}
@@ -44,9 +45,44 @@ jobs:
           name: dist
           path: dist/*
 
+  github-release:
+    needs: [test, build]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the release and upload its assets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Check the tag matches the package version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          ls dist/feynlag-"$version"-py3-none-any.whl dist/feynlag-"$version".tar.gz
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "feynlag ${GITHUB_REF_NAME#v}" --notes-file notes.md
+
+  # PyPI upload is opt-in: set the repository variable PUBLISH_PYPI=true once
+  # trusted publishing is configured on pypi.org, then re-run this workflow on
+  # the existing tag (Actions -> ci -> Run workflow -> pick the tag).
   publish:
     needs: [test, build]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && vars.PUBLISH_PYPI == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi

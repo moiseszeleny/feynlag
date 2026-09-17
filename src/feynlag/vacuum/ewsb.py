@@ -7,7 +7,8 @@ Aggregates the VEV registrations of all scalar fields
   (``φ⁰ → (v + h + i a)/√2``),
 - ``fluctuations``: all real fluctuation symbols,
 - ``at_vacuum(expr)``: evaluate an expression on the vacuum (shift, then set
-  all fluctuations to zero).
+  all fluctuations to zero); ``zero_fluctuations(expr)`` does only the
+  second step, for already-shifted expressions.
 """
 
 import sympy as sp
@@ -56,14 +57,23 @@ class Vacuum:
     def at_vacuum(self, expr):
         """Evaluate ``expr`` at the vacuum point (all fluctuations → 0).
 
+        ``expr`` must be **unshifted** (weak-basis components): the shift is
+        not idempotent for a real VEV'd scalar, whose fluctuation symbol is
+        the component itself, so shifting twice evaluates at ``φ = 2v``. For
+        an already-shifted expression use :meth:`zero_fluctuations`.
+        """
+        return self.zero_fluctuations(self.shift(expr))
+
+    def zero_fluctuations(self, expr):
+        """Set all fluctuations to zero in an **already-shifted** ``expr``.
+
         Also sets any remaining non-VEV'd scalar components (e.g. charged
         components) to zero — they have no VEV by charge conservation.
         """
-        shifted = self.shift(expr)
         zero_fluct = {f: 0 for f in self.fluctuations}
         for s in self.scalars:
             for comp in s.components:
                 if comp not in s.vev_expansions:
                     zero_fluct[comp] = 0
                     zero_fluct[sp.conjugate(comp)] = 0
-        return sp.expand(shifted.xreplace(zero_fluct))
+        return sp.expand(sp.sympify(expr).xreplace(zero_fluct))

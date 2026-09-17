@@ -5,16 +5,22 @@ Tree-level Feynman rules from Beyond-Standard-Model Lagrangians, in pure
 
 You declare particle fields with their gauge and discrete-symmetry
 representations, write the Lagrangian explicitly with library building blocks
-(`Dmu`, `FieldStrength`, `dag`), and `feynlag` takes it from there:
+(`Dmu`, `dag`, `Bilinear`), and `feynlag` takes it from there:
 
 - gauge / discrete invariance and hermiticity checks,
 - electroweak symmetry breaking: VEV expansion, tadpole conditions,
 - mass-matrix extraction and diagonalization (orthogonal, unitary, SVD for
   Dirac fermions, Takagi for Majorana),
 - rotation from the weak basis to the physical (mass) basis,
-- vertex extraction (SSS, SSSS, VSS, VVS, VVSS, VVV, VVVV, FFS, FFV) with
-  derivative couplings taken to momentum space,
-- export: LaTeX vertex tables and UFO (MadGraph et al.).
+- vertex extraction (SSS, SSSS, VSS, VVS, VVSS, VVV, VVVV, FFS, FFV, plus
+  four-fermion and Majorana/Weinberg operators) with derivative couplings
+  taken to momentum space,
+- model consistency in one call (`Model.validate()`): invariance,
+  hermiticity, anomaly cancellation, charge conservation,
+- export: LaTeX vertex tables and UFO (MadGraph et al.),
+- phenomenology (`feynlag.pheno`): decay widths and branching ratios
+  (tree-level 1→2, off-shell `h→WW*/ZZ*`, loop-induced `h→gg/γγ/Zγ`) and
+  tree-level 2→2 cross sections with forward–backward asymmetries.
 
 Parameters are split into **external** (fixed by experiment, e.g. `v`, `m_h`,
 `g`) and **internal** (derived: tadpole solutions, mixing angles, inverted
@@ -26,9 +32,15 @@ Full docs, including an **Algorithms Manual** deriving the physics and
 design of every pipeline stage (invariance checking, EWSB/tadpoles, mass
 matrices, diagonalization, vertex extraction, export), tutorial notebooks,
 an examples gallery, and the API reference:
-**https://moiseszeleny.github.io/lagrangian/**
+**https://moiseszeleny.github.io/feynlag/**
 
-## Install (development)
+## Install
+
+```bash
+pip install feynlag            # add [numeric] for SciPy-backed integration
+```
+
+For development:
 
 ```bash
 pip install -e .[dev]
@@ -65,9 +77,11 @@ m = Model("SM", gauge_groups=[SU2L, U1Y],
           parameters=[gw, g1, v, lam, mu2], lagrangian=L)
 
 m.check_invariance()          # gauge invariance, hermiticity, dim ≤ 4
-m.solve_tadpoles([mu2])       # mu2 = lam v², registered as internal
-m.mass_matrix([sp.Symbol("H0_r", real=True)])   # [[2 lam v²]]
-m.feynman_rules([...])        # vertices, momentum-space, i × n! included
+m.solve_tadpoles([mu2])       # {mu2: lam v²}, registered as internal
+
+h = sp.Symbol("H0_r", real=True)
+m.mass_matrix([h])            # Matrix([[2 lam v²]])
+m.feynman_rules([h])          # {(h,h,h): -6i lam v, (h,h,h,h): -6i lam}
 ```
 
 See `examples/` for full runs: `sm_scalar_gauge.py` (complete SM: Higgs +
@@ -75,9 +89,13 @@ electroweak gauge + leptons + quark/QCD sector), `sm_vll.py` (SM + a
 vector-like lepton doublet, biunitary mass-matrix diagonalization),
 `sm_u1x.py` (SM × U(1)_X with a Z′, symbolic charges, chained rotations),
 `thdm.py` (2HDM with the α rotation), `thdm_s3.py` (3HDM+S₃, where the
-tadpole conditions force the √3 vacuum alignment). The
-[docs site](https://moiseszeleny.github.io/lagrangian/) walks the SM, VLL,
-and U(1)_X models stage by stage in three executed tutorial notebooks.
+tadpole conditions force the √3 vacuum alignment), `sm_ckm.py` (CKM quark
+mixing), `fermi_theory.py` (four-fermion muon decay), `sm_weinberg.py` and
+`sm_seesaw.py` (Majorana neutrino masses), `sm_decays.py` and
+`sm_higgs_decays.py` (widths and the full Higgs branching-ratio table), and
+`ee_to_ff.py` (2→2 scattering). The
+[docs site](https://moiseszeleny.github.io/feynlag/) walks these models
+stage by stage in ten executed tutorial notebooks.
 
 ## Validation
 
@@ -98,19 +116,25 @@ symbolic difference **and** random-point numeric checks):
 
 ## Status / roadmap
 
-Working: scalars, gauge bosons, chiral fermions (bilinear track), tadpoles,
-mass matrices (real/charged/gauge blocks), orthogonal/SVD/Takagi
-diagonalization, momentum-space vertices for the closed catalog
-(SSS SSSS VSS VVS VVSS VVV VVVV FFS FFV), LaTeX tables, UFO export
-(including full SU(3) color-tensor strings for qqg/ggg/gggg), CKM quark
-mixing via the mass-basis insertion route (`feynlag.standard_ckm`).
-Model consistency: `Model.validate()` aggregates gauge/discrete invariance,
-hermiticity, gauge-anomaly cancellation, electric-charge conservation +
-vacuum-derived consistency, vertex hermiticity pairing, and a UFO round-trip.
-The exported SM UFO is **cross-checked against MadGraph** (`e+e-→μ+μ-` and the
-gauge-cancelling `e+e-→W+W-` reproduce the stock `sm` cross sections to MC
-precision — see [`docs/benchmark.md`](docs/benchmark.md) and
-`scripts/madgraph_roundtrip.py`).
+feynlag 0.1 is a **beta**: the tree-level pipeline above is complete and
+tested (400+ tests pinning physical results), and the exported SM UFO is
+**cross-checked against MadGraph** (`e+e-→μ+μ-` and the gauge-cancelling
+`e+e-→W+W-` reproduce the stock `sm` cross sections to MC precision, and a
+four-fermion UFO reproduces the muon width — see
+[`docs/benchmark.md`](docs/benchmark.md)).
 
-Deferred (v2): R_ξ gauge fixing and ghosts, four-fermion operators,
-NLO/UFO 2.0 extensions.
+Known limitations (planned, see [`docs/roadmap.md`](docs/roadmap.md)):
+
+- no R_ξ gauge fixing or ghosts (Goldstone bosons are kept, but no
+  gauge-fixing terms, ghost vertices or ξ dependence);
+- Majorana vertices are symbolic-only, not yet exported to UFO;
+- 2→2 scattering handles single-diagram processes only (no interference yet),
+  and `VVV` decays are not implemented;
+- no NLO / UFO 2.0 extensions.
+
+Unsupported cases raise `NotImplementedError` rather than returning a
+plausible-looking wrong answer.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

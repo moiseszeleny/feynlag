@@ -240,6 +240,41 @@ def test_seesaw_majorana_mass_reuse():
             assert sp.simplify(M[a, b] - (MR[a, b] + MR[b, a]) / 2) == 0
 
 
+def test_majorana_mass_matrix_integer_flavour_indices():
+    """A bare M_R written at explicit generation indices (FEYNLAG_GAPS FG-4).
+
+    Each term is read at its own leg indices, so an integer-indexed Majorana
+    mass lands only in its own (symmetrised) entry.
+    """
+    SU2L = SU2("SU2Lint", coupling=ExternalParameter("gw_i", 0.65, positive=True))
+    U1Y = U1("U1Yint", coupling=ExternalParameter("g1_i", 0.35, positive=True))
+    nuR = WeylFermion("nuRint", reps={}, chirality="R", nflavors=3,
+                      component_names=["nuRi"])
+    i, j = sp.symbols("i j", integer=True)
+    nu = nuR.components[0]
+    CPL = diracC * diracPL
+    M1, M2, M3, mx = sp.symbols("M1 M2 M3 mx", positive=True)
+    L = -sp.Rational(1, 2) * (
+        M1 * MajoranaBilinear(nu[0], CPL, nu[0])
+        + M2 * MajoranaBilinear(nu[1], CPL, nu[1])
+        + M3 * MajoranaBilinear(nu[2], CPL, nu[2])
+        + 2 * mx * MajoranaBilinear(nu[0], CPL, nu[2]))
+    vX = ExternalParameter("vXint", 1e15, positive=True, unit_dim=1)
+    S = Scalar("Sint", reps={}, component_names=["S0int"])
+    S.expand_vev({S.components[0]: vX})
+    model = Model("seesaw_int", gauge_groups=[SU2L, U1Y], fields=[nuR, S],
+                  parameters=[vX], lagrangian=Lagrangian())
+    M = majorana_mass_matrix(L, nu, model.vacuum, 3, (i, j), gamma=CPL)
+    expected = sp.Matrix([[M1, 0, mx], [0, M2, 0], [mx, 0, M3]])
+    assert sp.simplify(M - M.T) == sp.zeros(3, 3)
+    assert sp.simplify(M - expected) == sp.zeros(3, 3)
+    syms = [M1, M2, M3, mx]
+    for a in range(3):
+        for b in range(3):
+            ok, _ = numeric_equal(M[a, b], expected[a, b], syms)
+            assert ok, (a, b)
+
+
 # --------------------------------------------------------------------------
 # §4  Majorana vertices
 # --------------------------------------------------------------------------

@@ -442,6 +442,26 @@ def fermion_gauge_current(fermion, flavor_index, gauge_groups=None,
     return total
 
 
+def _index_assignment(term_idx, entry):
+    """Substitution putting a term with leg indices ``term_idx`` at ``entry``.
+
+    Returns ``None`` when the term does not contribute to that entry: an
+    explicit integer index only feeds its own row/column, and an index symbol
+    repeated across both legs (``ψ̄_i χ_i``) only feeds the diagonal.
+    """
+    sub = {}
+    for idx, val in zip(term_idx, entry):
+        if idx.is_number:
+            if idx != val:
+                return None
+        elif idx in sub:
+            if sub[idx] != val:
+                return None
+        else:
+            sub[idx] = val
+    return sub
+
+
 def fermion_mass_matrix(L_fermionic, bar_base, field_base, vacuum, nflavors,
                         indices, gamma=None):
     """Fermion mass matrix from the vacuum-evaluated fermionic sector.
@@ -455,7 +475,11 @@ def fermion_mass_matrix(L_fermionic, bar_base, field_base, vacuum, nflavors,
         bar_base, field_base: the ``IndexedBase`` pair of the mass term.
         vacuum: :class:`~feynlag.vacuum.Vacuum`.
         nflavors: matrix dimension.
-        indices: the ``(i, j)`` index symbols used in the Lagrangian.
+        indices: kept for backward compatibility and ignored — each term is
+            read at its *own* leg indices, so symbolic indices (``Y[i,j] ψ̄_i
+            χ_j``), explicit integer indices (``m_c ψ̄_1 χ_1``) and a repeated
+            index (``m ψ̄_i χ_i``, diagonal) all work, including mixed in one
+            Lagrangian.
         gamma: restrict to one Dirac structure (default: sum all — correct
             when P_L and P_R terms are conjugate halves of a Dirac mass).
 
@@ -463,8 +487,7 @@ def fermion_mass_matrix(L_fermionic, bar_base, field_base, vacuum, nflavors,
         ``nflavors × nflavors`` Matrix.
     """
     L0 = sp.expand(expand_bilinear(vacuum.at_vacuum(sp.expand(L_fermionic))))
-    i, j = indices
-    coeff = sp.S.Zero
+    pieces = []
     terms = L0.as_ordered_terms() if L0.is_Add else ([L0] if L0 != 0 else [])
     for term in terms:
         bils = list(term.atoms(Bilinear))
@@ -476,15 +499,19 @@ def fermion_mass_matrix(L_fermionic, bar_base, field_base, vacuum, nflavors,
             continue
         if gamma is not None and bil.gamma != gamma:
             continue
-        # normalize this term's indices to (i, j)
-        term_idx = (bil.bar.indices[0], bil.field.indices[0])
-        c = sp.cancel(term / bil)
-        c = c.subs({term_idx[0]: i, term_idx[1]: j}, simultaneous=True)
-        coeff += c
+        pieces.append((sp.cancel(term / bil),
+                       (bil.bar.indices[0], bil.field.indices[0])))
 
-    return sp.Matrix(nflavors, nflavors,
-                     lambda a, b: -coeff.subs({i: a, j: b},
-                                              simultaneous=True))
+    def entry(a, b):
+        total = sp.S.Zero
+        for c, term_idx in pieces:
+            sub = _index_assignment(term_idx, (a, b))
+            if sub is None:
+                continue
+            total += c.subs(sub, simultaneous=True) if sub else c
+        return -total
+
+    return sp.Matrix(nflavors, nflavors, entry)
 
 
 def majorana_mass_matrix(L_fermionic, field_base, vacuum, nflavors, indices,
@@ -504,15 +531,16 @@ def majorana_mass_matrix(L_fermionic, field_base, vacuum, nflavors, indices,
         field_base: the ``IndexedBase`` of the Majorana field (both legs).
         vacuum: :class:`~feynlag.vacuum.Vacuum`.
         nflavors: matrix dimension.
-        indices: the ``(i, j)`` index symbols used in the Lagrangian.
+        indices: kept for backward compatibility and ignored — each term is
+            read at its own leg indices (symbolic, integer or repeated), as in
+            :func:`fermion_mass_matrix`.
         gamma: restrict to one middle structure (default: sum all).
 
     Returns:
         ``nflavors × nflavors`` symmetric Matrix.
     """
     L0 = sp.expand(expand_bilinear(vacuum.at_vacuum(sp.expand(L_fermionic))))
-    i, j = indices
-    coeff = sp.S.Zero
+    pieces = []
     terms = L0.as_ordered_terms() if L0.is_Add else ([L0] if L0 != 0 else [])
     for term in terms:
         mbs = list(term.atoms(MajoranaBilinear))
@@ -524,13 +552,21 @@ def majorana_mass_matrix(L_fermionic, field_base, vacuum, nflavors, indices,
             continue
         if gamma is not None and mb.gamma != gamma:
             continue
-        term_idx = (mb.field1.indices[0], mb.field2.indices[0])
-        c = sp.cancel(term / mb)
-        coeff += c.subs({term_idx[0]: i, term_idx[1]: j}, simultaneous=True)
+        pieces.append((sp.cancel(term / mb),
+                       (mb.field1.indices[0], mb.field2.indices[0])))
+
+    def coeff_at(a, b):
+        total = sp.S.Zero
+        for c, term_idx in pieces:
+            sub = _index_assignment(term_idx, (a, b))
+            if sub is None:
+                continue
+            total += c.subs(sub, simultaneous=True) if sub else c
+        return total
 
     def entry(a, b):
-        cab = coeff.subs({i: a, j: b}, simultaneous=True)
-        cba = coeff.subs({i: b, j: a}, simultaneous=True)
+        cab = coeff_at(a, b)
+        cba = coeff_at(b, a)
         # off-diagonal (a≠b): the two orderings collapse to one canonical atom,
         # so only one of cab/cba carries it — sum picks it up once; diagonal
         # (a=b): cab==cba, and the −½ convention gives M = −2·coeff.
