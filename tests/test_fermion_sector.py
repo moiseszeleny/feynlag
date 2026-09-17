@@ -333,3 +333,64 @@ class TestRotatedBilinearExtraction:
                 M = fermion_mass_matrix(L_rot, bars[a], fields[b], vac, 1,
                                         (i, j), gamma=diracPR)
                 assert sp.simplify(M[0, 0] - expected[a, b]) == 0, (a, b)
+
+
+class TestExplicitFlavourIndices:
+    """A Yukawa written at explicit generation indices (FEYNLAG_GAPS FG-4).
+
+    ``fermion_mass_matrix`` reads every term at its *own* leg indices, so an
+    integer-indexed term feeds only its own entry, a repeated index feeds only
+    the diagonal, and symbolic and integer terms mix in one Lagrangian.
+    """
+
+    def _pieces(self, sm_leptons):
+        SU2L, U1Y, H, Ll, eR, v, gw, g1 = sm_leptons
+        return Ll.bar_components[1], eR.components[0], Vacuum([H]), v.s
+
+    def test_diagonal_integer_indices(self, sm_leptons):
+        """diag(m_e, m_mu, m_tau) written as three integer-indexed terms."""
+        eLbar, eRc, vac, v = self._pieces(sm_leptons)
+        SU2L, U1Y, H, Ll, eR, vp, gw, g1 = sm_leptons
+        H0 = H.components[1]
+        m = sp.symbols("m_e m_mu m_tau", positive=True)
+        L = -sum(sp.sqrt(2) * m[a] / v * H0
+                 * Bilinear(eLbar[a], diracPR, eRc[a]) for a in range(3))
+        M = fermion_mass_matrix(L, eLbar, eRc, vac, 3, (i, j), gamma=diracPR)
+        assert sp.simplify(M - sp.diag(*m)) == sp.zeros(3, 3)
+
+    def test_single_off_diagonal_integer_entry(self, sm_leptons):
+        """One integer-indexed off-diagonal term populates only that entry."""
+        eLbar, eRc, vac, v = self._pieces(sm_leptons)
+        SU2L, U1Y, H, Ll, eR, vp, gw, g1 = sm_leptons
+        H0 = H.components[1]
+        y = sp.Symbol("y13")
+        L = -(y + sp.I) * H0 * Bilinear(eLbar[0], diracPR, eRc[2])
+        M = fermion_mass_matrix(L, eLbar, eRc, vac, 3, (i, j), gamma=diracPR)
+        assert sp.simplify(M[0, 2] - (y + sp.I) * v / sp.sqrt(2)) == 0
+        for a in range(3):
+            for b in range(3):
+                if (a, b) != (0, 2):
+                    assert sp.simplify(M[a, b]) == 0
+
+    def test_mixed_symbolic_and_integer_terms(self, sm_leptons):
+        """A generic Y[i,j] term plus an integer-indexed correction add up."""
+        eLbar, eRc, vac, v = self._pieces(sm_leptons)
+        SU2L, U1Y, H, Ll, eR, vp, gw, g1 = sm_leptons
+        H0 = H.components[1]
+        Y, eps = sp.IndexedBase("Ymix"), sp.Symbol("eps")
+        L = -(Y[i, j] * H0 * Bilinear(eLbar[i], diracPR, eRc[j])
+              + eps * H0 * Bilinear(eLbar[1], diracPR, eRc[0]))
+        M = fermion_mass_matrix(L, eLbar, eRc, vac, 3, (i, j), gamma=diracPR)
+        for a in range(3):
+            for b in range(3):
+                extra = eps if (a, b) == (1, 0) else 0
+                assert sp.simplify(M[a, b]
+                                   - (Y[a, b] + extra) * v / sp.sqrt(2)) == 0
+
+    def test_repeated_index_is_diagonal(self, sm_leptons):
+        """ψ̄_i χ_i (one index on both legs) is a diagonal mass, not a full one."""
+        eLbar, eRc, vac, v = self._pieces(sm_leptons)
+        k = sp.Symbol("k_diag", positive=True)
+        M = fermion_mass_matrix(-k * Bilinear(eLbar[i], diracPR, eRc[i]),
+                                eLbar, eRc, vac, 3, (i, j), gamma=diracPR)
+        assert sp.simplify(M - k * sp.eye(3)) == sp.zeros(3, 3)
