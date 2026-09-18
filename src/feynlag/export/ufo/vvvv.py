@@ -117,8 +117,9 @@ def permute_vvvv(structures, perm, simplifier=sp.simplify):
 
     Args:
         structures: ``{VVVV1/2/3: coeff}`` for the current leg order.
-        perm: a 4-tuple; leg ``n`` of the result is leg ``perm[n]`` of the
-            input (0-based).
+        perm: a 4-tuple mapping input leg ``n`` to result leg ``perm[n]``
+            (0-based).  Every current caller passes an involution, for which
+            the direction is immaterial; a 3- or 4-cycle would not be.
 
     A permutation mixes the catalog structures (swapping legs 2 and 3 sends
     ``VVVV1 <-> VVVV2`` and flips ``VVVV3``), so callers that need a partner

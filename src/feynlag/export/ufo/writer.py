@@ -108,6 +108,21 @@ def _vss_split(coupling, scalars):
     return (a, b), c_a
 
 
+#: colour tensors that carry a colour charge — anything built from the
+#: fundamental generators, structure constants or the symmetric d-symbol.
+#: ``'1'`` and ``Identity(i,j)`` are BOTH colour singlets: the latter is what
+#: UFO uses for a coloured fermion pair with a colourless boson (q qbar gamma),
+#: so treating every non-``'1'`` string as QCD would tag the whole electroweak
+#: quark sector QCD — the mirror image of the bug that tagged gluons QED.
+_COLOURED_TENSORS = ("T(", "f(", "d(")
+
+
+def _order_name(color):
+    """``'QCD'`` if the colour tensor carries colour, else ``'QED'``."""
+    text = str(color).strip()
+    return "QCD" if any(t in text for t in _COLOURED_TENSORS) else "QED"
+
+
 class _UFOBuilder:
     def __init__(self, model_name, parameters, particles):
         self.model_name = model_name
@@ -117,7 +132,7 @@ class _UFOBuilder:
             if p.antisymbol is not None:
                 self.specs[p.antisymbol] = p
         self.particles = particles
-        self.couplings = {}          # value string -> coupling name
+        self.couplings = {}   # (value, order) -> (GC name, order)
         # (particles, lorentz names, couplings, color strings) — colors has
         # either 1 entry (broadcast to every lorentz/coupling slot, the
         # color-singlet default) or exactly len(lorentz names) entries (one
@@ -174,12 +189,17 @@ class _UFOBuilder:
         """
         value = ufo_expr(sp.nsimplify(expr, rational=False)
                          if expr.is_number else expr)
-        if value not in self.couplings:
+        order = {_order_name(color): max(n_legs - 2, 1)}
+        # The order is part of the coupling's identity: two vertices sharing a
+        # VALUE but differing in colour must not collapse onto one GC_n, or
+        # whichever registered first would decide the order for both (a gluon
+        # vertex silently inheriting QED is the failure this whole check
+        # exists to prevent).
+        key = (value, tuple(sorted(order.items())))
+        if key not in self.couplings:
             cname = f"GC_{len(self.couplings) + 1}"
-            name = "QED" if str(color).strip() in ("1", "") else "QCD"
-            order = {name: max(n_legs - 2, 1)}
-            self.couplings[value] = (cname, order)
-        return self.couplings[value][0]
+            self.couplings[key] = (cname, order)
+        return self.couplings[key][0]
 
     # -------------------------------------------------------------- vertices
 
@@ -281,8 +301,13 @@ class _UFOBuilder:
                     f"{tuple(quadruple)}: the field->particle relabelling is "
                     f"not a permutation of this vertex's legs")
         moved = permute_vvvv(structures, tuple(perm))
-        if (metric_pair_coefficients(moved)
-                != metric_pair_coefficients(structures)):
+        # compare by simplification: `moved` has been through permute_vvvv's
+        # sp.simplify while `structures` has only been expanded, so a
+        # structurally-different-but-equal form (radicals from a mixing angle)
+        # would otherwise raise on a perfectly invariant vertex.
+        if any(sp.simplify(a - b) != 0
+               for a, b in zip(metric_pair_coefficients(moved),
+                               metric_pair_coefficients(structures))):
             raise NotImplementedError(
                 f"quartic {tuple(quadruple)} is not invariant under the "
                 f"field->particle relabelling {perm}; emitting it under "
@@ -496,7 +521,7 @@ class _UFOBuilder:
                  "from object_library import all_couplings, Coupling",
                  "from function_library import (complexconjugate, re, im, "
                  "csc, sec, acsc, asec, cot)", "", ""]
-        for value, (cname, order) in self.couplings.items():
+        for (value, _), (cname, order) in self.couplings.items():
             lines.append(f"{cname} = Coupling(name='{cname}', "
                          f"value={value!r}, order={order})")
         lines.append("")

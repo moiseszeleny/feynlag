@@ -145,6 +145,22 @@ pair, and the writer applies whatever that costs
 | `VVVV1/2/3` | must be invariant — verified, raises otherwise |
 | `FF*` | excluded (own bar/field leg convention) |
 
+**Known limitation — vertices whose legs do not close under conjugation.**
+The table above only settles a *sign*, which presumes the relabelling is a
+permutation of the vertex's own legs ($\gamma W^+W^-$, $A G^+G^-$). It is not
+for a Feynman-gauge vertex like VSS $W^+G^-h$, whose conjugate leg set
+$W^-G^+h$ is a **different vertex**: it would have to be emitted at the
+conjugated legs, which this layer does not do. `structure_leg_sign` raises on
+those rather than assuming $+1$.
+
+The charged-Goldstone VSS/VVS exports disagreed with MadGraph in phase because
+of it — magnitudes match, but e.g. $W^+G^-h$ came out $+0.327i$ against
+stock's real $-0.327$, and $\gamma W^\pm G^\mp$ came out equal where stock has
+them opposite. Unitary-gauge exports are unaffected (no Goldstones), which is
+why nothing shipped moved. Deriving and validating the conjugated-leg emission
+is follow-up work; until then such vertices must be filtered before export, as
+`tests/test_ufo_export.py` does.
+
 Because the writer owns it, a `Vertex` coupling is always in feynlag's own
 convention and `gauge_self_couplings` takes no `conjugates=`. An unrecorded
 structure raises rather than defaulting to $+1$ — that default is what left

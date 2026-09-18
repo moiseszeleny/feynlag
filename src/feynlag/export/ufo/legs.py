@@ -89,10 +89,18 @@ def structure_leg_sign(structure, legs, conjugates=None):
         conjugates: as :func:`ufo_leg_sign`.
 
     Raises:
-        ValueError: the structure has no recorded behaviour.  Refusing beats
-            silently assuming ``+1`` for a structure nobody has checked --
-            that assumption is exactly what left VSS wrong.
+        ValueError: the structure has no recorded behaviour, or the
+            field->particle relabelling is not a permutation of ``legs``.
+            Refusing beats silently assuming ``+1`` -- that assumption is
+            exactly what left VSS wrong.
     """
+    # The relabelling must be a PERMUTATION of this vertex's legs. When it is
+    # not -- e.g. VSS ``W+ G- h``, whose conjugate leg set ``W- G+ h`` is a
+    # different vertex -- there is no sign that fixes it: the vertex would have
+    # to be emitted at the conjugated legs, which this layer does not do.
+    # Refuse, per this module's own policy; returning +1 there is what left the
+    # charged-Goldstone exports disagreeing with MadGraph.
+    ufo_leg_sign(legs, conjugates)
     if structure in SYMMETRIC_STRUCTURES:
         return 1
     if structure == "VVV1":

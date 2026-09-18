@@ -320,3 +320,25 @@ class TestCubicInFeynlagConvention:
         model, SU2L, s = ew
         verts = model.gauge_vertices(groups=[SU2L])
         assert {v.vertex_type for v in verts} == {"VVV", "VVVV"}
+
+
+def test_leg_sign_refuses_non_closing_legs():
+    """A vertex whose legs do not close under conjugation (VSS `W+ G- h`:
+    its conjugate leg set `W- G+ h` is a DIFFERENT vertex) cannot be fixed by
+    a sign — it would have to be emitted at the conjugated legs. Refuse
+    rather than return +1; assuming +1 there is what left the
+    charged-Goldstone exports disagreeing with MadGraph in phase.
+    """
+    from feynlag.export.ufo.legs import structure_leg_sign
+    Wp, Wm, Gp, Gm, h = sp.symbols("Wp Wm Gp Gm h")
+    conj = {Wp: Wm, Wm: Wp, Gp: Gm, Gm: Gp}
+
+    # closes: the charged pair is both legs 2,3 -> a real sign
+    assert structure_leg_sign("VSS1", [sp.Symbol("A"), Gp, Gm], conj) == -1
+    # does not close -> refuse
+    with pytest.raises(ValueError, match="not"):
+        structure_leg_sign("VSS1", [Wp, Gm, h], conj)
+    # and the same for a symmetric structure: being symmetric does not help,
+    # the emitted PARTICLE set would still be the wrong one
+    with pytest.raises(ValueError, match="not"):
+        structure_leg_sign("VVS1", [sp.Symbol("A"), Wp, Gm], conj)

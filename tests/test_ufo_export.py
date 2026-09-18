@@ -78,6 +78,19 @@ def sm_ufo(tmp_path_factory):
              + model.vertices(fields, sector="kinetic",
                               conjugate_map=cmap, simplifier=sp.simplify))
 
+    # KNOWN LIMITATION: a vertex whose legs do not close under conjugation
+    # (e.g. VSS `W+ G- h`, whose conjugate leg set `W- G+ h` is a DIFFERENT
+    # vertex) cannot be emitted under naive leg labels — feynlag's symbols
+    # label fields, a UFO leg labels a particle, and there is no sign that
+    # fixes a leg SWAP. Those exports disagreed with MadGraph in phase (see
+    # docs/manual/export.md); `structure_leg_sign` now raises on them rather
+    # than silently assuming +1, so they are filtered out here until the
+    # conjugated-leg emission is derived and validated in Feynman gauge.
+    conj = {Gp: Gm, Gm: Gp, Wp: Wm, Wm: Wp}
+    verts = [v for v in verts
+             if sorted(map(str, (conj.get(x, x) for x in v.particles)))
+             == sorted(map(str, v.particles))]
+
     # Gauge self-couplings via the library, not by hand: gauge_vertices
     # derives the weak->physical U from the registered Rotations and uses a
     # canonical leg ordering. Building this from raw cubic_couplings and

@@ -156,3 +156,42 @@ def test_quark_antiquark_color_conjugate(qcd_ufo):
     antiquark = next(p for p in ufo.all_particles if p.name == "q~")
     assert quark.color == 3
     assert antiquark.color == -3
+
+
+def test_coupling_order_is_qcd_only_for_coloured_tensors():
+    """The order decides which diagrams MadGraph builds.
+
+    Tagging gluon vertices QED makes MG reject the model outright
+    (CRITICAL: Model with non QCD emission of gluon). But the mirror mistake
+    is just as bad: Identity(i,j) is the colour SINGLET for a coloured
+    fermion pair with a colourless boson (q qbar gamma), so treating every
+    non-'1' tensor as QCD would tag the whole electroweak quark sector QCD.
+    """
+    from feynlag.export.ufo.writer import _order_name
+    for singlet in ("1", "", " 1 ", "Identity(1,2)"):
+        assert _order_name(singlet) == "QED", singlet
+    for coloured in ("T(3,2,1)", "f(1,2,3)", "f(1,2,-1)*f(3,4,-1)",
+                     "d(1,2,3)"):
+        assert _order_name(coloured) == "QCD", coloured
+
+
+def test_same_value_different_colour_gets_distinct_couplings():
+    """A coupling's order is part of its identity: two vertices sharing a
+    VALUE but differing in colour must not collapse onto one GC_n, or
+    whichever registered first would silently decide the order for both."""
+    import sympy as sp
+    from feynlag.export.ufo.writer import _UFOBuilder, UFOParticle
+
+    q, qbar, g = sp.symbols("q qbar g")
+    builder = _UFOBuilder("X", None, [
+        UFOParticle(q, 1, "q", antiname="q~", spin=2, color=3,
+                    antisymbol=qbar),
+        UFOParticle(g, 21, "g", spin=3, color=8),
+    ])
+    gs = sp.Symbol("gs", positive=True)
+    singlet = builder._coupling(sp.I * gs, 3, "1")
+    coloured = builder._coupling(sp.I * gs, 3, "T(3,2,1)")
+    assert singlet != coloured, "same GC_n reused across colour classes"
+    orders = {name: order for (name, order) in builder.couplings.values()}
+    assert orders[singlet] == {"QED": 1}
+    assert orders[coloured] == {"QCD": 1}
