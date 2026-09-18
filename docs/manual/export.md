@@ -105,6 +105,20 @@ group's full weak-basis component dictionary
 only ({doc}`vertices`'s `cubic_couplings`/`quartic_couplings`), not for
 UFO particle declarations.
 
+That has a consequence which is easy to get wrong for the **quartic**:
+`quartic_couplings`'s weak-basis entry is $-g^2/4\sum_e f^{ije}f^{kle}$ and
+therefore **already contains the colour contraction**, so pairing it with a
+colour-tensor string multiplies by colour twice. Use
+`export.ufo.vvvv.adjoint_vvvv(group)` with `ADJOINT_VVVV_COLORS`, which
+strips it and gives $ig^2$ per structure — MadGraph's `GC_12` for $gggg$.
+The cubic escaped this only because $f^{123}=1$ makes its colour factor
+unity for the quadruple conventionally used.
+
+For a **broken** group the physical-basis quartics are colour-singlet and
+come straight from `Model.gauge_vertices()`
+({doc}`vertices`, `feynlag/gauge_basis.py`), whose `Vertex` objects carry
+their three per-structure couplings in `meta['structures']`.
+
 ## Design gotchas
 
 - **UFO cannot export symbolic gauge charges.** UFO's particle table calls
@@ -128,6 +142,14 @@ UFO particle declarations.
   `::test_ufo_parameters_resolve`, `::test_ufo_couplings_pinned` — the
   generated model actually imports, parameters resolve in dependency order,
   and `hWW` is pinned numerically.
+- `tests/test_ufo_sm_bosonic.py` — the exported SM UFO's four quartic gauge
+  couplings (WWWW/WWZZ/WWAA/WWAZ) and its VVS/VVSS couplings, compared
+  numerically against MadGraph's stock `sm` at the same parameter point, in
+  the convention-free metric-pair basis (MG's VVVV basis differs from
+  feynlag's).
+- `tests/test_gauge_basis.py` — the derived weak→physical `U` equals the
+  matrix that used to be hand-typed, and the same four quartics come out of
+  `Model.gauge_vertices()`.
 - `tests/test_ufo_qcd.py::test_qqg_color_string`,
   `::test_ggg_color_string_and_coupling`,
   `::test_gggg_color_strings_and_couplings`,
