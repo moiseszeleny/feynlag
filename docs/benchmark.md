@@ -62,14 +62,69 @@ is invisible to unit tests but breaks a real generator run:
    invisible in $e^+e^-\to\mu^+\mu^-$ (an overall phase cancels in $|\mathcal
    M|^2$) but breaks the FFV↔VVV interference in $e^+e^-\to W^+W^-$. Fixed in
    `add_fermion_vertex`.
-3. **The triple-gauge coupling** built from the complex $W^\pm$ rotation comes
-   out of `cubic_couplings` with the opposite overall sign to MadGraph's VVV1
-   convention; the export flips it (the real-basis QCD $ggg=-g_s$ is unaffected
-   and already matches). See `scripts/export_sm_ufo.py`.
+3. **The triple-gauge coupling** comes out of `cubic_couplings` with the
+   opposite overall sign to what is needed at the ordering the export emits,
+   and the export flips it. It is *not* a universal MadGraph convention
+   mismatch: the real-basis QCD $ggg=-g_s$ is exported unflipped and already
+   matches MG's `GC_10`. Part of the difference is leg ordering — `VVV1` is
+   antisymmetric under $2\leftrightarrow3$, MadGraph lists $[\gamma,W^-,W^+]$
+   where the export emits $(\gamma,W^+,W^-)$ — but whether that accounts for
+   the whole asymmetry is still open, which is why
+   `gauge_basis.gauge_self_couplings` refuses to build a VVV vertex rather
+   than shipping a guessed sign. The quartics have no such freedom
+   (`assemble_vvvv` is verified ordering-covariant). See
+   `scripts/export_sm_ufo.py`.
 
 This is the payoff of feynlag's verification-first design: the round-trip is a
 harness that turns "the model looks right" into "the model computes the right
 cross section."
+
+## Quartic gauge couplings: the $\gamma\gamma\to W^+W^-$ Ward identity
+
+Cross sections are not the only oracle MadGraph offers. Its `check` command
+evaluates a process's matrix element at random phase-space points and runs
+three model-internal consistency tests — Lorentz invariance, the gauge/BRS
+(Ward) identity, and leg-permutation symmetry — with **no beams and no Fortran
+cross-section run**, so it is fast enough to use as a routine acceptance test.
+
+$\gamma\gamma\to W^+W^-$ is the ideal probe for the quartic: its only diagrams
+are $t$- and $u$-channel $W$ exchange plus the $\gamma\gamma W^+W^-$ contact
+term, and gauge invariance holds *only* if the quartic's normalization relative
+to the exchange diagrams is exactly right. A wrong quartic cannot hide.
+
+```bash
+mg5_aMC <<< 'import model /path/to/FEYNLAG_SM
+check a a > w+ w-'
+```
+
+| Model | Lorentz invariance | Gauge (BRS) ratio | Result |
+|---|---|---|---|
+| stock `sm` | $3.1\times10^{-15}$ | $5.0\times10^{-28}$ | Passed |
+| feynlag SM UFO | $2.6\times10^{-15}$ | $1.0\times10^{-27}$ | Passed |
+| feynlag, quartic $\times 3$ | $3.7\times10^{-1}$ | $2.6\times10^{-2}$ | **Failed** |
+
+The third row is the point. Before this was validated, `assemble_vvvv`
+reconstructed **3× the true vertex** (the three UFO `VVVV1/2/3` structures are
+linearly dependent, so the decomposition is a 1-parameter family and the
+symmetric representative carries a $1/3$ that the hard-coded normalization
+omitted). Re-exporting with the old value makes both checks fail
+catastrophically and inflates the matrix element by ~500×. The unit tests could
+not see it, because the "independent" ground truth had been built in the same
+over-complete convention and compared coefficient *lists*, which cannot detect
+a common factor.
+
+The exported couplings also match stock `sm` entry by entry at the shared
+parameter point, compared in the convention-free metric-pair basis since
+MadGraph's `VVVV` basis differs from feynlag's
+(`tests/test_ufo_sm_bosonic.py`, in CI):
+
+| Vertex | feynlag | stock `sm` |
+|---|---|---|
+| $\gamma\gamma W^+W^-$ | $ie^2$ | `GC_5` |
+| $W^+W^-W^+W^-$ | $-ig^2$ | `GC_35` |
+| $W^+W^-ZZ$ | $ig^2c_w^2$ | `GC_36` |
+| $\gamma W^+W^-Z$ | matches on MG's two-structure `VVVV5` shape | `GC_57` |
+| $hW^+W^-$, $hZZ$, $hhW^+W^-$, $hhZZ$ | extractor output, unrescaled | `GC_72`, `GC_81`, `GC_34`, `GC_65` |
 
 ## Four-fermion operators: the muon-decay width
 

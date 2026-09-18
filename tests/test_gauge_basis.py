@@ -201,3 +201,15 @@ def test_gauge_vertices_cached_and_invalidated(ew):
     assert model.gauge_vertices(groups=[SU2L]) is first
     model._invalidate()
     assert model.gauge_vertices(groups=[SU2L]) is not first
+
+
+def test_hermiticity_check_refuses_multi_structure(ew):
+    """A VVVV vertex's `coupling` slot is zero, so the scalar hermiticity
+    comparison would pass vacuously — it must refuse instead."""
+    from feynlag import check_hermiticity_pairing
+    model, SU2L, s = ew
+    verts = model.gauge_vertices(groups=[SU2L])
+    with pytest.raises(NotImplementedError, match="multi-structure"):
+        check_hermiticity_pairing(bosonic_vertices=verts,
+                                  conjugates={s["Wp"]: s["Wm"],
+                                              s["Wm"]: s["Wp"]})
