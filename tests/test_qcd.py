@@ -102,6 +102,10 @@ def test_gggg_coupling_pinned(qcd):
                       G.components[4])
     gggg = assemble_vvvv(quartic, (G1, G2, G4, G5))
 
-    assert sp.simplify(gggg["VVVV1"] - sp.Rational(3, 2) * gs.s ** 2) == 0
-    assert sp.simplify(gggg["VVVV2"] - sp.Rational(3, 4) * gs.s ** 2) == 0
-    assert sp.simplify(gggg["VVVV3"] + sp.Rational(3, 4) * gs.s ** 2) == 0
+    # Raw (Lagrangian-level) coefficients: these still CONTAIN the colour
+    # contraction sum_e f_{ije} f_{kle} for this specific quadruple, which is
+    # why an exported UFO must use export.ufo.vvvv.adjoint_vvvv instead (one
+    # gluon particle + a colour tensor) — see test_ufo_qcd.py.
+    assert sp.simplify(gggg["VVVV1"] - sp.Rational(1, 2) * gs.s ** 2) == 0
+    assert sp.simplify(gggg["VVVV2"] - sp.Rational(1, 4) * gs.s ** 2) == 0
+    assert sp.simplify(gggg["VVVV3"] + sp.Rational(1, 4) * gs.s ** 2) == 0

@@ -298,6 +298,26 @@ class Model:
 
     # ---------------------------------------------------------------- spins
 
+    def gauge_vertices(self, groups=None, basis=None, simplifier=sp.simplify):
+        """VVVV :class:`Vertex` objects for the gauge self-couplings.
+
+        The second extraction track for bosons: the Yang-Mills sector has no
+        Lagrangian term (``-1/4 F F`` is never written), so these vertices
+        come from the group's structure constants rotated into the physical
+        basis by the registered :attr:`rotations`, and do **not** overlap
+        :meth:`vertices` output.  See
+        :func:`~feynlag.gauge_basis.gauge_self_couplings`, whose docstring
+        also records why VVV is not emitted here.
+        """
+        from .gauge_basis import gauge_self_couplings
+        key = ("gauge_vertices",
+               None if groups is None else tuple(g.name for g in groups),
+               None if basis is None else tuple(basis))
+        if key not in self._cache:
+            self._cache[key] = gauge_self_couplings(
+                self, groups=groups, basis=basis, simplifier=simplifier)
+        return self._cache[key]
+
     def spin_map(self, conjugate_map=None):
         """``{symbol: spin}`` for every known component, fluctuation and
         rotated physical field (rotations propagate block spin; conjugate

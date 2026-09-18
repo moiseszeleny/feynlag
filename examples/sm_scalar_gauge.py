@@ -13,7 +13,7 @@ from feynlag import (
     fermion_feynman_rule, fermion_gauge_current, fermion_mass_matrix,
     latex_feynman_table, quartic_couplings, weinberg_rotation,
 )
-from feynlag.export.ufo.vvvv import assemble_vvvv
+from feynlag.export.ufo.vvvv import adjoint_vvvv, assemble_vvvv
 
 
 def main():
@@ -190,8 +190,14 @@ def main():
          " == -gs ?", sp.simplify(ggg + gs.s) == 0)
 
     G4, G5 = G.components[3], G.components[4]
-    gggg = assemble_vvvv(quartic_couplings(SU3c), (G1, G2, G4, G5))
-    print("gggg coupling (g_1 g_2 g_4 g_5, VVVV1/2/3) ->", gggg)
+    gggg_raw = assemble_vvvv(quartic_couplings(SU3c), (G1, G2, G4, G5))
+    print("gggg raw coefficients (g_1 g_2 g_4 g_5, VVVV1/2/3) ->", gggg_raw)
+    # ...but those still contain the color contraction sum_e f_{ije} f_{kle}
+    # for that specific quadruple. The UFO vertex is ONE gluon repeated four
+    # times with the color tensor carrying the adjoint index, so the exported
+    # coupling is the COLOR-STRIPPED one: i g_s^2 on each structure (= MG's
+    # stock sm GC_12). See export/ufo/vvvv.py::adjoint_vvvv.
+    print("gggg UFO couplings (color-stripped) ->", adjoint_vvvv(SU3c))
 
     # --- fermion Feynman rules (Yukawa + gauge currents, physical basis) ---
     # physical_lagrangian applies the vacuum shift (H0 -> (v+h+iG0)/√2), the

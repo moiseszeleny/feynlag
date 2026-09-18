@@ -10,8 +10,9 @@ and tests/test_yangmills.py.
 import sympy as sp
 import pytest
 
-from feynlag import ExternalParameter, ParameterSet, SU3, quartic_couplings
-from feynlag.export.ufo import UFOParticle, assemble_vvvv, write_ufo
+from feynlag import ExternalParameter, ParameterSet, SU3
+from feynlag.export.ufo import UFOParticle, write_ufo
+from feynlag.export.ufo.vvvv import ADJOINT_VVVV_COLORS, adjoint_vvvv
 
 import importlib
 import sys
@@ -65,22 +66,14 @@ def qcd_ufo(tmp_path_factory):
     vvv = {(g, g, g): -gs.s}
     vvv_colors = {(g, g, g): "f(1,2,3)"}
 
-    # gggg: couplings come from the actual group's weak-basis adjoint
-    # components (G_1..G_8) via assemble_vvvv — the color-tensor sum is
-    # what carries the adjoint index, so the UFO vertex itself is still
-    # ONE physical gluon repeated four times, matching
-    # tests/test_qcd.py::test_gggg_coupling_pinned's (G_1,G_2,G_4,G_5).
+    # gggg: ONE physical gluon repeated four times, with the adjoint index
+    # carried by the color tensors — so the coupling must be COLOR-STRIPPED.
+    # This used to pass assemble_vvvv's raw values for the specific quadruple
+    # (G_1,G_2,G_4,G_5), which already contain sum_e f_{ije} f_{kle}, and so
+    # multiplied by color twice. adjoint_vvvv divides it back out.
     SU3c = SU3("SU3c", coupling=gs)
-    G = SU3c.bosons("G")
-    G1, G2, G4, G5 = (G.components[0], G.components[1], G.components[3],
-                      G.components[4])
-    gggg_couplings = assemble_vvvv(quartic_couplings(SU3c), (G1, G2, G4, G5))
-    vvvv = {(g, g, g, g): gggg_couplings}
-    vvvv_colors = {(g, g, g, g): {
-        "VVVV1": "f(1,2,-1)*f(3,4,-1)",
-        "VVVV2": "f(1,3,-1)*f(2,4,-1)",
-        "VVVV3": "f(1,4,-1)*f(2,3,-1)",
-    }}
+    vvvv = {(g, g, g, g): adjoint_vvvv(SU3c)}
+    vvvv_colors = {(g, g, g, g): dict(ADJOINT_VVVV_COLORS)}
 
     out = tmp_path_factory.mktemp("ufo") / "QCD_UFO"
     write_ufo(out, "QCD", params, particles, vvv=vvv, vvv_colors=vvv_colors,
@@ -120,16 +113,10 @@ def test_ggg_color_string_and_coupling(qcd_ufo):
 def test_gggg_color_strings_and_couplings(qcd_ufo):
     path, num = qcd_ufo
     ufo = _import_ufo(path)
-    expected_colors = {
-        "VVVV1": "f(1,2,-1)*f(3,4,-1)",
-        "VVVV2": "f(1,3,-1)*f(2,4,-1)",
-        "VVVV3": "f(1,4,-1)*f(2,3,-1)",
-    }
-    expected_values = {
-        "VVVV1": 1.5 * num["gs"] ** 2,
-        "VVVV2": 0.75 * num["gs"] ** 2,
-        "VVVV3": -0.75 * num["gs"] ** 2,
-    }
+    expected_colors = dict(ADJOINT_VVVV_COLORS)
+    # MadGraph stock sm V_37 [g,g,g,g] carries GC_12 = i*G**2 on all three
+    # structures with these same (cyclically identical) color tensors.
+    expected_values = {name: 1j * num["gs"] ** 2 for name in expected_colors}
     for vert in ufo.all_vertices:
         if [p.name for p in vert.particles] == ["g", "g", "g", "g"]:
             lorentz_names = [l.name for l in vert.lorentz]

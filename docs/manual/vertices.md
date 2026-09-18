@@ -206,29 +206,53 @@ the role of the contracted adjoint index, returning
 
 ### Derivation: the VVVV → 3 UFO Lorentz structures (`vvvv.py`)
 
-UFO expresses a 4-vector self-coupling in exactly three independent metric
-contractions, `VVVV1/2/3` (`export/ufo/lorentz_map.py`,
-$g^{14}g^{23}-g^{13}g^{24}$ and cyclic). A single ordered quadruple
-$(i,j,k,l)$ from `quartic_couplings` corresponds to one specific pairing of
-the four legs; the other two independent pairings come from the two other
-orderings, $(i,k,j,l)$ and $(i,l,j,k)$ — the three ways to partition 4
-objects into 2 unordered pairs. `assemble_vvvv` (`export/ufo/vvvv.py:28`)
-reads off exactly these three raw values:
+UFO expresses a 4-vector self-coupling in three metric contractions,
+`VVVV1/2/3` (`export/ufo/lorentz_map.py`, $g^{14}g^{23}-g^{13}g^{24}$ and
+cyclic). A single ordered quadruple $(i,j,k,l)$ from `quartic_couplings`
+corresponds to one specific pairing of the four legs; the other two pairings
+come from the orderings $(i,k,j,l)$ and $(i,l,j,k)$ — the three ways to
+partition 4 objects into 2 unordered pairs. `assemble_vvvv`
+(`export/ufo/vvvv.py`) reads off exactly these three raw values:
 
 ```python
-VVVV1 = -12 * quartic_raw[(i, j, k, l)]
-VVVV2 = -12 * quartic_raw[(i, k, j, l)]
-VVVV3 = -12 * quartic_raw[(i, l, j, k)]
+VVVV1 = -4 * quartic_raw[(i, j, k, l)]
+VVVV2 = -4 * quartic_raw[(i, k, j, l)]
+VVVV3 = -4 * quartic_raw[(i, l, j, k)]
 ```
 
-The overall $-12$ normalization and the correctness of pairing three
-*orderings* of the same raw tensor to the three UFO structures was not
-assumed — it was **derived by direct functional differentiation** of
-$-\tfrac14F^aF^a$ (an independent computation from `quartic_couplings`'s
-group-theoretic route) and cross-checked against both SU(2) and SU(3),
-including cases where more than one of the three terms is simultaneously
-nonzero (`tests/test_yangmills.py`). This closes what `quartic_couplings`'s
-own docstring had left as an unbuilt "Phase 5" step.
+**The three structures are not independent**: $VVVV2 = VVVV1 + VVVV3$, so
+they span a 2-dimensional space and a vertex's decomposition is a
+1-parameter family. Writing the vertex in the metric-pair basis
+$V = c_{12}M_{12}M_{34} + c_{13}M_{13}M_{24} + c_{14}M_{14}M_{23}$, the
+Yang–Mills quartic always obeys $c_{12}+c_{13}+c_{14}=0$, and the symmetric
+representative $\left(\tfrac{c_{14}-c_{13}}{3},\tfrac{c_{14}-c_{12}}{3},
+\tfrac{c_{13}-c_{12}}{3}\right)$ reconstructs it exactly. The $-4$ is that
+$/3$; this module shipped with $-12$ and therefore reconstructed **3× the
+true vertex**.
+
+That survived because the "independent" ground truth was circular: it built
+its reference in the *same* over-complete convention and compared coefficient
+lists, which cannot see a common factor. `tests/test_yangmills.py` now works
+in the convention-free metric-pair basis and asserts that
+$\sum_s c_s \times \text{structure}_s$ reproduces the direct functional
+differentiation of $-\tfrac14F^aF^a$ — including in the **physical**
+electroweak basis reached through the complex $W^\pm$ rotation, where the
+four quartics are pinned against MadGraph's stock `sm` model
+(`TestMadGraphOracle`).
+
+`assemble_vvvv` returns Lagrangian-level coefficients; pass
+`feynman_rule=True` for the UFO coupling $i\times$ that.
+
+### Colour-stripping for an unbroken group (`adjoint_vvvv`)
+
+`quartic_couplings` works in the weak basis, so its entry for a component
+quadruple, $-g^2/4\sum_e f^{ije}f^{kle}$, **already contains the colour
+contraction**. An unbroken group's UFO vertex is ONE particle repeated four
+times with the adjoint index carried by a colour tensor, so feeding those
+component-specific values to the writer multiplies by colour twice.
+`adjoint_vvvv(group)` divides it back out, giving $ig^2$ on every structure —
+MadGraph's `GC_12` for $gggg$. Use it, together with
+`ADJOINT_VVVV_COLORS`, for any unbroken non-abelian group.
 
 ## Design gotchas
 
