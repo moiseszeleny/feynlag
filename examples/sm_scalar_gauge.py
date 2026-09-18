@@ -180,6 +180,18 @@ def main():
     print("\ndown-quark mass matrix M_d =")
     sp.pprint(M_d)
 
+    # --- electroweak quartic gauge couplings (physical basis) -------------
+    # The weak->physical rotation U is derived from the Rotation objects
+    # registered above, so this needs no hand-typed matrix. A VVVV coupling is
+    # three numbers (one per UFO Lorentz structure) tied to the leg ordering,
+    # so they live in Vertex.meta['structures'] rather than .coupling.
+    print("\nelectroweak quartic gauge couplings (physical basis):")
+    for vtx in model.gauge_vertices(groups=[SU2L]):
+        legs = " ".join(str(x) for x in vtx.particles)
+        body = ", ".join(f"{n} = {sp.simplify(c)}"
+                         for n, c in sorted(vtx.structures.items()))
+        print(f"  {legs:16s} {body}")
+
     # --- QCD self-coupling: internal verification only, not UFO input ------
     # (gluons are ONE UFO particle "g" with the color-adjoint index summed
     # via a color-tensor string, not 8 separate weak-basis components — see
