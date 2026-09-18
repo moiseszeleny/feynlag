@@ -63,3 +63,23 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
   module import time.
 - Dual verification everywhere: symbolic difference **and** random-point
   numeric check (`feynlag.verify.numeric_equal`).
+
+## UFO export conventions
+
+feynlag's own conventions are the ones above; mapping them onto UFO/MadGraph
+adds three factors, all applied at the export boundary in
+`export/ufo/legs.py` (never in the physics layer, so a `Vertex` coupling is
+always in feynlag's convention):
+
+- **field → particle leg sign.** feynlag's symbols label *fields*; a UFO leg
+  labels a *particle*, and the field `W+` creates a `W-`. Emitting naive
+  names transposes each conjugate pair: `VVV1` is totally antisymmetric so it
+  picks up the permutation parity; `VVS1`/`VVSS1`/`SSS1`/`SSSS1` are
+  invariant; `VVVV` must be invariant and is checked.
+- **VSS1 momentum sign.** `VSS1` carries one power of momentum and feynlag's
+  `d_mu -> i p_mu` differs from UFO's by a sign, so a VSS gets `-1`
+  unconditionally.
+- **charged-Goldstone phase.** feynlag's `G±` carries `i**(-q)` relative to
+  MadGraph's, so each charged-Goldstone leg contributes `i**q`. A pure
+  rephasing, so no physics changes — verified by MadGraph agreeing across
+  unitary/Feynman/axial/FD gauge.

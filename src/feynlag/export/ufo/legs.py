@@ -31,7 +31,10 @@ always in feynlag's own convention, and the writer is the only layer that
 knows the particle/antiparticle pairing (``UFOParticle.antisymbol``).
 """
 
-__all__ = ["ufo_leg_sign", "structure_leg_sign", "SYMMETRIC_STRUCTURES"]
+__all__ = ["ufo_leg_sign", "structure_leg_sign",
+           "charged_goldstone_phase", "SYMMETRIC_STRUCTURES"]
+
+import sympy as sp
 
 #: Lorentz structures invariant under a transposition of any two legs that can
 #: form a conjugate pair -- ``Metric(1,2)`` is symmetric in the two vectors and
@@ -89,31 +92,55 @@ def structure_leg_sign(structure, legs, conjugates=None):
         conjugates: as :func:`ufo_leg_sign`.
 
     Raises:
-        ValueError: the structure has no recorded behaviour, or the
-            field->particle relabelling is not a permutation of ``legs``.
-            Refusing beats silently assuming ``+1`` -- that assumption is
-            exactly what left VSS wrong.
+        ValueError: the structure has no recorded behaviour.  Refusing beats
+            silently assuming ``+1`` for a structure nobody has checked.
     """
-    # The relabelling must be a PERMUTATION of this vertex's legs. When it is
-    # not -- e.g. VSS ``W+ G- h``, whose conjugate leg set ``W- G+ h`` is a
-    # different vertex -- there is no sign that fixes it: the vertex would have
-    # to be emitted at the conjugated legs, which this layer does not do.
-    # Refuse, per this module's own policy; returning +1 there is what left the
-    # charged-Goldstone exports disagreeing with MadGraph.
-    ufo_leg_sign(legs, conjugates)
     if structure in SYMMETRIC_STRUCTURES:
         return 1
     if structure == "VVV1":
-        # totally antisymmetric
+        # totally antisymmetric, so the conjugate-pair transposition shows up
+        # as its permutation parity
         return ufo_leg_sign(legs, conjugates)
     if structure == "VSS1":
-        # P(1,2) - P(1,3): antisymmetric in legs 2 and 3 only, and a vector
-        # cannot pair with a scalar, so the only possible pair is those two.
-        conjugates = conjugates or {}
-        _, a, b = legs
-        return -1 if conjugates.get(a) == b and a != b else 1
+        # P(1,2) - P(1,3) carries one power of momentum, and feynlag's
+        # ``d_mu -> i p_mu`` differs from UFO's by a sign there -- so a VSS
+        # picks up -1 UNCONDITIONALLY, independent of any conjugate pair.
+        #
+        # This used to be returned only when the two scalars were a conjugate
+        # pair. For `A G+ G-` the two rules agree, which is why that vertex
+        # matched MadGraph and looked like confirmation; solving for the exact
+        # transformation across all eight charged-Goldstone vertices showed
+        # the pair condition was coincidental and the real factor is uniform.
+        return -1
     raise ValueError(
         f"no leg-relabelling rule recorded for Lorentz structure "
         f"{structure!r}; add it to {__name__} rather than assuming +1 "
         f"(VVVV is handled by its own invariance check, and the fermion "
         f"structures have their own explicit bar/field leg convention)")
+
+
+def charged_goldstone_phase(charges):
+    """``prod(i**q)`` over a vertex's charged-Goldstone legs.
+
+    feynlag's charged Goldstone carries a phase ``i**(-q)`` relative to
+    MadGraph's, so an exported coupling needs ``i**q`` per charged-Goldstone
+    leg, ``q`` being the charge of the particle ACTUALLY EMITTED on that leg.
+
+    A conjugate pair contributes ``i * (1/i) = 1``, which is why `A G+ G-`,
+    `Z G- G+` and `W+ W- G+ G-` matched MadGraph all along and must keep
+    matching: this phase only moves vertices with an unbalanced number of
+    charged Goldstones.
+
+    It lives here, with the leg sign, because it is the same kind of thing --
+    a mapping from feynlag's conventions onto UFO's. It is a pure rephasing,
+    so it changes no physics: verified by MadGraph agreeing between unitary
+    and Feynman gauge before the alignment, with a deliberately-broken phase
+    failing that same check.
+
+    Args:
+        charges: the emitted charges of this vertex's charged-Goldstone legs.
+    """
+    phase = sp.S.One
+    for q in charges:
+        phase *= sp.I ** int(q)
+    return phase
