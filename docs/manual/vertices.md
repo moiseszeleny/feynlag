@@ -243,7 +243,7 @@ four quartics are pinned against MadGraph's stock `sm` model
 `assemble_vvvv` returns Lagrangian-level coefficients; pass
 `feynman_rule=True` for the UFO coupling $i\times$ that.
 
-### The VVV leg sign (`gauge_basis.ufo_leg_sign`)
+### The field → particle leg sign (`export.ufo.legs`)
 
 feynlag's symbols label **fields**; a UFO leg labels a **particle**. The field
 $W^+$ annihilates a $W^+$ but *creates* a $W^-$, so the leg carrying the symbol
@@ -256,9 +256,15 @@ transposes each conjugate pair, and since `VVV1` is totally antisymmetric:
 That is the whole content of what was long recorded as an unresolved "cubic
 sign convention". It also explains why VVS/VVSS/VVVV never needed a flip:
 their structures are *invariant* under that transposition — checked by
-`gauge_basis._assert_relabelling_invariant`, which raises rather than assume
-it. Pass `conjugates=` to `Model.gauge_vertices` whenever a charged vector is
-in the basis; omitting it treats every boson as self-conjugate.
+the writer's `_assert_relabelling_invariant`, which raises rather than assume
+it. **`VSS1` does get $-1$** when its two scalars are a conjugate pair, and
+nothing applied that until `export/ufo/legs.py` existed — so every exported
+Feynman-gauge `V S S` was wrong by a sign.
+
+The sign is applied by the **writer**, not here: it is a UFO convention, and
+the writer is the only layer that knows the particle/antiparticle pairing
+(`UFOParticle.antisymbol`). A `Vertex` coupling is therefore always in
+feynlag's own convention, and `Model.gauge_vertices` takes no `conjugates=`.
 
 Note `cubic_couplings`'s raw output also **contains the colour factor**
 ($-g_s f^{abc}$), the cubic twin of the quartic's colour-double-count above.

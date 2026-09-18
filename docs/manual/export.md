@@ -122,6 +122,28 @@ come straight from `Model.gauge_vertices()`
 ({doc}`vertices`, `feynlag/gauge_basis.py`), whose `Vertex` objects carry
 their three per-structure couplings in `meta['structures']`.
 
+### The field → particle leg sign
+
+feynlag's symbols label **fields**; a UFO leg labels a **particle**, and the
+field $W^+$ *creates* a $W^-$ — so the leg carrying the symbol `Wp` is UFO's
+`W-` leg. Emitting legs under their naive names transposes each conjugate
+pair, and the writer applies whatever that costs
+(`export/ufo/legs.py::structure_leg_sign`), reading the pairing off
+`UFOParticle.antisymbol`:
+
+| structure | sign |
+|---|---|
+| `VVV1` | permutation parity (totally antisymmetric) |
+| `VSS1` | $-1$ when the two scalars are a conjugate pair |
+| `VVS1`, `VVSS1`, `SSS1`, `SSSS1` | $+1$ |
+| `VVVV1/2/3` | must be invariant — verified, raises otherwise |
+| `FF*` | excluded (own bar/field leg convention) |
+
+Because the writer owns it, a `Vertex` coupling is always in feynlag's own
+convention and `gauge_self_couplings` takes no `conjugates=`. An unrecorded
+structure raises rather than defaulting to $+1$ — that default is what left
+every exported Feynman-gauge `VSS` wrong by a sign until this existed.
+
 ## Design gotchas
 
 - **UFO cannot export symbolic gauge charges.** UFO's particle table calls

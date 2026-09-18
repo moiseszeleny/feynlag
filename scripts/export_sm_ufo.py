@@ -124,7 +124,7 @@ def export(path):
     # convention mismatch.
     g, gp = gw.s, g1.s
     self_couplings = model.gauge_vertices(
-        groups=[s["SU2L"]], basis=[Wp, Wm, Z, A], conjugates={Wp: Wm, Wm: Wp})
+        groups=[s["SU2L"]], basis=[Wp, Wm, Z, A])
     vvv = {v.particles: v.coupling
            for v in self_couplings if v.vertex_type == "VVV"}
     vvvv = {v.particles: v.structures

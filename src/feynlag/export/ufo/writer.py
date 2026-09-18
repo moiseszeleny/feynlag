@@ -22,7 +22,9 @@ from pathlib import Path
 import sympy as sp
 
 from ...operators import momentum
+from .legs import structure_leg_sign, ufo_leg_sign
 from .lorentz_map import UFO_LORENTZ, structures_for
+from .vvvv import metric_pair_coefficients, permute_vvvv
 from .pycode import ufo_expr
 from .static import FUNCTION_LIBRARY, INIT_TEMPLATE, OBJECT_LIBRARY
 
@@ -134,6 +136,27 @@ class _UFOBuilder:
             return f"P.{_pyname(spec.antiname)}"
         return f"P.{_pyname(spec.name)}"
 
+    def _conjugate_symbol(self, symbol):
+        """The symbol of this leg's antiparticle (itself if self-conjugate).
+
+        The writer is the only layer that knows this pairing, which is why it
+        owns the field->particle leg sign (see :mod:`.legs`).
+        """
+        spec = self.specs.get(symbol)
+        if spec is None:
+            raise KeyError(f"no UFOParticle registered for symbol {symbol}")
+        if spec.self_conjugate or spec.antisymbol is None:
+            return symbol
+        return spec.antisymbol if symbol == spec.symbol else spec.symbol
+
+    def _conjugates(self, legs):
+        return {leg: self._conjugate_symbol(leg) for leg in legs}
+
+    def _leg_sign(self, structure, legs):
+        """Sign the emitted coupling picks up under the field->particle
+        relabelling of ``legs`` (see :mod:`.legs`)."""
+        return structure_leg_sign(structure, legs, self._conjugates(legs))
+
     def _coupling(self, expr, n_legs):
         value = ufo_expr(sp.nsimplify(expr, rational=False)
                          if expr.is_number else expr)
@@ -171,7 +194,8 @@ class _UFOBuilder:
             spins = {p: self.specs[p].spin for p in particles}
             ordered = sorted(particles, key=lambda p: -spins[p])
             lorentz = structures_for(vtype)[0]
-            cname = self._coupling(coupling, n)
+            cname = self._coupling(
+                self._leg_sign(lorentz, ordered) * coupling, n)
         elif vtype == "VSS":
             vector = [p for p in particles if self.specs[p].spin == 3]
             scalars = [p for p in particles if self.specs[p].spin == 1]
@@ -180,7 +204,10 @@ class _UFOBuilder:
             (a, b), c = _vss_split(coupling, scalars)
             ordered = [vector[0], a, b]
             lorentz = "VSS1"
-            cname = self._coupling(c, n)
+            # A charged pair in legs 2,3 (e.g. A G+ G-) flips VSS1, which is
+            # antisymmetric in them. Nothing applied this before, so every
+            # exported Feynman-gauge VSS was wrong by a sign.
+            cname = self._coupling(self._leg_sign(lorentz, ordered) * c, n)
         else:
             raise ValueError(f"add_bosonic_vertex cannot handle {vtype}; "
                              f"use the dedicated adders")
@@ -202,10 +229,50 @@ class _UFOBuilder:
                 dict is for internal verification only, see yangmills.py).
         """
         self.used_lorentz.add("VVV1")
-        cname = self._coupling(coupling, 3)
+        # VVV1 is totally antisymmetric, so a conjugate pair among the legs
+        # (A W+ W-, W+ W- Z) contributes -1 while ggg contributes +1 — the
+        # whole of the old "cubic sign convention" puzzle (see .legs).
+        cname = self._coupling(
+            self._leg_sign("VVV1", list(triple)) * coupling, 3)
         self.vertex_entries.append(
             ([self._particle_ref(p) for p in triple], ["VVV1"], [cname],
              [color]))
+
+    def _assert_relabelling_invariant(self, quadruple, structures):
+        """A VVVV's structures must be INVARIANT under the field->particle
+        relabelling, not merely pick up a sign.
+
+        Unlike VVV1 the quartic structures are not totally antisymmetric, so
+        there is no signature to apply — either the relabelling is a symmetry
+        of this vertex's structures (it is, for all four electroweak
+        quartics: the coefficients it would exchange are equal) or the vertex
+        cannot be emitted under naive leg labels at all.  Checked rather than
+        assumed.
+        """
+        conjugates = self._conjugates(quadruple)
+        if all(conjugates[leg] == leg for leg in quadruple):
+            return
+        target = [conjugates[leg] for leg in quadruple]
+        remaining = list(range(len(quadruple)))
+        perm = []
+        for t in target:
+            for i in remaining:
+                if quadruple[i] == t:
+                    perm.append(i)
+                    remaining.remove(i)
+                    break
+            else:
+                raise ValueError(
+                    f"{tuple(quadruple)}: the field->particle relabelling is "
+                    f"not a permutation of this vertex's legs")
+        moved = permute_vvvv(structures, tuple(perm))
+        if (metric_pair_coefficients(moved)
+                != metric_pair_coefficients(structures)):
+            raise NotImplementedError(
+                f"quartic {tuple(quadruple)} is not invariant under the "
+                f"field->particle relabelling {perm}; emitting it under "
+                f"naive leg labels would be wrong and no signature can fix a "
+                f"non-antisymmetric structure")
 
     def add_vvvv_vertex(self, quadruple, couplings, colors=None):
         """Quartic gauge vertex: dict ``{VVVV structure name: coupling}``.
@@ -217,6 +284,7 @@ class _UFOBuilder:
                 VVVV1/2/3 respectively — see export/ufo/vvvv.py). Defaults
                 to broadcasting the singlet ``'1'`` to every structure.
         """
+        self._assert_relabelling_invariant(quadruple, couplings)
         names, cnames, clist = [], [], []
         for lname, coupling in couplings.items():
             self.used_lorentz.add(lname)

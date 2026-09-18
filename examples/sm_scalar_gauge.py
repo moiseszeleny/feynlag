@@ -187,12 +187,11 @@ def main():
     # registered above, so this needs no hand-typed matrix. A VVVV coupling is
     # three numbers (one per UFO Lorentz structure) tied to the leg ordering,
     # so they live in Vertex.meta['structures'] rather than .coupling.
-    # conjugates= is required whenever a charged vector is in the basis: it
-    # is what supplies the field->particle leg sign (gauge_basis.ufo_leg_sign)
-    # that makes the electroweak cubics come out flipped and ggg not.
+    # These are in feynlag's own convention; the field->particle leg sign a
+    # UFO needs (which flips the cubics but not ggg) is applied at export by
+    # the writer — see feynlag.export.ufo.legs.
     print("\nelectroweak gauge self-couplings (physical basis):")
-    for vtx in model.gauge_vertices(groups=[SU2L],
-                                    conjugates={Wp: Wm, Wm: Wp}):
+    for vtx in model.gauge_vertices(groups=[SU2L]):
         legs = " ".join(str(x) for x in vtx.particles)
         if vtx.structures is None:
             body = str(sp.simplify(vtx.coupling))

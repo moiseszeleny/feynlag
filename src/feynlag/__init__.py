@@ -65,8 +65,8 @@ from .charges import (
 from .flavor import CKM_ELEMENT_NAMES, cabibbo_2x2, standard_ckm
 from .gauge_basis import (
     adjoint_rotation, gauge_self_couplings, physical_vector_basis,
-    ufo_leg_sign,
 )
+from .export.ufo.legs import ufo_leg_sign
 from .models import (
     ElectroweakScaffold, PhysicalBasis, StandardModel,
     charged_current_rotation, electroweak_gauge, electroweak_scaffold,

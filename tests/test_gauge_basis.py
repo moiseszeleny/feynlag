@@ -246,20 +246,23 @@ class TestUfoLegSign:
             ufo_leg_sign((A, Z, Wp), {Wp: Wm, Wm: Wp})
 
 
-class TestCubicVsMadGraph:
-    """The exported electroweak cubics equal MadGraph's stock sm at MG's own
-    leg orderings, with the sign DERIVED (ufo_leg_sign), not hand-applied:
+class TestCubicInFeynlagConvention:
+    """The electroweak cubics in **feynlag's own convention** — i.e. plain
+    ``cubic_couplings`` values, `-i e` and `-i g cw` at the canonical leg
+    ordering.
 
-        [a, W-, W+]  GC_4  = +i*ee
-        [W-, W+, Z]  GC_53 = +i*cw*ee/sw
+    These are NOT MadGraph's numbers, and that is deliberate: the
+    field->particle leg sign a UFO needs is applied at export by the writer
+    (``feynlag.export.ufo.legs``), the only layer that knows the
+    particle/antiparticle pairing.  Do not "fix" these to MG's ``GC_4``/
+    ``GC_53`` — those are pinned on the EXPORTED UFO, in
+    ``tests/test_ufo_sm_bosonic.py`` and ``tests/test_ufo_export.py``.
     """
 
     @pytest.fixture(scope="class")
     def cubics(self, ew):
         model, SU2L, s = ew
-        verts = model.gauge_vertices(groups=[SU2L],
-                                     conjugates={s["Wp"]: s["Wm"],
-                                                 s["Wm"]: s["Wp"]})
+        verts = model.gauge_vertices(groups=[SU2L])
         return {v.particles: v.coupling
                 for v in verts if v.vertex_type == "VVV"}, s
 
@@ -268,7 +271,7 @@ class TestCubicVsMadGraph:
         e = s["g"] * s["gp"] / sp.sqrt(s["g"] ** 2 + s["gp"] ** 2)
         got = verts[tuple(sorted((s["A"], s["Wm"], s["Wp"]),
                                  key=sp.default_sort_key))]
-        assert sp.simplify(got - sp.I * e) == 0, got
+        assert sp.simplify(got + sp.I * e) == 0, got
 
     def test_zww(self, cubics):
         verts, s = cubics
@@ -276,24 +279,20 @@ class TestCubicVsMadGraph:
         cw = g / sp.sqrt(g ** 2 + gp ** 2)
         got = verts[tuple(sorted((s["Wm"], s["Wp"], s["Z"]),
                                  key=sp.default_sort_key))]
-        assert sp.simplify(got - sp.I * g * cw) == 0, got
+        assert sp.simplify(got + sp.I * g * cw) == 0, got
 
-    def test_equivalent_to_the_old_hand_flip(self, cubics, ew):
-        """The previous export emitted (A,Wp,Wm) with -cubic_couplings'
-        value.  VVV1 is antisymmetric under 2<->3, so that is the SAME vertex
-        as what is emitted now — the 19.50 pb e+e-->W+W- round-trip that
-        validated the hand flip is preserved by construction."""
+    def test_is_the_raw_cubic_tensor(self, cubics, ew):
+        """gauge_vertices applies no export convention of its own: the
+        coupling is cubic_couplings' value at the canonical ordering."""
         from feynlag import cubic_couplings
         model, SU2L, s = ew
         verts, _ = cubics
         U, basis = adjoint_rotation(model, SU2L,
                                     basis=[s["Wp"], s["Wm"], s["Z"], s["A"]])
         raw = cubic_couplings(SU2L, physical=basis, U=U)
-        old = -sp.simplify(raw[(s["A"], s["Wp"], s["Wm"])])   # the hand flip
-        new = verts[tuple(sorted((s["A"], s["Wm"], s["Wp"]),
-                                 key=sp.default_sort_key))]
-        # same vertex, legs 2<->3 swapped => couplings differ by a sign
-        assert sp.simplify(old + new) == 0, (old, new)
+        key = tuple(sorted((s["A"], s["Wm"], s["Wp"]),
+                           key=sp.default_sort_key))
+        assert sp.simplify(verts[key] - raw[key]) == 0
 
     def test_unrotated_group_is_refused(self):
         """An unbroken group's "physical" basis IS its weak-basis adjoint
@@ -319,7 +318,5 @@ class TestCubicVsMadGraph:
         """The guard keys on "no rotation touches this group", not on colour,
         so the electroweak path is unaffected."""
         model, SU2L, s = ew
-        verts = model.gauge_vertices(groups=[SU2L],
-                                     conjugates={s["Wp"]: s["Wm"],
-                                                 s["Wm"]: s["Wp"]})
+        verts = model.gauge_vertices(groups=[SU2L])
         assert {v.vertex_type for v in verts} == {"VVV", "VVVV"}
