@@ -62,18 +62,23 @@ is invisible to unit tests but breaks a real generator run:
    invisible in $e^+e^-\to\mu^+\mu^-$ (an overall phase cancels in $|\mathcal
    M|^2$) but breaks the FFV↔VVV interference in $e^+e^-\to W^+W^-$. Fixed in
    `add_fermion_vertex`.
-3. **The triple-gauge coupling** comes out of `cubic_couplings` with the
-   opposite overall sign to what is needed at the ordering the export emits,
-   and the export flips it. It is *not* a universal MadGraph convention
-   mismatch: the real-basis QCD $ggg=-g_s$ is exported unflipped and already
-   matches MG's `GC_10`. Part of the difference is leg ordering — `VVV1` is
-   antisymmetric under $2\leftrightarrow3$, MadGraph lists $[\gamma,W^-,W^+]$
-   where the export emits $(\gamma,W^+,W^-)$ — but whether that accounts for
-   the whole asymmetry is still open, which is why
-   `gauge_basis.gauge_self_couplings` refuses to build a VVV vertex rather
-   than shipping a guessed sign. The quartics have no such freedom
-   (`assemble_vvvv` is verified ordering-covariant). See
-   `scripts/export_sm_ufo.py`.
+3. **The triple-gauge coupling** needs a sign flip for the electroweak
+   vertices but not for the gluon. This looked for a long time like an
+   unresolved MadGraph convention mismatch; it is neither a mismatch nor a
+   bug. feynlag's symbols label **fields**, a UFO leg labels a **particle**,
+   and the field $W^+$ annihilates a $W^+$ but *creates* a $W^-$ — so the leg
+   carrying the symbol `Wp` is UFO's `W-` leg. Emitting legs under naive
+   names transposes each conjugate pair, and `VVV1` is totally antisymmetric:
+   one conjugate pair $\Rightarrow -1$ (the electroweak cubics), none
+   $\Rightarrow +1$ ($ggg$). `gauge_basis.ufo_leg_sign` computes it, and the
+   export no longer applies anything by hand.
+
+   The same rule explains why VVS/VVSS/VVVV never needed a flip — their
+   structures are *invariant* under that transposition — and it reproduces
+   MadGraph's `GC_4`, `GC_53`, `GC_10`, `GC_3` and `GC_61` with no other
+   adjustment. It is also behaviour-preserving here: the old export emitted
+   $(\gamma,W^+,W^-)$ with $-ie$, the same vertex as the $(\gamma,W^-,W^+)$
+   with $+ie$ emitted now, so the 19.50 pb below is unchanged.
 
 This is the payoff of feynlag's verification-first design: the round-trip is a
 harness that turns "the model looks right" into "the model computes the right

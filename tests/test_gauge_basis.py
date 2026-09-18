@@ -24,6 +24,7 @@ import pytest
 from feynlag import (
     Dmu, ExternalParameter, InternalParameter, Lagrangian, Model, Rotation,
     SU2, SU3, Scalar, U1, adjoint_rotation, dag, gauge_self_couplings,
+    ufo_leg_sign,
     physical_vector_basis, rotation_2x2,
 )
 from feynlag.export.ufo.vvvv import metric_pair_coefficients
@@ -124,7 +125,8 @@ class TestElectroweakQuarticsVsMadGraph:
     @pytest.fixture(scope="class")
     def vertices(self, ew):
         model, SU2L, s = ew
-        return model.gauge_vertices(groups=[SU2L]), s
+        verts = model.gauge_vertices(groups=[SU2L], include=("VVVV",))
+        return verts, s
 
     def _pairs(self, vertices, legs):
         v = _quartic(vertices, legs)
@@ -187,20 +189,18 @@ class TestElectroweakQuarticsVsMadGraph:
             assert set(v.structure_couplings) == set(v.structures)
 
 
-def test_cubic_is_refused_not_guessed(ew):
-    """The UFO sign convention for VVV is unresolved (unflipped for gluons,
-    flipped for the EW vertices) — it must raise rather than guess."""
+def test_unknown_vertex_type_rejected(ew):
     model, SU2L, s = ew
-    with pytest.raises(NotImplementedError, match="sign convention"):
-        gauge_self_couplings(model, groups=[SU2L], include=("VVV", "VVVV"))
+    with pytest.raises(ValueError, match="unknown vertex types"):
+        gauge_self_couplings(model, groups=[SU2L], include=("VVV", "FFV"))
 
 
 def test_gauge_vertices_cached_and_invalidated(ew):
     model, SU2L, s = ew
-    first = model.gauge_vertices(groups=[SU2L])
-    assert model.gauge_vertices(groups=[SU2L]) is first
+    first = model.gauge_vertices(groups=[SU2L], include=("VVVV",))
+    assert model.gauge_vertices(groups=[SU2L], include=("VVVV",)) is first
     model._invalidate()
-    assert model.gauge_vertices(groups=[SU2L]) is not first
+    assert model.gauge_vertices(groups=[SU2L], include=("VVVV",)) is not first
 
 
 def test_hermiticity_check_refuses_multi_structure(ew):
@@ -208,8 +208,105 @@ def test_hermiticity_check_refuses_multi_structure(ew):
     comparison would pass vacuously — it must refuse instead."""
     from feynlag import check_hermiticity_pairing
     model, SU2L, s = ew
-    verts = model.gauge_vertices(groups=[SU2L])
+    verts = model.gauge_vertices(groups=[SU2L], include=("VVVV",))
     with pytest.raises(NotImplementedError, match="multi-structure"):
         check_hermiticity_pairing(bosonic_vertices=verts,
                                   conjugates={s["Wp"]: s["Wm"],
                                               s["Wm"]: s["Wp"]})
+
+
+class TestUfoLegSign:
+    """feynlag's symbols label FIELDS; a UFO leg labels a PARTICLE, and the
+    field W+ carries the W- leg.  Emitting legs under naive names therefore
+    transposes each conjugate pair, and VVV1 is totally antisymmetric.
+
+    This is the entire content of what used to be documented as an
+    unresolved "cubic sign convention": one conjugate pair -> -1 (the
+    electroweak cubics), none -> +1 (the gluon).
+    """
+
+    def test_conjugate_pair_gives_minus_one(self, ew):
+        model, SU2L, s = ew
+        Wp, Wm, A = s["Wp"], s["Wm"], s["A"]
+        conj = {Wp: Wm, Wm: Wp}
+        assert ufo_leg_sign((A, Wm, Wp), conj) == -1
+
+    def test_no_conjugate_pair_gives_plus_one(self):
+        """ggg — why the gluon never needed a flip."""
+        g1_, g2_, g3_ = sp.symbols("G_1 G_2 G_3")
+        assert ufo_leg_sign((g1_, g2_, g3_), {}) == 1
+        assert ufo_leg_sign((g1_, g2_, g3_), None) == 1
+
+    def test_unpaired_charged_leg_raises(self, ew):
+        """A charged leg whose partner is not also a leg means the
+        relabelling is not a permutation — refuse rather than return a sign."""
+        model, SU2L, s = ew
+        Wp, Wm, A, Z = s["Wp"], s["Wm"], s["A"], s["Z"]
+        with pytest.raises(ValueError, match="not.*a leg|permutation"):
+            ufo_leg_sign((A, Z, Wp), {Wp: Wm, Wm: Wp})
+
+
+class TestCubicVsMadGraph:
+    """The exported electroweak cubics equal MadGraph's stock sm at MG's own
+    leg orderings, with the sign DERIVED (ufo_leg_sign), not hand-applied:
+
+        [a, W-, W+]  GC_4  = +i*ee
+        [W-, W+, Z]  GC_53 = +i*cw*ee/sw
+    """
+
+    @pytest.fixture(scope="class")
+    def cubics(self, ew):
+        model, SU2L, s = ew
+        verts = model.gauge_vertices(groups=[SU2L],
+                                     conjugates={s["Wp"]: s["Wm"],
+                                                 s["Wm"]: s["Wp"]})
+        return {v.particles: v.coupling
+                for v in verts if v.vertex_type == "VVV"}, s
+
+    def test_aww(self, cubics):
+        verts, s = cubics
+        e = s["g"] * s["gp"] / sp.sqrt(s["g"] ** 2 + s["gp"] ** 2)
+        got = verts[tuple(sorted((s["A"], s["Wm"], s["Wp"]),
+                                 key=sp.default_sort_key))]
+        assert sp.simplify(got - sp.I * e) == 0, got
+
+    def test_zww(self, cubics):
+        verts, s = cubics
+        g, gp = s["g"], s["gp"]
+        cw = g / sp.sqrt(g ** 2 + gp ** 2)
+        got = verts[tuple(sorted((s["Wm"], s["Wp"], s["Z"]),
+                                 key=sp.default_sort_key))]
+        assert sp.simplify(got - sp.I * g * cw) == 0, got
+
+    def test_equivalent_to_the_old_hand_flip(self, cubics, ew):
+        """The previous export emitted (A,Wp,Wm) with -cubic_couplings'
+        value.  VVV1 is antisymmetric under 2<->3, so that is the SAME vertex
+        as what is emitted now — the 19.50 pb e+e-->W+W- round-trip that
+        validated the hand flip is preserved by construction."""
+        from feynlag import cubic_couplings
+        model, SU2L, s = ew
+        verts, _ = cubics
+        U, basis = adjoint_rotation(model, SU2L,
+                                    basis=[s["Wp"], s["Wm"], s["Z"], s["A"]])
+        raw = cubic_couplings(SU2L, physical=basis, U=U)
+        old = -sp.simplify(raw[(s["A"], s["Wp"], s["Wm"])])   # the hand flip
+        new = verts[tuple(sorted((s["A"], s["Wm"], s["Wp"]),
+                                 key=sp.default_sort_key))]
+        # same vertex, legs 2<->3 swapped => couplings differ by a sign
+        assert sp.simplify(old + new) == 0, (old, new)
+
+    def test_gluon_needs_no_flip(self):
+        """An unbroken group has no conjugate pair, so the emitted coupling
+        is cubic_couplings' raw value — matching MG's GC_10 = -G."""
+        from feynlag import cubic_couplings
+        gs = ExternalParameter("gs", 1.22, positive=True)
+        SU3c = SU3("SU3c", coupling=gs)
+        model = Model("QCD", gauge_groups=[SU3c], fields=[SU3c.bosons("G")],
+                      parameters=[gs])
+        verts = model.gauge_vertices(groups=[SU3c], include=("VVV",))
+        G1, G2, G3 = SU3c.bosons().components[:3]
+        key = tuple(sorted((G1, G2, G3), key=sp.default_sort_key))
+        got = {v.particles: v.coupling for v in verts}[key]
+        raw = cubic_couplings(SU3c)[(G1, G2, G3)]
+        assert sp.simplify(got - raw) == 0
+        assert sp.simplify(got + gs.s) == 0          # -g_s, MG's GC_10

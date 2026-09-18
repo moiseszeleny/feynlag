@@ -298,8 +298,9 @@ class Model:
 
     # ---------------------------------------------------------------- spins
 
-    def gauge_vertices(self, groups=None, basis=None, simplifier=sp.simplify):
-        """VVVV :class:`Vertex` objects for the gauge self-couplings.
+    def gauge_vertices(self, groups=None, basis=None, simplifier=sp.simplify,
+                       include=("VVV", "VVVV"), conjugates=None):
+        """VVV and VVVV :class:`Vertex` objects for the gauge self-couplings.
 
         The second extraction track for bosons: the Yang-Mills sector has no
         Lagrangian term (``-1/4 F F`` is never written), so these vertices
@@ -312,10 +313,14 @@ class Model:
         from .gauge_basis import gauge_self_couplings
         key = ("gauge_vertices",
                None if groups is None else tuple(g.name for g in groups),
-               None if basis is None else tuple(basis))
+               None if basis is None else tuple(basis),
+               tuple(include),
+               None if conjugates is None
+               else tuple(sorted(conjugates.items(), key=str)))
         if key not in self._cache:
             self._cache[key] = gauge_self_couplings(
-                self, groups=groups, basis=basis, simplifier=simplifier)
+                self, groups=groups, basis=basis, simplifier=simplifier,
+                include=include, conjugates=conjugates)
         return self._cache[key]
 
     def spin_map(self, conjugate_map=None):

@@ -196,3 +196,18 @@ class TestScalarVectorCouplings:
         ol, _ = sm_ufo
         exported = {p.name for p in ol.all_particles}
         assert not exported & {"G0", "G+", "G-", "Gp", "Gm"}
+
+
+class TestCubicGaugeCouplings:
+    """The triple-gauge couplings, with the field->particle leg sign derived
+    (gauge_basis.ufo_leg_sign) rather than hand-applied in the export."""
+
+    def test_aww(self, sm_ufo):
+        ol, p = sm_ufo
+        got = _evaluate(_vertex(ol, ["a", "W-", "W+"]), p)["VVV1"]
+        _assert_close(got, 1j * p["ee"], "AWW")                    # GC_4
+
+    def test_zww(self, sm_ufo):
+        ol, p = sm_ufo
+        got = _evaluate(_vertex(ol, ["W-", "W+", "Z"]), p)["VVV1"]
+        _assert_close(got, 1j * p["cw"] * p["ee"] / p["sw"], "ZWW")  # GC_53

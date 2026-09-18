@@ -21,12 +21,14 @@ import itertools
 
 import sympy as sp
 
-from .export.ufo.vvvv import assemble_vvvv
+from .export.ufo.vvvv import (assemble_vvvv,
+                              metric_pair_coefficients,
+                              permute_vvvv)
 from .vertices.vertex import Vertex
-from .vertices.yangmills import quartic_couplings
+from .vertices.yangmills import cubic_couplings, quartic_couplings
 
 __all__ = ["physical_vector_basis", "adjoint_rotation",
-           "gauge_self_couplings"]
+           "gauge_self_couplings", "ufo_leg_sign"]
 
 
 def _rotate_symbol(model, sym):
@@ -98,9 +100,106 @@ def adjoint_rotation(model, group, basis=None, simplifier=sp.expand):
     return U, basis
 
 
+def ufo_leg_sign(legs, conjugates=None):
+    """Sign relating feynlag's field-symbol leg order to UFO's particle legs.
+
+    feynlag's symbols label **fields**; a UFO leg labels a **particle**.  The
+    field ``W+`` annihilates a W+ but *creates* a W−, so the leg carrying the
+    symbol ``Wp`` is UFO's ``W-`` leg.  Emitting the legs under their naive
+    names therefore transposes each conjugate pair, and a Lorentz structure
+    antisymmetric under that transposition picks up its signature.
+
+    This is the whole content of the "cubic sign convention" puzzle:
+
+    - a VVV with one conjugate pair (``A W+ W-``, ``W+ W- Z``) gets **−1**,
+      which is exactly the flip ``scripts/export_sm_ufo.py`` used to apply by
+      hand and the ``e+e-→W+W-`` round-trip validated;
+    - a VVV with no conjugate pair (``ggg``) gets **+1**, which is why the
+      gluon never needed one.
+
+    Derived in this session against MadGraph's stock ``sm``: with this sign
+    and no other adjustment, feynlag's ``[a,W-,W+]``, ``[W-,W+,Z]``,
+    ``[g,g,g]``, ``[a,G-,G+]`` and ``[Z,G-,G+]`` all reproduce ``GC_4``,
+    ``GC_53``, ``GC_10``, ``GC_3`` and ``GC_61``.
+
+    Args:
+        legs: the field symbols, in the order they will be emitted.
+        conjugates: ``{field: antifield}`` for the non-self-conjugate fields
+            (both directions), as ``check_hermiticity_pairing`` takes.  Fields
+            absent from it are self-conjugate.  ``None`` means every field is
+            self-conjugate, i.e. sign ``+1``.
+
+    Returns:
+        ``+1`` or ``−1`` for a structure that is totally antisymmetric in the
+        exchanged legs (VVV); callers of non-antisymmetric structures must
+        check invariance instead (see :func:`gauge_self_couplings`).
+
+    Raises:
+        ValueError: a conjugate leg's partner is not also among the legs, so
+            the relabelling is not a permutation of this vertex's legs.
+    """
+    conjugates = conjugates or {}
+    legs = list(legs)
+    target = [conjugates.get(L, L) for L in legs]
+    remaining = list(range(len(legs)))
+    perm = []
+    for t in target:
+        for i in remaining:
+            if legs[i] == t:
+                perm.append(i)
+                remaining.remove(i)
+                break
+        else:
+            raise ValueError(
+                f"leg {t} (the antiparticle of a leg of {tuple(legs)}) is not "
+                f"itself a leg, so the field->particle relabelling is not a "
+                f"permutation of this vertex")
+    parity = 1
+    for i in range(len(perm)):
+        for j in range(i + 1, len(perm)):
+            if perm[i] > perm[j]:
+                parity = -parity
+    return parity
+
+
+def _assert_relabelling_invariant(ordering, structures, conjugates):
+    """A VVVV's structures must be INVARIANT under the field->particle
+    relabelling, not merely pick up a sign.
+
+    Unlike VVV1 the quartic structures are not totally antisymmetric, so
+    there is no signature to apply — either the relabelling is a symmetry of
+    this vertex's structures (it is, for all four electroweak quartics: the
+    coefficients it would exchange are equal) or the vertex cannot be emitted
+    under naive leg labels at all.  Checked rather than assumed.
+    """
+    conjugates = conjugates or {}
+    if not any(L in conjugates for L in ordering):
+        return
+    target = [conjugates.get(L, L) for L in ordering]
+    remaining = list(range(len(ordering)))
+    perm = []
+    for t in target:
+        for i in remaining:
+            if ordering[i] == t:
+                perm.append(i)
+                remaining.remove(i)
+                break
+        else:
+            raise ValueError(
+                f"{ordering}: the field->particle relabelling is not a "
+                f"permutation of this vertex's legs")
+    moved = permute_vvvv(structures, tuple(perm))
+    if metric_pair_coefficients(moved) != metric_pair_coefficients(structures):
+        raise NotImplementedError(
+            f"quartic {ordering} is not invariant under the field->particle "
+            f"relabelling {perm}; emitting it under naive leg labels would "
+            f"be wrong and no signature can fix a non-antisymmetric structure")
+
+
 def gauge_self_couplings(model, groups=None, basis=None,
-                         simplifier=sp.simplify, include=("VVVV",)):
-    """VVVV :class:`Vertex` objects for the gauge self-couplings.
+                         simplifier=sp.simplify, include=("VVV", "VVVV"),
+                         conjugates=None):
+    """VVV and VVVV :class:`Vertex` objects for the gauge self-couplings.
 
     These are derived group-theoretically and therefore do **not** duplicate
     :meth:`Model.vertices` output — the ``-1/4 F F`` term is never written
@@ -114,47 +213,62 @@ def gauge_self_couplings(model, groups=None, basis=None,
     them.  The couplings carry the Feynman-rule ``i`` and are pinned against
     MadGraph's stock ``sm`` in ``tests/test_yangmills.py::TestMadGraphOracle``.
 
+    The VVV couplings are UFO-ready: they carry the field->particle leg sign
+    from :func:`ufo_leg_sign`, which is what makes an electroweak cubic come
+    out flipped relative to ``cubic_couplings``'s raw tensor while the gluon
+    does not.  That asymmetry used to be applied by hand in
+    ``scripts/export_sm_ufo.py`` and described as an unresolved convention;
+    it is neither — see :func:`ufo_leg_sign`.
+
     Args:
-        include: which vertex types to build.  ``"VVV"`` is **not**
-            supported: the UFO sign convention for the cubic is unresolved.
-            ``cubic_couplings``'s raw output is exported *unflipped* for the
-            gluon (``ggg = -g_s``, matching MG's ``GC_10``) but *flipped* for
-            the electroweak vertices (validated by the ``e+e-→W+W-``
-            round-trip at 19.50 pb, and MG's ``[a,W-,W+] = +i e`` against our
-            ``-i e`` at the same ordering).  Until that asymmetry is derived
-            rather than observed, this function refuses to emit a VVV vertex
-            instead of guessing a sign — build it with ``cubic_couplings``
-            and apply the convention at the call site, as
-            ``scripts/export_sm_ufo.py`` does.
+        include: which vertex types to build.
+        conjugates: ``{field: antifield}`` for the non-self-conjugate physical
+            bosons (e.g. ``{Wp: Wm, Wm: Wp}``), needed for the VVV leg sign.
+            Omitted, every boson is treated as self-conjugate — correct for an
+            unbroken group (gluons), wrong for W±, so passing it is required
+            whenever a charged vector is in ``basis``.
 
     Returns:
         list of :class:`~feynlag.vertices.vertex.Vertex`.
     """
-    unknown = set(include) - {"VVVV"}
+    unknown = set(include) - {"VVV", "VVVV"}
     if unknown:
-        raise NotImplementedError(
-            f"gauge_self_couplings cannot build {sorted(unknown)}: the UFO "
-            f"sign convention for the cubic gauge coupling is unresolved "
-            f"(unflipped for gluons, flipped for the electroweak vertices) "
-            f"— see this function's docstring")
+        raise ValueError(f"unknown vertex types {sorted(unknown)}")
     groups = [g for g in (model.gauge_groups if groups is None else groups)
               if not g.abelian]
     if basis is None:
         basis = physical_vector_basis(model, groups)
     basis = list(basis)
 
-    quartic_total = {}
+    cubic_total, quartic_total = {}, {}
     for group in groups:
         U, _ = adjoint_rotation(model, group, basis)
-        for key, val in quartic_couplings(group, physical=basis, U=U).items():
-            quartic_total[key] = quartic_total.get(key, sp.S.Zero) + val
+        if "VVV" in include:
+            for key, val in cubic_couplings(group, physical=basis,
+                                            U=U).items():
+                cubic_total[key] = cubic_total.get(key, sp.S.Zero) + val
+        if "VVVV" in include:
+            for key, val in quartic_couplings(group, physical=basis,
+                                              U=U).items():
+                quartic_total[key] = quartic_total.get(key, sp.S.Zero) + val
 
     vertices = []
+    for triple in itertools.combinations_with_replacement(basis, 3):
+        ordering = tuple(sorted(triple, key=sp.default_sort_key))
+        raw = cubic_total.get(ordering, sp.S.Zero)
+        if raw == 0:
+            continue
+        # VVV1 is totally antisymmetric, so the field->particle relabelling
+        # contributes its permutation signature (see ufo_leg_sign).
+        coupling = simplifier(ufo_leg_sign(ordering, conjugates) * raw)
+        if coupling != 0:
+            vertices.append(Vertex(ordering, coupling, "VVV"))
     for quad in itertools.combinations_with_replacement(basis, 4):
         ordering = tuple(sorted(quad, key=sp.default_sort_key))
         structures = assemble_vvvv(quartic_total, ordering, feynman_rule=True)
         structures = {name: simplifier(c) for name, c in structures.items()}
         structures = {name: c for name, c in structures.items() if c != 0}
         if structures:
+            _assert_relabelling_invariant(ordering, structures, conjugates)
             vertices.append(Vertex.from_structures(ordering, structures))
     return vertices

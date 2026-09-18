@@ -243,6 +243,27 @@ four quartics are pinned against MadGraph's stock `sm` model
 `assemble_vvvv` returns Lagrangian-level coefficients; pass
 `feynman_rule=True` for the UFO coupling $i\times$ that.
 
+### The VVV leg sign (`gauge_basis.ufo_leg_sign`)
+
+feynlag's symbols label **fields**; a UFO leg labels a **particle**. The field
+$W^+$ annihilates a $W^+$ but *creates* a $W^-$, so the leg carrying the symbol
+`Wp` is UFO's `W-` leg. Emitting legs under their naive names therefore
+transposes each conjugate pair, and since `VVV1` is totally antisymmetric:
+
+- one conjugate pair ($\gamma W^+W^-$, $W^+W^-Z$) $\Rightarrow$ **−1**;
+- none ($ggg$) $\Rightarrow$ **+1**.
+
+That is the whole content of what was long recorded as an unresolved "cubic
+sign convention". It also explains why VVS/VVSS/VVVV never needed a flip:
+their structures are *invariant* under that transposition — checked by
+`gauge_basis._assert_relabelling_invariant`, which raises rather than assume
+it. Pass `conjugates=` to `Model.gauge_vertices` whenever a charged vector is
+in the basis; omitting it treats every boson as self-conjugate.
+
+Note `cubic_couplings`'s raw output also **contains the colour factor**
+($-g_s f^{abc}$), the cubic twin of the quartic's colour-double-count above.
+The gluon export is correct only because it uses the $f^{123}=1$ triple.
+
 ### Colour-stripping for an unbroken group (`adjoint_vvvv`)
 
 `quartic_couplings` works in the weak basis, so its entry for a component

@@ -20,8 +20,7 @@ import sympy as sp
 from feynlag import (
     Bilinear, DiracGamma, ExternalParameter, InternalParameter, Lagrangian,
     Model, ParameterSet, Rotation, SU2, Scalar, U1, WeylFermion,
-    ChargeRegistry, Dmu, adjoint_rotation, conjugate_pair,
-    cubic_couplings, dag, diracPL,
+    ChargeRegistry, Dmu, conjugate_pair, dag, diracPL,
     diracPR, extract_fermion_vertices, fermion_gauge_current, rotation_2x2,
     verify_ufo_numeric,
 )
@@ -116,29 +115,20 @@ def export(path):
     W_lL = cc((nuLbar[i], gL, eL[i]), gL, Wp)
 
     # --- gauge self-couplings (physical basis) ---------------------------
-    # The weak->physical rotation U is DERIVED from the Rotation objects
-    # registered on the model (feynlag.gauge_basis), not hand-typed.
+    # Both the rotation U and the field->particle leg sign are DERIVED
+    # (feynlag.gauge_basis): the electroweak cubic comes out flipped relative
+    # to cubic_couplings' raw tensor and the gluon does not, because feynlag's
+    # symbols label FIELDS while a UFO leg labels a PARTICLE and the field W+
+    # carries the W- leg. See gauge_basis.ufo_leg_sign. This replaces a
+    # hand-applied minus that used to be described as an unresolved MadGraph
+    # convention mismatch.
     g, gp = gw.s, g1.s
-    Uc, _ = adjoint_rotation(model, s["SU2L"], basis=[Wp, Wm, Z, A])
-    cubic = cubic_couplings(s["SU2L"], physical=[Wp, Wm, Z, A], U=Uc)
-    # The electroweak triple-gauge coupling comes out of cubic_couplings with
-    # the opposite overall sign to what MadGraph's VVV1 convention wants HERE,
-    # and the flip is emitted at the (A,Wp,Wm) ordering used below — validated
-    # by the e+e-→W+W- round-trip (only the ν t-channel × γ/Z s-channel
-    # interference is sensitive to it: without the flip the diagrams add
-    # instead of gauge-cancelling, giving ~98 pb instead of ~19.5 pb).
-    #
-    # It is NOT a universal negation: the real-basis gluon coupling
-    # (ggg = −g_s) is exported unflipped and already matches MG's GC_10 = −G.
-    # Part of the difference is leg ordering — VVV1 is antisymmetric under
-    # 2↔3, MG lists [a, W-, W+] where this emits (A, Wp, Wm), and MG's
-    # GC_4 = +i·e equals −(our raw coupling) at ITS ordering. Whether that
-    # accounts for the whole asymmetry is unresolved, which is why
-    # gauge_basis.gauge_self_couplings refuses to build VVV rather than guess;
-    # the quartics below have no such freedom (verified ordering-covariant in
-    # tests/test_yangmills.py) and match MG exactly.
-    gAWW = -sp.simplify(cubic.get((A, Wp, Wm), 0))
-    gZWW = -sp.simplify(cubic.get((Z, Wp, Wm), 0))
+    self_couplings = model.gauge_vertices(
+        groups=[s["SU2L"]], basis=[Wp, Wm, Z, A], conjugates={Wp: Wm, Wm: Wp})
+    vvv = {v.particles: v.coupling
+           for v in self_couplings if v.vertex_type == "VVV"}
+    vvvv = {v.particles: v.structures
+            for v in self_couplings if v.vertex_type == "VVVV"}
 
     # --- hVV / hhVV from the kinetic sector ------------------------------
     # Extracted, not hand-written: every scalar leg (including the Goldstones)
@@ -208,12 +198,6 @@ def export(path):
             dict(bar=lp, field=nu, bosons=(Wm,), left=W_lL, right=0),
         ]
 
-    vvv = {(A, Wp, Wm): gAWW, (Z, Wp, Wm): gZWW}
-
-    # quartic gauge couplings (WWWW / WWZZ / WWAA / WWAZ), physical basis
-    vvvv = {vtx.particles: vtx.structures
-            for vtx in model.gauge_vertices(groups=[s["SU2L"]],
-                                            basis=[Wp, Wm, Z, A])}
 
     write_ufo(path, "FEYNLAG_SM", params, particles,
               bosonic_vertices=bosonic_extracted, vvv=vvv, vvvv=vvvv,
