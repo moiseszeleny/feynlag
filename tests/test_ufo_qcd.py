@@ -60,7 +60,7 @@ def qcd_ufo(tmp_path_factory):
     # matching tests/test_qcd.py::test_qqg_coupling_pinned.
     fermion_vertices = [
         dict(bar=qbar, field=q, bosons=(g,), left=gs.s / 2,
-             color="T(3,1,2)"),
+             color="T(3,2,1)"),
     ]
     SU3c = SU3("SU3c", coupling=gs)
 
@@ -95,7 +95,12 @@ def test_qqg_color_string(qcd_ufo):
     for vert in ufo.all_vertices:
         pnames = sorted(p.name for p in vert.particles)
         if pnames == sorted(["q", "q~", "g"]):
-            assert vert.color == ["T(3,1,2)"]
+            # T(a,i,j): i is the FUNDAMENTAL index, so with the
+            # [bar, field, g] leg order the field leg comes first.
+            # T(3,1,2) transposes a hermitian T^a (= conjugates it)
+            # and flipped the ggg interference; u u~ > g g failed
+            # MadGraph's gauge check until this was corrected.
+            assert vert.color == ["T(3,2,1)"]
             break
     else:
         pytest.fail("qqg vertex not found")

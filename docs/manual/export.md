@@ -89,12 +89,18 @@ singlet `'1'` used for EW self-couplings after EWSB:
   matching the three `f·f` color factors UFO expects for a 4-gluon vertex.
 - **`add_fermion_vertex`**'s `color=` follows the leg ordering
   `[bar_symbol, field_symbol, boson]` (positions 1, 2, 3) — a `qqg` vertex
-  uses `color='T(3,1,2)'`, i.e. $T^{a=\text{leg 3}}_{i=\text{leg 1},\,
-  j=\text{leg 2}}$: the gluon's adjoint color index at leg 3, contracted
-  with the quark/antiquark fundamental indices at legs 1 and 2 — matching
-  both this adder's own argument order and `fermion_gauge_current`'s
-  `T[r,c]` convention (`r` = bar-leg row index = leg 1, `c` = field-leg
-  column index = leg 2, {doc}`vertices`).
+  uses `color='T(3,2,1)'`, i.e. $T^{a=\text{leg 3}}_{i=\text{leg 2},\,
+  j=\text{leg 1}}$. UFO reads `T(a,i,j)` with **`i` the fundamental (quark)
+  index and `j` the anti-fundamental**, so the field leg comes first and the
+  bar leg second; MadGraph's stock `sm` emits the same thing for
+  `[u~, u, g]`.
+
+  This said `T(3,1,2)` until the QCD sector was first run in MadGraph. That
+  reasoning came from `fermion_gauge_current`'s `T[r,c]` Lagrangian index
+  order (row with the bar leg), which is **not** UFO's leg convention;
+  transposing a hermitian $T^a$ conjugates it, flipping the sign of the
+  $ggg$ interference. `u u~ > g g` failed MadGraph's Lorentz and gauge/Ward
+  checks until it was corrected — see {doc}`../benchmark`.
 
 Critically, **an unbroken non-abelian self-coupling is exported as one
 physical particle referenced multiple times** (e.g. `ggg` triples the

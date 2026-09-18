@@ -157,12 +157,27 @@ class _UFOBuilder:
         relabelling of ``legs`` (see :mod:`.legs`)."""
         return structure_leg_sign(structure, legs, self._conjugates(legs))
 
-    def _coupling(self, expr, n_legs):
+    def _coupling(self, expr, n_legs, color="1"):
+        """Register a coupling and return its ``GC_n`` name.
+
+        The coupling ORDER matters to MadGraph: it selects diagrams by it and
+        defines the perturbative expansion.  A non-singlet colour tensor means
+        the vertex is colour-charged, hence QCD; everything else is QED.  The
+        power ``max(n_legs - 2, 1)`` is right either way (ggg -> 1,
+        gggg -> 2, qqg -> 1).
+
+        Tagging the gluon vertices QED — which this did for every coupling —
+        makes MadGraph refuse the model outright:
+        ``CRITICAL: Model with non QCD emission of gluon``, after which it
+        builds the wrong diagram set and any QCD result is meaningless.  Found
+        by ``scripts/madgraph_qcd.py``; nothing symbolic could see it.
+        """
         value = ufo_expr(sp.nsimplify(expr, rational=False)
                          if expr.is_number else expr)
         if value not in self.couplings:
             cname = f"GC_{len(self.couplings) + 1}"
-            order = {"QED": max(n_legs - 2, 1)}
+            name = "QED" if str(color).strip() in ("1", "") else "QCD"
+            order = {name: max(n_legs - 2, 1)}
             self.couplings[value] = (cname, order)
         return self.couplings[value][0]
 
@@ -233,7 +248,7 @@ class _UFOBuilder:
         # (A W+ W-, W+ W- Z) contributes -1 while ggg contributes +1 — the
         # whole of the old "cubic sign convention" puzzle (see .legs).
         cname = self._coupling(
-            self._leg_sign("VVV1", list(triple)) * coupling, 3)
+            self._leg_sign("VVV1", list(triple)) * coupling, 3, color)
         self.vertex_entries.append(
             ([self._particle_ref(p) for p in triple], ["VVV1"], [cname],
              [color]))
@@ -289,8 +304,9 @@ class _UFOBuilder:
         for lname, coupling in couplings.items():
             self.used_lorentz.add(lname)
             names.append(lname)
-            cnames.append(self._coupling(coupling, 4))
-            clist.append((colors or {}).get(lname, "1"))
+            ccolor = (colors or {}).get(lname, "1")
+            cnames.append(self._coupling(coupling, 4, ccolor))
+            clist.append(ccolor)
         self.vertex_entries.append(
             ([self._particle_ref(p) for p in quadruple], names, cnames,
              clist))
@@ -306,12 +322,23 @@ class _UFOBuilder:
             left_coupling / right_coupling: coefficients of P_L / P_R
                 (or γ^μ P_L / γ^μ P_R).
             color: UFO color-tensor string (default ``'1'``, singlet — e.g.
-                a lepton current). A qqg vertex uses ``'T(3,1,2)'`` (gluon
-                at the boson position, matching this adder's own
-                ``[bar, field, boson]`` leg order and
-                ``fermion_gauge_current``'s ``T[r,c]`` convention, where
-                ``r``=bar-leg index=position 1, ``c``=field-leg
-                index=position 2).
+                a lepton current).  A qqg vertex uses ``'T(3,2,1)'`` with
+                this adder's ``[bar, field, boson]`` leg order: the gluon's
+                adjoint index at leg 3, then **the fundamental (quark) index
+                FIRST** — UFO reads ``T(a,i,j)`` with ``i`` the 3 and ``j``
+                the 3bar, so it is ``T^a_{field, bar}`` = legs ``(2,1)``,
+                which is also what MadGraph's stock ``sm`` emits for
+                ``[u~, u, g]``.
+
+                This used to say ``'T(3,1,2)'``, reasoning from
+                ``fermion_gauge_current``'s ``T[r,c]`` Lagrangian index order
+                (row with the bar leg).  That conflates the Lagrangian index
+                order with UFO's leg convention and transposes the generator;
+                since ``T^a`` is hermitian the transpose is the complex
+                conjugate, which flips the sign of the ggg interference.
+                ``u u~ > g g`` failed MadGraph's Lorentz and gauge/Ward checks
+                because of it (``scripts/madgraph_qcd.py``) — the one place any
+                of this is observable.
         """
         if len(bosons) != 1:
             raise ValueError("v1 fermion vertices have exactly one boson leg")
@@ -330,7 +357,7 @@ class _UFOBuilder:
             lname = base + suffix
             self.used_lorentz.add(lname)
             names.append(lname)
-            cnames.append(self._coupling(coupling, 3))
+            cnames.append(self._coupling(coupling, 3, color))
         if not names:
             return
         self.vertex_entries.append(
@@ -540,7 +567,7 @@ def write_ufo(path, model_name, parameters, particles, bosonic_vertices=(),
             :meth:`_UFOBuilder.add_vvvv_vertex`).
         fermion_vertices: iterable of dicts with keys ``bar``, ``field``,
             ``bosons``, ``left``, ``right`` (flavor-resolved symbols), and
-            optionally ``color`` (default ``'1'``; e.g. ``'T(3,1,2)'`` for a
+            optionally ``color`` (default ``'1'``; e.g. ``'T(3,2,1)'`` for a
             qqg vertex).
         four_fermion_vertices: iterable of dicts with keys ``bar1``,
             ``field1``, ``bar2``, ``field2`` (the two Dirac chains' legs),
