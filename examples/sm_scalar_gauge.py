@@ -13,7 +13,9 @@ from feynlag import (
     fermion_feynman_rule, fermion_gauge_current, fermion_mass_matrix,
     latex_feynman_table, quartic_couplings, weinberg_rotation,
 )
-from feynlag.export.ufo.vvvv import adjoint_vvvv, assemble_vvvv
+from feynlag.export.ufo.vvvv import (ADJOINT_VVV_COLOR,
+                                     adjoint_vvv, adjoint_vvvv,
+                                     assemble_vvvv)
 
 
 def main():
@@ -205,8 +207,14 @@ def main():
     # export/ufo/writer.py for the color-export side of this).
     G1, G2, G3 = G.components[0], G.components[1], G.components[2]
     ggg = cubic_couplings(SU3c)[(G1, G2, G3)]
-    print("\nggg coupling (pinned, f^123=1) g_1 g_2 g_3 ->", ggg,
-         " == -gs ?", sp.simplify(ggg + gs.s) == 0)
+    print("\nggg raw coefficient (g_1 g_2 g_3) ->", ggg,
+          " == -gs ?", sp.simplify(ggg + gs.s) == 0)
+    # ...but that value CONTAINS the colour factor f^abc; it coincides with
+    # the exported coupling only because f^123 = 1. The UFO vertex is ONE
+    # gluon repeated with a colour tensor, so the exported coupling is the
+    # colour-stripped one — see export/ufo/vvvv.py::adjoint_vvv.
+    print("ggg UFO coupling (color-stripped) ->", adjoint_vvv(SU3c),
+          f"  with color {ADJOINT_VVV_COLOR}")
 
     G4, G5 = G.components[3], G.components[4]
     gggg_raw = assemble_vvvv(quartic_couplings(SU3c), (G1, G2, G4, G5))

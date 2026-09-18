@@ -295,18 +295,31 @@ class TestCubicVsMadGraph:
         # same vertex, legs 2<->3 swapped => couplings differ by a sign
         assert sp.simplify(old + new) == 0, (old, new)
 
-    def test_gluon_needs_no_flip(self):
-        """An unbroken group has no conjugate pair, so the emitted coupling
-        is cubic_couplings' raw value — matching MG's GC_10 = -G."""
-        from feynlag import cubic_couplings
+    def test_unrotated_group_is_refused(self):
+        """An unbroken group's "physical" basis IS its weak-basis adjoint
+        components, so cubic_couplings/quartic_couplings return one
+        colour-CARRYING value per component.  Emitting those as per-component
+        vertices is the double-count trap, and the (G_1,G_2,G_3) triple would
+        even look right because f^123 = 1 — so refuse, naming the helpers
+        that do it properly.
+
+        This test replaces one that asserted the opposite (that
+        gauge_vertices returns the raw colour-carrying value); that was the
+        footgun, not the contract.
+        """
         gs = ExternalParameter("gs", 1.22, positive=True)
         SU3c = SU3("SU3c", coupling=gs)
         model = Model("QCD", gauge_groups=[SU3c], fields=[SU3c.bosons("G")],
                       parameters=[gs])
-        verts = model.gauge_vertices(groups=[SU3c], include=("VVV",))
-        G1, G2, G3 = SU3c.bosons().components[:3]
-        key = tuple(sorted((G1, G2, G3), key=sp.default_sort_key))
-        got = {v.particles: v.coupling for v in verts}[key]
-        raw = cubic_couplings(SU3c)[(G1, G2, G3)]
-        assert sp.simplify(got - raw) == 0
-        assert sp.simplify(got + gs.s) == 0          # -g_s, MG's GC_10
+        for include in (("VVV",), ("VVVV",), ("VVV", "VVVV")):
+            with pytest.raises(NotImplementedError, match="adjoint_vvv"):
+                model.gauge_vertices(groups=[SU3c], include=include)
+
+    def test_broken_group_still_works(self, ew):
+        """The guard keys on "no rotation touches this group", not on colour,
+        so the electroweak path is unaffected."""
+        model, SU2L, s = ew
+        verts = model.gauge_vertices(groups=[SU2L],
+                                     conjugates={s["Wp"]: s["Wm"],
+                                                 s["Wm"]: s["Wp"]})
+        assert {v.vertex_type for v in verts} == {"VVV", "VVVV"}

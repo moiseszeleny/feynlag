@@ -23,11 +23,12 @@ import sympy as sp
 import pytest
 
 from feynlag import (
-    DiracGamma, ExternalParameter, Lagrangian, Model, SU3, WeylFermion,
-    cubic_couplings, diracPL, extract_fermion_vertices, fermion_gauge_current,
-    quartic_couplings,
+    DiracGamma, ExternalParameter, Lagrangian, Model, SU2, SU3, SUN,
+    WeylFermion, cubic_couplings, diracPL, extract_fermion_vertices,
+    fermion_gauge_current, quartic_couplings, structure_constants,
 )
-from feynlag.export.ufo.vvvv import assemble_vvvv
+from feynlag.export.ufo.vvvv import (adjoint_vvv, adjoint_vvvv,
+                                     assemble_vvvv)
 
 i = sp.Symbol("fl_i", integer=True)
 
@@ -89,6 +90,49 @@ def test_ggg_coupling_pinned(qcd):
     assert sp.simplify(cubic[(G1, G3, G2)] + ggg) == 0
 
     assert (G1, G1, G2) not in cubic
+
+
+def test_cubic_raw_value_carries_the_colour_factor(qcd):
+    """``cubic_couplings`` returns ``-g * f^{abc}`` — the colour factor is
+    INSIDE the coupling, so an exported UFO (which emits a colour tensor
+    separately) must use the colour-stripped ``adjoint_vvv`` instead.
+
+    The pin above only ever looks at ``(G_1,G_2,G_3)``, where ``f^123 = 1``
+    makes the two coincide — which is exactly why the double-count went
+    unnoticed.  This checks triples where ``f != 1``.
+    """
+    SU3c, q, G, gs = qcd
+    cubic = cubic_couplings(SU3c)
+    f = structure_constants(SU3c)
+    stripped = adjoint_vvv(SU3c)
+    assert sp.simplify(stripped + gs.s) == 0            # -g_s, MG's GC_10
+
+    seen_non_unit = False
+    for (a, b, c), fabc in f.items():
+        if fabc == 0:
+            continue
+        raw = cubic[(G.components[a], G.components[b], G.components[c])]
+        assert sp.simplify(raw - stripped * fabc) == 0, (a, b, c, raw)
+        if sp.simplify(sp.Abs(fabc) - 1) != 0:
+            seen_non_unit = True
+    assert seen_non_unit, "no f != 1 triple exercised — the pin is vacuous"
+
+
+def test_cubic_colour_stripping_is_group_generic(qcd):
+    """The stripped coupling is ``-g`` for ANY SU(N), not just SU(3): it is
+    the same number for every non-zero structure constant."""
+    for group in (SU2("G2", coupling=sp.Symbol("g2", positive=True)),
+                  SUN(4, "G4", coupling=sp.Symbol("g4", positive=True))):
+        f = structure_constants(group)
+        cubic = cubic_couplings(group)
+        comps = list(group.bosons().components)
+        stripped = adjoint_vvv(group)
+        assert sp.simplify(stripped + group.g) == 0
+        for (a, b, c), fabc in f.items():
+            if fabc == 0:
+                continue
+            raw = cubic[(comps[a], comps[b], comps[c])]
+            assert sp.simplify(raw - stripped * fabc) == 0, (group, a, b, c)
 
 
 def test_gggg_coupling_pinned(qcd):

@@ -264,7 +264,7 @@ Note `cubic_couplings`'s raw output also **contains the colour factor**
 ($-g_s f^{abc}$), the cubic twin of the quartic's colour-double-count above.
 The gluon export is correct only because it uses the $f^{123}=1$ triple.
 
-### Colour-stripping for an unbroken group (`adjoint_vvvv`)
+### Colour-stripping for an unbroken group (`adjoint_vvv`/`adjoint_vvvv`)
 
 `quartic_couplings` works in the weak basis, so its entry for a component
 quadruple, $-g^2/4\sum_e f^{ije}f^{kle}$, **already contains the colour
@@ -274,6 +274,27 @@ component-specific values to the writer multiplies by colour twice.
 `adjoint_vvvv(group)` divides it back out, giving $ig^2$ on every structure —
 MadGraph's `GC_12` for $gggg$. Use it, together with
 `ADJOINT_VVVV_COLORS`, for any unbroken non-abelian group.
+
+**The cubic has the identical problem**: `cubic_couplings` returns
+$-g\,f^{abc}$, colour factor included. `adjoint_vvv(group)` strips it,
+giving $-g$ on every triple independent of $N$ (verified for SU(2), SU(3) and
+SU(4) against every non-zero structure constant) — MadGraph's `GC_10` for
+$ggg$ — to be emitted with `ADJOINT_VVV_COLOR = "f(1,2,3)"`. This hid far
+longer than the quartic version because the only triple ever exported was
+$(G_1,G_2,G_3)$, and $f^{123}=1$ makes the colour factor unity, so the
+emitted number was accidentally right.
+
+Note `adjoint_vvv` takes **no** `feynman_rule` flag while `adjoint_vvvv`
+does: the cubic carries one derivative, so the $i$ from $\partial_\mu\to
+ip_\mu$ cancels the Feynman-rule $i$ and `cubic_couplings`' output is already
+the vertex coefficient (real in a real basis — hence $ggg=-g_s$). The quartic
+has no derivative, so its $i$ survives.
+
+`Model.gauge_vertices` **refuses** a group no rotation touches, for exactly
+this reason: its "physical" basis is the weak-basis adjoint components, so
+every coupling would carry the group factor. Use the two helpers above, or
+call `cubic_couplings`/`quartic_couplings` directly for the weak-basis tensor
+(internal verification only).
 
 ## Design gotchas
 

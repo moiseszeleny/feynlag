@@ -1,5 +1,10 @@
-"""Assemble the 4-boson (VVVV) self-coupling into the 3 UFO Lorentz
-structures.
+"""Gauge self-coupling export helpers.
+
+Assembles the 4-boson (VVVV) self-coupling into the 3 UFO Lorentz structures,
+and supplies the colour-stripped couplings an UNBROKEN non-abelian group needs
+(:func:`adjoint_vvv`, :func:`adjoint_vvvv`) — since ``cubic_couplings`` and
+``quartic_couplings`` both return weak-basis values with the colour factor
+already inside, which must not be multiplied by a colour tensor a second time.
 
 For a representative external ordering ``(i, j, k, l)`` of 4 physical bosons,
 
@@ -46,7 +51,12 @@ import sympy as sp
 
 __all__ = ["assemble_vvvv", "metric_pair_coefficients",
            "structures_from_metric_pairs", "permute_vvvv",
-           "adjoint_vvvv", "ADJOINT_VVVV_COLORS"]
+           "adjoint_vvv", "adjoint_vvvv",
+           "ADJOINT_VVV_COLOR", "ADJOINT_VVVV_COLORS"]
+
+#: UFO colour tensor pairing with VVV1 for an unbroken non-abelian group's
+#: 3-boson self-coupling (ONE physical particle repeated three times).
+ADJOINT_VVV_COLOR = "f(1,2,3)"
 
 #: UFO colour tensors pairing with VVVV1/2/3 for an unbroken non-abelian
 #: group's 4-boson self-coupling (ONE physical particle repeated four times).
@@ -131,6 +141,44 @@ def permute_vvvv(structures, perm, simplifier=sp.simplify):
     return structures_from_metric_pairs(
         out.get(key12, sp.S.Zero), out.get(key13, sp.S.Zero),
         out.get(key14, sp.S.Zero), simplifier=simplifier)
+
+
+def adjoint_vvv(group):
+    """Colour-stripped VVV coupling of an UNBROKEN non-abelian group.
+
+    The cubic twin of :func:`adjoint_vvvv`.  An unbroken group's 3-boson
+    vertex is ONE UFO particle repeated three times, with the adjoint index
+    carried by :data:`ADJOINT_VVV_COLOR`, so the coupling that pairs with it
+    must be colour-*stripped*.
+
+    ``cubic_couplings`` works in the weak basis, where its entry for a
+    component triple is ``-g * f^{abc}`` — it already contains the colour
+    factor.  Feeding those component-specific values to the writer alongside
+    a colour tensor multiplies by colour twice.  Divided out, the coupling is
+    ``-g`` on every triple, independent of N (verified for SU(2), SU(3) and
+    SU(4) against every non-zero structure constant) — matching MadGraph's
+    stock ``sm`` ``GC_10 = -G`` for ``[g,g,g]``.
+
+    That bug hid for a long time because the only exported triple was
+    ``(G_1,G_2,G_3)``, and ``f^{123} = 1`` makes the colour factor unity, so
+    the emitted number was accidentally right.
+
+    **No ``feynman_rule`` flag, unlike** :func:`adjoint_vvvv`.  The cubic
+    carries one derivative, so the ``i`` from ``d_mu -> i p_mu`` cancels the
+    Feynman-rule ``i`` and ``cubic_couplings``' output *is already* the vertex
+    coefficient — real for a real basis, which is why ``ggg = -g_s`` has no
+    ``i`` while ``gggg = i g_s^2`` does.  (Confirmed by differentiating
+    ``-1/4 F F`` directly, including the Feynman ``i``: it reproduces
+    ``cubic_couplings`` exactly.)  The quartic has no derivative, so its ``i``
+    survives and has to be added.
+
+    Returns:
+        the single VVV1 coupling, to be emitted with
+        :data:`ADJOINT_VVV_COLOR`.
+    """
+    if group.abelian:
+        raise ValueError(f"{group!r} is abelian — no self-coupling")
+    return -group.g
 
 
 def adjoint_vvvv(group, feynman_rule=True):

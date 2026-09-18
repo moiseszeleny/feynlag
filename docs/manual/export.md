@@ -111,8 +111,11 @@ therefore **already contains the colour contraction**, so pairing it with a
 colour-tensor string multiplies by colour twice. Use
 `export.ufo.vvvv.adjoint_vvvv(group)` with `ADJOINT_VVVV_COLORS`, which
 strips it and gives $ig^2$ per structure — MadGraph's `GC_12` for $gggg$.
-The cubic escaped this only because $f^{123}=1$ makes its colour factor
-unity for the quadruple conventionally used.
+
+The **cubic** is the same story: `cubic_couplings` returns $-g\,f^{abc}$, so
+use `adjoint_vvv(group)` with `ADJOINT_VVV_COLOR`, giving $-g$ — MadGraph's
+`GC_10`. It escaped notice far longer only because the exported triple is
+$(G_1,G_2,G_3)$ and $f^{123}=1$.
 
 For a **broken** group the physical-basis quartics are colour-singlet and
 come straight from `Model.gauge_vertices()`

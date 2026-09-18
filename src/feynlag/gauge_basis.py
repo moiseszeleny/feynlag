@@ -196,6 +196,35 @@ def _assert_relabelling_invariant(ordering, structures, conjugates):
             f"be wrong and no signature can fix a non-antisymmetric structure")
 
 
+def _reject_unrotated(model, group):
+    """Refuse a group whose adjoint components no rotation touches.
+
+    For such a group the "physical" basis IS its weak-basis adjoint
+    components, so ``cubic_couplings``/``quartic_couplings`` return one value
+    per component carrying the colour factor (``-g f^{abc}``,
+    ``-g^2/4 sum_e f f``).  Emitting those as per-component vertices is the
+    trap ``export/ufo/writer.py`` and ``docs/manual/export.md`` warn about: an
+    unbroken group is ONE UFO particle repeated, with the adjoint index in a
+    colour tensor, so the coupling must be colour-STRIPPED.
+
+    Returning them from here would hand a caller ``Vertex`` objects that look
+    export-ready and are not — and the ``(G_1,G_2,G_3)`` triple would even
+    look correct, because ``f^{123} = 1``.  Refuse instead, and name the two
+    helpers that do it properly.
+    """
+    for comp in group.bosons().components:
+        if _rotate_symbol(model, comp) != comp:
+            return                      # something mixed it: physical basis
+    raise NotImplementedError(
+        f"no registered rotation touches {group.name}'s adjoint components, "
+        f"so its self-couplings are weak-basis values carrying the colour "
+        f"factor. An unbroken group exports as ONE particle repeated with a "
+        f"colour tensor — use export.ufo.vvvv.adjoint_vvv / adjoint_vvvv "
+        f"(with ADJOINT_VVV_COLOR / ADJOINT_VVVV_COLORS), or call "
+        f"cubic_couplings / quartic_couplings directly for the weak-basis "
+        f"tensor (internal verification only)")
+
+
 def gauge_self_couplings(model, groups=None, basis=None,
                          simplifier=sp.simplify, include=("VVV", "VVVV"),
                          conjugates=None):
@@ -242,6 +271,7 @@ def gauge_self_couplings(model, groups=None, basis=None,
 
     cubic_total, quartic_total = {}, {}
     for group in groups:
+        _reject_unrotated(model, group)
         U, _ = adjoint_rotation(model, group, basis)
         if "VVV" in include:
             for key, val in cubic_couplings(group, physical=basis,

@@ -12,7 +12,9 @@ import pytest
 
 from feynlag import ExternalParameter, ParameterSet, SU3
 from feynlag.export.ufo import UFOParticle, write_ufo
-from feynlag.export.ufo.vvvv import ADJOINT_VVVV_COLORS, adjoint_vvvv
+from feynlag.export.ufo.vvvv import (ADJOINT_VVV_COLOR,
+                                     ADJOINT_VVVV_COLORS,
+                                     adjoint_vvv, adjoint_vvvv)
 
 import importlib
 import sys
@@ -60,18 +62,21 @@ def qcd_ufo(tmp_path_factory):
         dict(bar=qbar, field=q, bosons=(g,), left=gs.s / 2,
              color="T(3,1,2)"),
     ]
-    # ggg: f^123=1 => coupling exactly -gs, matching
-    # tests/test_qcd.py::test_ggg_coupling_pinned. One physical gluon
-    # particle repeated three times — NOT the 8-component weak-basis dict.
-    vvv = {(g, g, g): -gs.s}
-    vvv_colors = {(g, g, g): "f(1,2,3)"}
+    SU3c = SU3("SU3c", coupling=gs)
+
+    # ggg: ONE physical gluon repeated three times, with the adjoint index
+    # carried by the color tensor — so the coupling is COLOR-STRIPPED, like
+    # the gggg below. This used to be the hardcoded literal -gs.s, which is
+    # cubic_couplings' value for the (G_1,G_2,G_3) triple and contains the
+    # color factor; it was right only because f^123 = 1.
+    vvv = {(g, g, g): adjoint_vvv(SU3c)}
+    vvv_colors = {(g, g, g): ADJOINT_VVV_COLOR}
 
     # gggg: ONE physical gluon repeated four times, with the adjoint index
     # carried by the color tensors — so the coupling must be COLOR-STRIPPED.
     # This used to pass assemble_vvvv's raw values for the specific quadruple
     # (G_1,G_2,G_4,G_5), which already contain sum_e f_{ije} f_{kle}, and so
     # multiplied by color twice. adjoint_vvvv divides it back out.
-    SU3c = SU3("SU3c", coupling=gs)
     vvvv = {(g, g, g, g): adjoint_vvvv(SU3c)}
     vvvv_colors = {(g, g, g, g): dict(ADJOINT_VVVV_COLORS)}
 
