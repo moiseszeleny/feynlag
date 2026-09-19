@@ -322,23 +322,37 @@ class TestCubicInFeynlagConvention:
         assert {v.vertex_type for v in verts} == {"VVV", "VVVV"}
 
 
-def test_leg_sign_refuses_non_closing_legs():
-    """A vertex whose legs do not close under conjugation (VSS `W+ G- h`:
-    its conjugate leg set `W- G+ h` is a DIFFERENT vertex) cannot be fixed by
-    a sign — it would have to be emitted at the conjugated legs. Refuse
-    rather than return +1; assuming +1 there is what left the
-    charged-Goldstone exports disagreeing with MadGraph in phase.
+def test_vss_leg_sign_is_unconditional():
+    """VSS1 carries one power of momentum and feynlag's `d_mu -> i p_mu`
+    differs from UFO's by a sign there, so a VSS picks up -1 whether or not
+    its two scalars are a conjugate pair.
+
+    This replaces a test asserting that non-closing legs RAISE. That guard
+    was added when the charged-Goldstone exports were thought to be
+    unfixable under naive leg labels; solving for the exact transformation
+    (issue #22) showed they are fixable, with this sign plus a
+    charged-Goldstone phase, so the refusal was over-strict.
+
+    Note the pair condition and the unconditional rule agree for `A G+ G-`,
+    which is why that vertex matched MadGraph under the old rule and looked
+    like confirmation of it.
     """
     from feynlag.export.ufo.legs import structure_leg_sign
-    Wp, Wm, Gp, Gm, h = sp.symbols("Wp Wm Gp Gm h")
+    A, Wp, Wm, Gp, Gm, h = sp.symbols("A Wp Wm Gp Gm h")
     conj = {Wp: Wm, Wm: Wp, Gp: Gm, Gm: Gp}
 
-    # closes: the charged pair is both legs 2,3 -> a real sign
-    assert structure_leg_sign("VSS1", [sp.Symbol("A"), Gp, Gm], conj) == -1
-    # does not close -> refuse
-    with pytest.raises(ValueError, match="not"):
-        structure_leg_sign("VSS1", [Wp, Gm, h], conj)
-    # and the same for a symmetric structure: being symmetric does not help,
-    # the emitted PARTICLE set would still be the wrong one
-    with pytest.raises(ValueError, match="not"):
-        structure_leg_sign("VVS1", [sp.Symbol("A"), Wp, Gm], conj)
+    assert structure_leg_sign("VSS1", [A, Gp, Gm], conj) == -1   # closing
+    assert structure_leg_sign("VSS1", [Wp, Gm, h], conj) == -1   # non-closing
+    # symmetric structures are unaffected either way
+    assert structure_leg_sign("VVS1", [A, Wp, Gm], conj) == 1
+
+
+def test_charged_goldstone_phase_cancels_for_a_pair():
+    """Each charged-Goldstone leg contributes i**q, so a conjugate pair gives
+    i * (1/i) = 1 -- which is why the vertices whose legs close matched
+    MadGraph before the alignment and had to keep matching after it."""
+    from feynlag.export.ufo.legs import charged_goldstone_phase
+    assert charged_goldstone_phase([]) == 1
+    assert charged_goldstone_phase([1]) == sp.I
+    assert charged_goldstone_phase([-1]) == -sp.I
+    assert charged_goldstone_phase([1, -1]) == 1

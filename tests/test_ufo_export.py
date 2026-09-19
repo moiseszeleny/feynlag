@@ -78,18 +78,6 @@ def sm_ufo(tmp_path_factory):
              + model.vertices(fields, sector="kinetic",
                               conjugate_map=cmap, simplifier=sp.simplify))
 
-    # KNOWN LIMITATION: a vertex whose legs do not close under conjugation
-    # (e.g. VSS `W+ G- h`, whose conjugate leg set `W- G+ h` is a DIFFERENT
-    # vertex) cannot be emitted under naive leg labels — feynlag's symbols
-    # label fields, a UFO leg labels a particle, and there is no sign that
-    # fixes a leg SWAP. Those exports disagreed with MadGraph in phase (see
-    # docs/manual/export.md); `structure_leg_sign` now raises on them rather
-    # than silently assuming +1, so they are filtered out here until the
-    # conjugated-leg emission is derived and validated in Feynman gauge.
-    conj = {Gp: Gm, Gm: Gp, Wp: Wm, Wm: Wp}
-    verts = [v for v in verts
-             if sorted(map(str, (conj.get(x, x) for x in v.particles)))
-             == sorted(map(str, v.particles))]
 
     # Gauge self-couplings via the library, not by hand: gauge_vertices
     # derives the weak->physical U from the registered Rotations and uses a
@@ -336,3 +324,52 @@ def test_exported_vss_goldstone_coupling(sm_ufo):
     if names.index("G+") < names.index("G-"):
         expected = -expected
     assert abs(got - expected) < 1e-9, (names, got, expected)
+
+
+def test_exported_charged_goldstone_couplings(sm_ufo):
+    """Every charged-Goldstone VSS/VVS coupling against MadGraph's stock sm
+    (issue #22).
+
+    These were off by exactly ±i. Two factors, both mappings from feynlag's
+    conventions onto UFO's and both applied in `export/ufo/legs.py`:
+
+    * VSS1 carries one power of momentum and feynlag's `d_mu -> i p_mu`
+      differs from UFO's by a sign there, so a VSS picks up -1
+      unconditionally;
+    * feynlag's charged Goldstone carries a phase `i**(-q)` relative to
+      MadGraph's, so each charged-Goldstone leg contributes `i**q`.
+
+    It was a pure convention, not an error: MadGraph agreed between unitary
+    and Feynman gauge BEFORE the alignment, and a deliberately-broken phase
+    failed that same check.
+
+    The last two rows are the controls. A conjugate pair contributes
+    `i * (1/i) = 1`, so those vertices matched all along and must NOT move --
+    if aligning the phase shifts them, the alignment is wrong.
+    """
+    path, model, num = sm_ufo
+    vals = _eval_ufo_couplings(_import_ufo(path), num)
+    g, gp, v = num["g"], num["gp"], num["v"]
+    e = g * gp / (g ** 2 + gp ** 2) ** 0.5
+    sw = gp / (g ** 2 + gp ** 2) ** 0.5
+    cw = g / (g ** 2 + gp ** 2) ** 0.5
+    j = complex(0, 1)
+
+    expected = {
+        ("W+", "G-", "h"): -e / (2 * sw),            # GC_37
+        ("W-", "G+", "h"): -e / (2 * sw),            # GC_37
+        ("a", "W+", "G-"): e ** 2 * v / (2 * sw),    # GC_75
+        ("a", "W-", "G+"): -e ** 2 * v / (2 * sw),   # GC_74
+        ("W+", "G0", "G-"): -j * e / (2 * sw),       # GC_38
+        ("W-", "G0", "G+"): j * e / (2 * sw),        # GC_39
+        ("W+", "Z", "G-"): -e ** 2 * v / (2 * cw),   # GC_66
+        ("W-", "Z", "G+"): e ** 2 * v / (2 * cw),    # GC_67
+        # controls: legs close under conjugation, so the phase cancels
+        ("a", "G-", "G+"): -j * e,                   # GC_3
+        ("W-", "W+", "h"): j * g ** 2 * v / 2,       # GC_72
+    }
+    for legs, want in expected.items():
+        key = tuple(sorted(legs))
+        assert key in vals, f"{legs} not exported; have {sorted(vals)}"
+        got = list(vals[key].values())[0]
+        assert abs(got - want) < 1e-6 * max(1.0, abs(want)), (legs, got, want)

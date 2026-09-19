@@ -22,7 +22,8 @@ from pathlib import Path
 import sympy as sp
 
 from ...operators import momentum
-from .legs import structure_leg_sign, ufo_leg_sign
+from .legs import (charged_goldstone_phase, structure_leg_sign,
+                   ufo_leg_sign)
 from .lorentz_map import UFO_LORENTZ, structures_for
 from .vvvv import metric_pair_coefficients, permute_vvvv
 from .pycode import ufo_expr
@@ -167,6 +168,22 @@ class _UFOBuilder:
     def _conjugates(self, legs):
         return {leg: self._conjugate_symbol(leg) for leg in legs}
 
+    def _emitted_charge(self, symbol):
+        """Charge of the particle actually emitted on this leg (the
+        antiparticle's, when the leg carries the antisymbol)."""
+        spec = self.specs[symbol]
+        if symbol == spec.antisymbol and not spec.self_conjugate:
+            return -spec.charge
+        return spec.charge
+
+    def _goldstone_phase(self, legs):
+        """Phase aligning feynlag's charged-Goldstone convention with UFO's
+        (see :func:`.legs.charged_goldstone_phase`)."""
+        charges = [self._emitted_charge(leg) for leg in legs
+                   if self.specs[leg].goldstone
+                   and self.specs[leg].charge != 0]
+        return charged_goldstone_phase(charges)
+
     def _leg_sign(self, structure, legs):
         """Sign the emitted coupling picks up under the field->particle
         relabelling of ``legs`` (see :mod:`.legs`)."""
@@ -230,7 +247,8 @@ class _UFOBuilder:
             ordered = sorted(particles, key=lambda p: -spins[p])
             lorentz = structures_for(vtype)[0]
             cname = self._coupling(
-                self._leg_sign(lorentz, ordered) * coupling, n)
+                self._leg_sign(lorentz, ordered)
+                * self._goldstone_phase(ordered) * coupling, n)
         elif vtype == "VSS":
             vector = [p for p in particles if self.specs[p].spin == 3]
             scalars = [p for p in particles if self.specs[p].spin == 1]
@@ -242,7 +260,8 @@ class _UFOBuilder:
             # A charged pair in legs 2,3 (e.g. A G+ G-) flips VSS1, which is
             # antisymmetric in them. Nothing applied this before, so every
             # exported Feynman-gauge VSS was wrong by a sign.
-            cname = self._coupling(self._leg_sign(lorentz, ordered) * c, n)
+            cname = self._coupling(self._leg_sign(lorentz, ordered)
+                                   * self._goldstone_phase(ordered) * c, n)
         else:
             raise ValueError(f"add_bosonic_vertex cannot handle {vtype}; "
                              f"use the dedicated adders")
@@ -382,7 +401,8 @@ class _UFOBuilder:
             lname = base + suffix
             self.used_lorentz.add(lname)
             names.append(lname)
-            cnames.append(self._coupling(coupling, 3, color))
+            cnames.append(self._coupling(
+                self._goldstone_phase(ordered) * coupling, 3, color))
         if not names:
             return
         self.vertex_entries.append(

@@ -145,21 +145,29 @@ pair, and the writer applies whatever that costs
 | `VVVV1/2/3` | must be invariant — verified, raises otherwise |
 | `FF*` | excluded (own bar/field leg convention) |
 
-**Known limitation — vertices whose legs do not close under conjugation.**
-The table above only settles a *sign*, which presumes the relabelling is a
-permutation of the vertex's own legs ($\gamma W^+W^-$, $A G^+G^-$). It is not
-for a Feynman-gauge vertex like VSS $W^+G^-h$, whose conjugate leg set
-$W^-G^+h$ is a **different vertex**: it would have to be emitted at the
-conjugated legs, which this layer does not do. `structure_leg_sign` raises on
-those rather than assuming $+1$.
+**Charged Goldstones.** Two further factors map feynlag's conventions onto
+UFO's, both in `export/ufo/legs.py` beside the leg sign:
 
-The charged-Goldstone VSS/VVS exports disagreed with MadGraph in phase because
-of it — magnitudes match, but e.g. $W^+G^-h$ came out $+0.327i$ against
-stock's real $-0.327$, and $\gamma W^\pm G^\mp$ came out equal where stock has
-them opposite. Unitary-gauge exports are unaffected (no Goldstones), which is
-why nothing shipped moved. Deriving and validating the conjugated-leg emission
-is follow-up work; until then such vertices must be filtered before export, as
-`tests/test_ufo_export.py` does.
+- `VSS1` carries one power of momentum, and feynlag's $\partial_\mu\to ip_\mu$
+  differs from UFO's by a sign there, so a VSS picks up $-1$
+  **unconditionally**;
+- feynlag's charged Goldstone carries a phase $i^{-q}$ relative to MadGraph's,
+  so each charged-Goldstone leg contributes $i^{q}$
+  (`charged_goldstone_phase`). A conjugate pair gives $i\cdot i^{-1}=1$, which
+  is why $\gamma G^+G^-$, $ZG^-G^+$ and $W^+W^-G^+G^-$ matched all along.
+
+This was **a convention, not an error** (issue #22): before the alignment
+MadGraph already agreed between unitary and Feynman gauge, and a
+deliberately-broken phase failed that check. After it, all four of MadGraph's
+gauges agree to $3\times10^{-15}$ on $\gamma\gamma\to W^+W^-$ and every
+charged-Goldstone coupling matches stock `sm` entry-by-entry
+(`tests/test_ufo_export.py`).
+
+Note the $-1$ for `VSS1` used to be applied only when the two scalars were a
+conjugate pair. For $\gamma G^+G^-$ the two rules agree, so that vertex
+matched MadGraph and looked like confirmation; solving for the exact
+transformation across all eight charged-Goldstone vertices showed the pair
+condition was coincidental and the factor is uniform.
 
 Because the writer owns it, a `Vertex` coupling is always in feynlag's own
 convention and `gauge_self_couplings` takes no `conjugates=`. An unrecorded
