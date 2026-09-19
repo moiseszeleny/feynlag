@@ -298,6 +298,39 @@ class Model:
 
     # ---------------------------------------------------------------- spins
 
+    def gauge_vertices(self, groups=None, basis=None, simplifier=sp.simplify,
+                       include=("VVV", "VVVV")):
+        """VVV and VVVV :class:`Vertex` objects for the gauge self-couplings.
+
+        The second extraction track for bosons: the Yang-Mills sector has no
+        Lagrangian term (``-1/4 F F`` is never written), so these vertices
+        come from the group's structure constants rotated into the physical
+        basis by the registered :attr:`rotations`, and do **not** overlap
+        :meth:`vertices` output.  See
+        :func:`~feynlag.gauge_basis.gauge_self_couplings`.
+
+        Couplings are in feynlag's own convention; the field->particle leg
+        sign a UFO needs is applied at export by the writer
+        (:mod:`feynlag.export.ufo.legs`).
+
+        Note ``groups`` defaults to every non-abelian group on the model, and
+        an **unbroken** one raises: its "physical" basis is its weak-basis
+        adjoint components, whose couplings carry the group factor (use
+        ``adjoint_vvv``/``adjoint_vvvv`` for those).  A model with both an
+        electroweak and a colour group therefore needs an explicit
+        ``groups=[SU2L]``.
+        """
+        from .gauge_basis import gauge_self_couplings
+        key = ("gauge_vertices",
+               None if groups is None else tuple(g.name for g in groups),
+               None if basis is None else tuple(basis),
+               tuple(include), getattr(simplifier, "__name__", repr(simplifier)))
+        if key not in self._cache:
+            self._cache[key] = gauge_self_couplings(
+                self, groups=groups, basis=basis, simplifier=simplifier,
+                include=include)
+        return self._cache[key]
+
     def spin_map(self, conjugate_map=None):
         """``{symbol: spin}`` for every known component, fluctuation and
         rotated physical field (rotations propagate block spin; conjugate

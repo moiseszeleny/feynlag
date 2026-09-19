@@ -89,12 +89,18 @@ singlet `'1'` used for EW self-couplings after EWSB:
   matching the three `f·f` color factors UFO expects for a 4-gluon vertex.
 - **`add_fermion_vertex`**'s `color=` follows the leg ordering
   `[bar_symbol, field_symbol, boson]` (positions 1, 2, 3) — a `qqg` vertex
-  uses `color='T(3,1,2)'`, i.e. $T^{a=\text{leg 3}}_{i=\text{leg 1},\,
-  j=\text{leg 2}}$: the gluon's adjoint color index at leg 3, contracted
-  with the quark/antiquark fundamental indices at legs 1 and 2 — matching
-  both this adder's own argument order and `fermion_gauge_current`'s
-  `T[r,c]` convention (`r` = bar-leg row index = leg 1, `c` = field-leg
-  column index = leg 2, {doc}`vertices`).
+  uses `color='T(3,2,1)'`, i.e. $T^{a=\text{leg 3}}_{i=\text{leg 2},\,
+  j=\text{leg 1}}$. UFO reads `T(a,i,j)` with **`i` the fundamental (quark)
+  index and `j` the anti-fundamental**, so the field leg comes first and the
+  bar leg second; MadGraph's stock `sm` emits the same thing for
+  `[u~, u, g]`.
+
+  This said `T(3,1,2)` until the QCD sector was first run in MadGraph. That
+  reasoning came from `fermion_gauge_current`'s `T[r,c]` Lagrangian index
+  order (row with the bar leg), which is **not** UFO's leg convention;
+  transposing a hermitian $T^a$ conjugates it, flipping the sign of the
+  $ggg$ interference. `u u~ > g g` failed MadGraph's Lorentz and gauge/Ward
+  checks until it was corrected — see {doc}`../benchmark`.
 
 Critically, **an unbroken non-abelian self-coupling is exported as one
 physical particle referenced multiple times** (e.g. `ggg` triples the
@@ -104,6 +110,61 @@ group's full weak-basis component dictionary
 (`group.bosons().components`) exists for internal symbolic verification
 only ({doc}`vertices`'s `cubic_couplings`/`quartic_couplings`), not for
 UFO particle declarations.
+
+That has a consequence which is easy to get wrong for the **quartic**:
+`quartic_couplings`'s weak-basis entry is $-g^2/4\sum_e f^{ije}f^{kle}$ and
+therefore **already contains the colour contraction**, so pairing it with a
+colour-tensor string multiplies by colour twice. Use
+`export.ufo.vvvv.adjoint_vvvv(group)` with `ADJOINT_VVVV_COLORS`, which
+strips it and gives $ig^2$ per structure — MadGraph's `GC_12` for $gggg$.
+
+The **cubic** is the same story: `cubic_couplings` returns $-g\,f^{abc}$, so
+use `adjoint_vvv(group)` with `ADJOINT_VVV_COLOR`, giving $-g$ — MadGraph's
+`GC_10`. It escaped notice far longer only because the exported triple is
+$(G_1,G_2,G_3)$ and $f^{123}=1$.
+
+For a **broken** group the physical-basis quartics are colour-singlet and
+come straight from `Model.gauge_vertices()`
+({doc}`vertices`, `feynlag/gauge_basis.py`), whose `Vertex` objects carry
+their three per-structure couplings in `meta['structures']`.
+
+### The field → particle leg sign
+
+feynlag's symbols label **fields**; a UFO leg labels a **particle**, and the
+field $W^+$ *creates* a $W^-$ — so the leg carrying the symbol `Wp` is UFO's
+`W-` leg. Emitting legs under their naive names transposes each conjugate
+pair, and the writer applies whatever that costs
+(`export/ufo/legs.py::structure_leg_sign`), reading the pairing off
+`UFOParticle.antisymbol`:
+
+| structure | sign |
+|---|---|
+| `VVV1` | permutation parity (totally antisymmetric) |
+| `VSS1` | $-1$ when the two scalars are a conjugate pair |
+| `VVS1`, `VVSS1`, `SSS1`, `SSSS1` | $+1$ |
+| `VVVV1/2/3` | must be invariant — verified, raises otherwise |
+| `FF*` | excluded (own bar/field leg convention) |
+
+**Known limitation — vertices whose legs do not close under conjugation.**
+The table above only settles a *sign*, which presumes the relabelling is a
+permutation of the vertex's own legs ($\gamma W^+W^-$, $A G^+G^-$). It is not
+for a Feynman-gauge vertex like VSS $W^+G^-h$, whose conjugate leg set
+$W^-G^+h$ is a **different vertex**: it would have to be emitted at the
+conjugated legs, which this layer does not do. `structure_leg_sign` raises on
+those rather than assuming $+1$.
+
+The charged-Goldstone VSS/VVS exports disagreed with MadGraph in phase because
+of it — magnitudes match, but e.g. $W^+G^-h$ came out $+0.327i$ against
+stock's real $-0.327$, and $\gamma W^\pm G^\mp$ came out equal where stock has
+them opposite. Unitary-gauge exports are unaffected (no Goldstones), which is
+why nothing shipped moved. Deriving and validating the conjugated-leg emission
+is follow-up work; until then such vertices must be filtered before export, as
+`tests/test_ufo_export.py` does.
+
+Because the writer owns it, a `Vertex` coupling is always in feynlag's own
+convention and `gauge_self_couplings` takes no `conjugates=`. An unrecorded
+structure raises rather than defaulting to $+1$ — that default is what left
+every exported Feynman-gauge `VSS` wrong by a sign until this existed.
 
 ## Design gotchas
 
@@ -128,6 +189,14 @@ UFO particle declarations.
   `::test_ufo_parameters_resolve`, `::test_ufo_couplings_pinned` — the
   generated model actually imports, parameters resolve in dependency order,
   and `hWW` is pinned numerically.
+- `tests/test_ufo_sm_bosonic.py` — the exported SM UFO's four quartic gauge
+  couplings (WWWW/WWZZ/WWAA/WWAZ) and its VVS/VVSS couplings, compared
+  numerically against MadGraph's stock `sm` at the same parameter point, in
+  the convention-free metric-pair basis (MG's VVVV basis differs from
+  feynlag's).
+- `tests/test_gauge_basis.py` — the derived weak→physical `U` equals the
+  matrix that used to be hand-typed, and the same four quartics come out of
+  `Model.gauge_vertices()`.
 - `tests/test_ufo_qcd.py::test_qqg_color_string`,
   `::test_ggg_color_string_and_coupling`,
   `::test_gggg_color_strings_and_couplings`,

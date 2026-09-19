@@ -22,7 +22,9 @@ from pathlib import Path
 import sympy as sp
 
 from ...operators import momentum
+from .legs import structure_leg_sign, ufo_leg_sign
 from .lorentz_map import UFO_LORENTZ, structures_for
+from .vvvv import metric_pair_coefficients, permute_vvvv
 from .pycode import ufo_expr
 from .static import FUNCTION_LIBRARY, INIT_TEMPLATE, OBJECT_LIBRARY
 
@@ -106,6 +108,21 @@ def _vss_split(coupling, scalars):
     return (a, b), c_a
 
 
+#: colour tensors that carry a colour charge — anything built from the
+#: fundamental generators, structure constants or the symmetric d-symbol.
+#: ``'1'`` and ``Identity(i,j)`` are BOTH colour singlets: the latter is what
+#: UFO uses for a coloured fermion pair with a colourless boson (q qbar gamma),
+#: so treating every non-``'1'`` string as QCD would tag the whole electroweak
+#: quark sector QCD — the mirror image of the bug that tagged gluons QED.
+_COLOURED_TENSORS = ("T(", "f(", "d(")
+
+
+def _order_name(color):
+    """``'QCD'`` if the colour tensor carries colour, else ``'QED'``."""
+    text = str(color).strip()
+    return "QCD" if any(t in text for t in _COLOURED_TENSORS) else "QED"
+
+
 class _UFOBuilder:
     def __init__(self, model_name, parameters, particles):
         self.model_name = model_name
@@ -115,7 +132,7 @@ class _UFOBuilder:
             if p.antisymbol is not None:
                 self.specs[p.antisymbol] = p
         self.particles = particles
-        self.couplings = {}          # value string -> coupling name
+        self.couplings = {}   # (value, order) -> (GC name, order)
         # (particles, lorentz names, couplings, color strings) — colors has
         # either 1 entry (broadcast to every lorentz/coupling slot, the
         # color-singlet default) or exactly len(lorentz names) entries (one
@@ -134,14 +151,55 @@ class _UFOBuilder:
             return f"P.{_pyname(spec.antiname)}"
         return f"P.{_pyname(spec.name)}"
 
-    def _coupling(self, expr, n_legs):
+    def _conjugate_symbol(self, symbol):
+        """The symbol of this leg's antiparticle (itself if self-conjugate).
+
+        The writer is the only layer that knows this pairing, which is why it
+        owns the field->particle leg sign (see :mod:`.legs`).
+        """
+        spec = self.specs.get(symbol)
+        if spec is None:
+            raise KeyError(f"no UFOParticle registered for symbol {symbol}")
+        if spec.self_conjugate or spec.antisymbol is None:
+            return symbol
+        return spec.antisymbol if symbol == spec.symbol else spec.symbol
+
+    def _conjugates(self, legs):
+        return {leg: self._conjugate_symbol(leg) for leg in legs}
+
+    def _leg_sign(self, structure, legs):
+        """Sign the emitted coupling picks up under the field->particle
+        relabelling of ``legs`` (see :mod:`.legs`)."""
+        return structure_leg_sign(structure, legs, self._conjugates(legs))
+
+    def _coupling(self, expr, n_legs, color="1"):
+        """Register a coupling and return its ``GC_n`` name.
+
+        The coupling ORDER matters to MadGraph: it selects diagrams by it and
+        defines the perturbative expansion.  A non-singlet colour tensor means
+        the vertex is colour-charged, hence QCD; everything else is QED.  The
+        power ``max(n_legs - 2, 1)`` is right either way (ggg -> 1,
+        gggg -> 2, qqg -> 1).
+
+        Tagging the gluon vertices QED — which this did for every coupling —
+        makes MadGraph refuse the model outright:
+        ``CRITICAL: Model with non QCD emission of gluon``, after which it
+        builds the wrong diagram set and any QCD result is meaningless.  Found
+        by ``scripts/madgraph_qcd.py``; nothing symbolic could see it.
+        """
         value = ufo_expr(sp.nsimplify(expr, rational=False)
                          if expr.is_number else expr)
-        if value not in self.couplings:
+        order = {_order_name(color): max(n_legs - 2, 1)}
+        # The order is part of the coupling's identity: two vertices sharing a
+        # VALUE but differing in colour must not collapse onto one GC_n, or
+        # whichever registered first would decide the order for both (a gluon
+        # vertex silently inheriting QED is the failure this whole check
+        # exists to prevent).
+        key = (value, tuple(sorted(order.items())))
+        if key not in self.couplings:
             cname = f"GC_{len(self.couplings) + 1}"
-            order = {"QED": max(n_legs - 2, 1)}
-            self.couplings[value] = (cname, order)
-        return self.couplings[value][0]
+            self.couplings[key] = (cname, order)
+        return self.couplings[key][0]
 
     # -------------------------------------------------------------- vertices
 
@@ -171,7 +229,8 @@ class _UFOBuilder:
             spins = {p: self.specs[p].spin for p in particles}
             ordered = sorted(particles, key=lambda p: -spins[p])
             lorentz = structures_for(vtype)[0]
-            cname = self._coupling(coupling, n)
+            cname = self._coupling(
+                self._leg_sign(lorentz, ordered) * coupling, n)
         elif vtype == "VSS":
             vector = [p for p in particles if self.specs[p].spin == 3]
             scalars = [p for p in particles if self.specs[p].spin == 1]
@@ -180,7 +239,10 @@ class _UFOBuilder:
             (a, b), c = _vss_split(coupling, scalars)
             ordered = [vector[0], a, b]
             lorentz = "VSS1"
-            cname = self._coupling(c, n)
+            # A charged pair in legs 2,3 (e.g. A G+ G-) flips VSS1, which is
+            # antisymmetric in them. Nothing applied this before, so every
+            # exported Feynman-gauge VSS was wrong by a sign.
+            cname = self._coupling(self._leg_sign(lorentz, ordered) * c, n)
         else:
             raise ValueError(f"add_bosonic_vertex cannot handle {vtype}; "
                              f"use the dedicated adders")
@@ -202,10 +264,55 @@ class _UFOBuilder:
                 dict is for internal verification only, see yangmills.py).
         """
         self.used_lorentz.add("VVV1")
-        cname = self._coupling(coupling, 3)
+        # VVV1 is totally antisymmetric, so a conjugate pair among the legs
+        # (A W+ W-, W+ W- Z) contributes -1 while ggg contributes +1 — the
+        # whole of the old "cubic sign convention" puzzle (see .legs).
+        cname = self._coupling(
+            self._leg_sign("VVV1", list(triple)) * coupling, 3, color)
         self.vertex_entries.append(
             ([self._particle_ref(p) for p in triple], ["VVV1"], [cname],
              [color]))
+
+    def _assert_relabelling_invariant(self, quadruple, structures):
+        """A VVVV's structures must be INVARIANT under the field->particle
+        relabelling, not merely pick up a sign.
+
+        Unlike VVV1 the quartic structures are not totally antisymmetric, so
+        there is no signature to apply — either the relabelling is a symmetry
+        of this vertex's structures (it is, for all four electroweak
+        quartics: the coefficients it would exchange are equal) or the vertex
+        cannot be emitted under naive leg labels at all.  Checked rather than
+        assumed.
+        """
+        conjugates = self._conjugates(quadruple)
+        if all(conjugates[leg] == leg for leg in quadruple):
+            return
+        target = [conjugates[leg] for leg in quadruple]
+        remaining = list(range(len(quadruple)))
+        perm = []
+        for t in target:
+            for i in remaining:
+                if quadruple[i] == t:
+                    perm.append(i)
+                    remaining.remove(i)
+                    break
+            else:
+                raise ValueError(
+                    f"{tuple(quadruple)}: the field->particle relabelling is "
+                    f"not a permutation of this vertex's legs")
+        moved = permute_vvvv(structures, tuple(perm))
+        # compare by simplification: `moved` has been through permute_vvvv's
+        # sp.simplify while `structures` has only been expanded, so a
+        # structurally-different-but-equal form (radicals from a mixing angle)
+        # would otherwise raise on a perfectly invariant vertex.
+        if any(sp.simplify(a - b) != 0
+               for a, b in zip(metric_pair_coefficients(moved),
+                               metric_pair_coefficients(structures))):
+            raise NotImplementedError(
+                f"quartic {tuple(quadruple)} is not invariant under the "
+                f"field->particle relabelling {perm}; emitting it under "
+                f"naive leg labels would be wrong and no signature can fix a "
+                f"non-antisymmetric structure")
 
     def add_vvvv_vertex(self, quadruple, couplings, colors=None):
         """Quartic gauge vertex: dict ``{VVVV structure name: coupling}``.
@@ -217,12 +324,14 @@ class _UFOBuilder:
                 VVVV1/2/3 respectively — see export/ufo/vvvv.py). Defaults
                 to broadcasting the singlet ``'1'`` to every structure.
         """
+        self._assert_relabelling_invariant(quadruple, couplings)
         names, cnames, clist = [], [], []
         for lname, coupling in couplings.items():
             self.used_lorentz.add(lname)
             names.append(lname)
-            cnames.append(self._coupling(coupling, 4))
-            clist.append((colors or {}).get(lname, "1"))
+            ccolor = (colors or {}).get(lname, "1")
+            cnames.append(self._coupling(coupling, 4, ccolor))
+            clist.append(ccolor)
         self.vertex_entries.append(
             ([self._particle_ref(p) for p in quadruple], names, cnames,
              clist))
@@ -238,12 +347,23 @@ class _UFOBuilder:
             left_coupling / right_coupling: coefficients of P_L / P_R
                 (or γ^μ P_L / γ^μ P_R).
             color: UFO color-tensor string (default ``'1'``, singlet — e.g.
-                a lepton current). A qqg vertex uses ``'T(3,1,2)'`` (gluon
-                at the boson position, matching this adder's own
-                ``[bar, field, boson]`` leg order and
-                ``fermion_gauge_current``'s ``T[r,c]`` convention, where
-                ``r``=bar-leg index=position 1, ``c``=field-leg
-                index=position 2).
+                a lepton current).  A qqg vertex uses ``'T(3,2,1)'`` with
+                this adder's ``[bar, field, boson]`` leg order: the gluon's
+                adjoint index at leg 3, then **the fundamental (quark) index
+                FIRST** — UFO reads ``T(a,i,j)`` with ``i`` the 3 and ``j``
+                the 3bar, so it is ``T^a_{field, bar}`` = legs ``(2,1)``,
+                which is also what MadGraph's stock ``sm`` emits for
+                ``[u~, u, g]``.
+
+                This used to say ``'T(3,1,2)'``, reasoning from
+                ``fermion_gauge_current``'s ``T[r,c]`` Lagrangian index order
+                (row with the bar leg).  That conflates the Lagrangian index
+                order with UFO's leg convention and transposes the generator;
+                since ``T^a`` is hermitian the transpose is the complex
+                conjugate, which flips the sign of the ggg interference.
+                ``u u~ > g g`` failed MadGraph's Lorentz and gauge/Ward checks
+                because of it (``scripts/madgraph_qcd.py``) — the one place any
+                of this is observable.
         """
         if len(bosons) != 1:
             raise ValueError("v1 fermion vertices have exactly one boson leg")
@@ -262,7 +382,7 @@ class _UFOBuilder:
             lname = base + suffix
             self.used_lorentz.add(lname)
             names.append(lname)
-            cnames.append(self._coupling(coupling, 3))
+            cnames.append(self._coupling(coupling, 3, color))
         if not names:
             return
         self.vertex_entries.append(
@@ -401,7 +521,7 @@ class _UFOBuilder:
                  "from object_library import all_couplings, Coupling",
                  "from function_library import (complexconjugate, re, im, "
                  "csc, sec, acsc, asec, cot)", "", ""]
-        for value, (cname, order) in self.couplings.items():
+        for (value, _), (cname, order) in self.couplings.items():
             lines.append(f"{cname} = Coupling(name='{cname}', "
                          f"value={value!r}, order={order})")
         lines.append("")
@@ -472,7 +592,7 @@ def write_ufo(path, model_name, parameters, particles, bosonic_vertices=(),
             :meth:`_UFOBuilder.add_vvvv_vertex`).
         fermion_vertices: iterable of dicts with keys ``bar``, ``field``,
             ``bosons``, ``left``, ``right`` (flavor-resolved symbols), and
-            optionally ``color`` (default ``'1'``; e.g. ``'T(3,1,2)'`` for a
+            optionally ``color`` (default ``'1'``; e.g. ``'T(3,2,1)'`` for a
             qqg vertex).
         four_fermion_vertices: iterable of dicts with keys ``bar1``,
             ``field1``, ``bar2``, ``field2`` (the two Dirac chains' legs),

@@ -20,7 +20,7 @@ import sympy as sp
 from feynlag import (
     Bilinear, DiracGamma, ExternalParameter, InternalParameter, Lagrangian,
     Model, ParameterSet, Rotation, SU2, Scalar, U1, WeylFermion,
-    ChargeRegistry, Dmu, conjugate_pair, cubic_couplings, dag, diracPL,
+    ChargeRegistry, Dmu, conjugate_pair, dag, diracPL,
     diracPR, extract_fermion_vertices, fermion_gauge_current, rotation_2x2,
     verify_ufo_numeric,
 )
@@ -115,33 +115,44 @@ def export(path):
     W_lL = cc((nuLbar[i], gL, eL[i]), gL, Wp)
 
     # --- gauge self-couplings (physical basis) ---------------------------
+    # Both the rotation U and the field->particle leg sign are DERIVED
+    # (feynlag.gauge_basis): the electroweak cubic comes out flipped relative
+    # to cubic_couplings' raw tensor and the gluon does not, because feynlag's
+    # symbols label FIELDS while a UFO leg labels a PARTICLE and the field W+
+    # carries the W- leg. See gauge_basis.ufo_leg_sign. This replaces a
+    # hand-applied minus that used to be described as an unresolved MadGraph
+    # convention mismatch.
     g, gp = gw.s, g1.s
-    cw, sw = g / sp.sqrt(g**2 + gp**2), gp / sp.sqrt(g**2 + gp**2)
-    Uc = sp.Matrix([[1 / sp.sqrt(2), 1 / sp.sqrt(2), 0, 0],
-                    [sp.I / sp.sqrt(2), -sp.I / sp.sqrt(2), 0, 0],
-                    [0, 0, cw, sw]])
-    cubic = cubic_couplings(s["SU2L"], physical=[Wp, Wm, Z, A], U=Uc)
-    # The triple-gauge coupling built from the COMPLEX W± rotation
-    # (W± = (W1∓iW2)/√2) comes out of cubic_couplings with the opposite overall
-    # sign to MadGraph's VVV1 Lorentz convention — validated by the e+e-→W+W-
-    # round-trip (only the ν t-channel × γ/Z s-channel interference is
-    # sensitive to it: without the flip the diagrams add instead of gauge-
-    # cancelling, giving ~98 pb instead of the correct ~19.5 pb). The real-basis
-    # QCD gluon self-coupling (ggg = −g_s) is unaffected and already matches.
-    gAWW = -sp.simplify(cubic.get((A, Wp, Wm), 0))
-    gZWW = -sp.simplify(cubic.get((Z, Wp, Wm), 0))
+    self_couplings = model.gauge_vertices(
+        groups=[s["SU2L"]], basis=[Wp, Wm, Z, A])
+    vvv = {v.particles: v.coupling
+           for v in self_couplings if v.vertex_type == "VVV"}
+    vvvv = {v.particles: v.structures
+            for v in self_couplings if v.vertex_type == "VVVV"}
 
-    # --- hVV from the kinetic sector -------------------------------------
+    # --- hVV / hhVV from the kinetic sector ------------------------------
+    # Extracted, not hand-written: every scalar leg (including the Goldstones)
+    # must be listed in `fields` or the extractor treats it as a parameter and
+    # poisons the coefficients; the filter below is what keeps the Goldstones
+    # out of the UFO (unitary gauge).
     h = sp.Symbol("H0_r", real=True)
-    hWW = sp.I * g**2 * v.s / 2       # = i g m_W  (pinned in test_gauge_sector)
-    hZZ = sp.I * (g**2 + gp**2) * v.s / 2
+    G0 = sp.Symbol("H0_i", real=True)
+    Gp_c = s["H"].components[0]
+    Gm_c, cmap_s = conjugate_pair(Gp_c, "Gm")
+    boson_fields = [h, G0, Gp_c, Gm_c, Z, A, Wp, Wm]
+    exported = {h, Z, A, Wp, Wm}
+    bosonic_extracted = [
+        vtx for vtx in model.vertices(boson_fields, sector="kinetic",
+                                      conjugate_map=cmap_s,
+                                      simplifier=sp.simplify)
+        if vtx.vertex_type in ("VVS", "VVSS") and set(vtx.particles) <= exported
+    ]
 
     # --- particles --------------------------------------------------------
     em, ep = sp.symbols("em ep")
     mm, mp = sp.symbols("mm mp")
     ve, veb = sp.symbols("ve veb")
     vm, vmb = sp.symbols("vm vmb")
-    hs = sp.Symbol("h")
     gwv, g1v = s["val"]["gw"], s["val"]["g1"]
     particles = [
         UFOParticle(em, 11, "e-", antiname="e+", spin=2, charge=-1,
@@ -156,7 +167,7 @@ def export(path):
         UFOParticle(Z, 23, "Z", spin=3, charge=0, mass="MZ", width="WZ"),
         UFOParticle(Wp, 24, "W+", antiname="W-", spin=3, charge=1, mass="MW",
                     width="WW", antisymbol=Wm),
-        UFOParticle(hs, 25, "h", spin=1, charge=0, mass="MH", width="WH"),
+        UFOParticle(h, 25, "h", spin=1, charge=0, mass="MH", width="WH"),
     ]
 
     # --- parameters -------------------------------------------------------
@@ -187,14 +198,9 @@ def export(path):
             dict(bar=lp, field=nu, bosons=(Wm,), left=W_lL, right=0),
         ]
 
-    vvv = {(A, Wp, Wm): gAWW, (Z, Wp, Wm): gZWW}
-
-    from feynlag.vertices.vertex import Vertex
-    bosonic = [Vertex((hs, Wp, Wm), hWW, "VVS"),
-               Vertex((hs, Z, Z), hZZ, "VVS")]
 
     write_ufo(path, "FEYNLAG_SM", params, particles,
-              bosonic_vertices=bosonic, vvv=vvv,
+              bosonic_vertices=bosonic_extracted, vvv=vvv, vvvv=vvvv,
               fermion_vertices=fermion_vertices)
     return path, model, s
 

@@ -62,14 +62,132 @@ is invisible to unit tests but breaks a real generator run:
    invisible in $e^+e^-\to\mu^+\mu^-$ (an overall phase cancels in $|\mathcal
    M|^2$) but breaks the FFV↔VVV interference in $e^+e^-\to W^+W^-$. Fixed in
    `add_fermion_vertex`.
-3. **The triple-gauge coupling** built from the complex $W^\pm$ rotation comes
-   out of `cubic_couplings` with the opposite overall sign to MadGraph's VVV1
-   convention; the export flips it (the real-basis QCD $ggg=-g_s$ is unaffected
-   and already matches). See `scripts/export_sm_ufo.py`.
+3. **The triple-gauge coupling** needs a sign flip for the electroweak
+   vertices but not for the gluon. This looked for a long time like an
+   unresolved MadGraph convention mismatch; it is neither a mismatch nor a
+   bug. feynlag's symbols label **fields**, a UFO leg labels a **particle**,
+   and the field $W^+$ annihilates a $W^+$ but *creates* a $W^-$ — so the leg
+   carrying the symbol `Wp` is UFO's `W-` leg. Emitting legs under naive
+   names transposes each conjugate pair, and `VVV1` is totally antisymmetric:
+   one conjugate pair $\Rightarrow -1$ (the electroweak cubics), none
+   $\Rightarrow +1$ ($ggg$). `gauge_basis.ufo_leg_sign` computes it, and the
+   export no longer applies anything by hand.
+
+   The same rule explains why VVS/VVSS/VVVV never needed a flip — their
+   structures are *invariant* under that transposition — and it reproduces
+   MadGraph's `GC_4`, `GC_53`, `GC_10`, `GC_3` and `GC_61` with no other
+   adjustment. It is also behaviour-preserving here: the old export emitted
+   $(\gamma,W^+,W^-)$ with $-ie$, the same vertex as the $(\gamma,W^-,W^+)$
+   with $+ie$ emitted now, so the 19.50 pb below is unchanged.
 
 This is the payoff of feynlag's verification-first design: the round-trip is a
 harness that turns "the model looks right" into "the model computes the right
 cross section."
+
+## Quartic gauge couplings: the $\gamma\gamma\to W^+W^-$ Ward identity
+
+Cross sections are not the only oracle MadGraph offers. Its `check` command
+evaluates a process's matrix element at random phase-space points and runs
+three model-internal consistency tests — Lorentz invariance, the gauge/BRS
+(Ward) identity, and leg-permutation symmetry — with **no beams and no Fortran
+cross-section run**, so it is fast enough to use as a routine acceptance test.
+
+$\gamma\gamma\to W^+W^-$ is the ideal probe for the quartic: its only diagrams
+are $t$- and $u$-channel $W$ exchange plus the $\gamma\gamma W^+W^-$ contact
+term, and gauge invariance holds *only* if the quartic's normalization relative
+to the exchange diagrams is exactly right. A wrong quartic cannot hide.
+
+```bash
+mg5_aMC <<< 'import model /path/to/FEYNLAG_SM
+check a a > w+ w-'
+```
+
+| Model | Lorentz invariance | Gauge (BRS) ratio | Result |
+|---|---|---|---|
+| stock `sm` | $3.1\times10^{-15}$ | $5.0\times10^{-28}$ | Passed |
+| feynlag SM UFO | $2.6\times10^{-15}$ | $1.0\times10^{-27}$ | Passed |
+| feynlag, quartic $\times 3$ | $3.7\times10^{-1}$ | $2.6\times10^{-2}$ | **Failed** |
+
+The third row is the point. Before this was validated, `assemble_vvvv`
+reconstructed **3× the true vertex** (the three UFO `VVVV1/2/3` structures are
+linearly dependent, so the decomposition is a 1-parameter family and the
+symmetric representative carries a $1/3$ that the hard-coded normalization
+omitted). Re-exporting with the old value makes both checks fail
+catastrophically and inflates the matrix element by ~500×. The unit tests could
+not see it, because the "independent" ground truth had been built in the same
+over-complete convention and compared coefficient *lists*, which cannot detect
+a common factor.
+
+The exported couplings also match stock `sm` entry by entry at the shared
+parameter point, compared in the convention-free metric-pair basis since
+MadGraph's `VVVV` basis differs from feynlag's
+(`tests/test_ufo_sm_bosonic.py`, in CI):
+
+| Vertex | feynlag | stock `sm` |
+|---|---|---|
+| $\gamma\gamma W^+W^-$ | $ie^2$ | `GC_5` |
+| $W^+W^-W^+W^-$ | $-ig^2$ | `GC_35` |
+| $W^+W^-ZZ$ | $ig^2c_w^2$ | `GC_36` |
+| $\gamma W^+W^-Z$ | matches on MG's two-structure `VVVV5` shape | `GC_57` |
+| $hW^+W^-$, $hZZ$, $hhW^+W^-$, $hhZZ$ | extractor output, unrescaled | `GC_72`, `GC_81`, `GC_34`, `GC_65` |
+
+## QCD: the $u\bar u\to gg$ gauge check
+
+Until this, feynlag's **QCD sector had never been exercised in any process**.
+The cross-section round-trip covers $e^+e^-\to\mu^+\mu^-$ and
+$e^+e^-\to W^+W^-$, both QCD-free, and the $\gamma\gamma\to W^+W^-$ check
+above is electroweak. Every QCD result in the repo was a symbolic pin of
+feynlag's own output — which is exactly how three separate colour defects
+survived in it.
+
+$u\bar u\to gg$ is the right probe: $t$- and $u$-channel quark exchange (no
+$ggg$) interferes with the $s$-channel gluon (one $ggg$), so the amplitude is
+**linear** in the triple-gluon coupling and its sign is observable.
+$gg\to gg$ will **not** do — it goes as $ggg^2$ and is sign-blind.
+
+```bash
+python scripts/madgraph_qcd.py     # exports the UFO and runs all three models
+```
+
+| Model | Lorentz invariance | Gauge (BRS) ratio | Result |
+|---|---|---|---|
+| stock `sm` | $1.6\times10^{-16}$ | $2.3\times10^{-30}$ | Passed |
+| feynlag QCD UFO | $3.0\times10^{-15}$ | $2.0\times10^{-30}$ | Passed |
+| feynlag, $ggg$ sign flipped | $3.6\times10^{-1}$ | $4.0$ | **Failed** |
+
+The third row is the point, as before: a pass alone would only mean "nothing
+crashed". `scripts/madgraph_qcd.py` exports the broken variant itself and
+exits non-zero unless it fails.
+
+### Two defects this caught, both invisible to everything symbolic
+
+**1. Every coupling was tagged `QED`.** `writer.py` assigned
+`order = {'QED': max(n_legs-2, 1)}` unconditionally, so the gluon vertices
+carried a QED order. MadGraph rejects that outright —
+`CRITICAL: Model with non QCD emission of gluon (found 6 of those)` — and then
+builds the wrong diagram set, which made the first run of this check
+*inconclusive* rather than failing: the broken control passed too, because the
+$ggg$ diagram was not in the amplitude at all. The order is now QCD whenever
+the colour tensor is not the singlet `'1'`; the power was already right
+($ggg\to1$, $gggg\to2$, $qqg\to1$).
+
+**2. The $qqg$ colour tensor was transposed.** The writer emitted
+`T(3,1,2)` with its `[bar, field, boson]` leg order, reasoning from
+`fermion_gauge_current`'s `T[r,c]` Lagrangian index order. But UFO's
+`T(a,i,j)` takes `i` as the **fundamental** index, so it must be `T(3,2,1)` —
+what MadGraph's stock `sm` emits for `[u~, u, g]`. Transposing a hermitian
+$T^a$ conjugates it, which flips the sign of the $ggg$ interference: with
+`T(3,1,2)` the model **failed** both the Lorentz and gauge checks
+(rel. diff $0.50$, BRS ratio $3.4$).
+
+That second one is worth dwelling on. The failure was initially masked twice
+over — once by the coupling-order bug, and once by a regex in the check parser
+that dropped failing sections (MadGraph indents `JAMP` rows under a failure),
+so a hard failure first appeared as a *missing* section. And the naive reading
+of the surviving numbers was that flipping $ggg$ "fixed" it — which would have
+been precisely the wrong conclusion, since $ggg=-g_s$ matches stock `GC_10`.
+The colour index order was the real defect, and only the exported couplings
+matching stock ($ggg=-g_s$, $qqg=ig_s$, $gggg=ig_s^2$) made that legible.
 
 ## Four-fermion operators: the muon-decay width
 

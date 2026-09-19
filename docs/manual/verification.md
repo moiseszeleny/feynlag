@@ -105,7 +105,7 @@ library affects a known-correct physics prediction:
 | $W\ell\nu = ig/\sqrt2\,\gamma^\mu P_L$, $Z$ couplings $\propto T^3-Q\sin^2\theta_W$ | `test_fermion_sector.py::TestGaugeCurrents` |
 | 2HDM tadpoles/masses vs. Gunion–Haber | `test_scalar_pipeline_thdm.py` (whole file) |
 | 3HDM+S₃ forced $\sqrt3$ alignment | `test_thdm_s3.py::test_tadpole_alignment_sqrt3` |
-| $qqg$: `T(3,1,2)`, $ggg = -g_s$, $gggg$ | `test_qcd.py` (whole file), `test_ufo_qcd.py` |
+| $qqg$: `T(3,2,1)`, $ggg = -g_s$, $gggg$ | `test_qcd.py` (whole file), `test_ufo_qcd.py` |
 | VVVV assembly (SU(2) and SU(3)) | `test_yangmills.py::TestVVVVAssemblyGroundTruth` |
 | VLL: right-handed-only Z FCNC, h-coupling sum rule, SM decoupling | `test_vll.py` (whole file) |
 | Z–Z′ mixing, tan 2θ′, Goldstone counting, B−L limit | `test_u1x.py` (whole file) |

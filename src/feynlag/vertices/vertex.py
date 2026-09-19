@@ -11,6 +11,11 @@ letters don't say which fermion pairs into which Dirac chain.  A caller that
 builds a :class:`Vertex` for a four-fermion operator must record the chain
 pairing in ``Vertex.meta['pairing']`` (the two ``(bar, gamma, field)`` subkeys
 produced by :func:`~feynlag.vertices.bilinear.extract_fermion_vertices`).
+
+``VVVV`` has the same shape of problem for a different reason: it needs three
+couplings, one per Lorentz structure, tied to a specific leg ordering (a
+permutation mixes them).  :meth:`Vertex.from_structures` records those in
+``Vertex.meta['structures']``; ``Vertex.coupling`` is zero for such a vertex.
 """
 
 from dataclasses import dataclass, field as dc_field
@@ -21,7 +26,7 @@ from .extract import vertex_multiplicity
 
 __all__ = ["Vertex", "classify_spins", "LORENTZ_CATALOG"]
 
-#: vertex type → UFO lorentz structure name(s) (Phase 5 fills the strings)
+#: vertex type → UFO lorentz structure name(s)
 LORENTZ_CATALOG = {
     "SSS": ["SSS1"],
     "SSSS": ["SSSS1"],
@@ -78,6 +83,9 @@ class Vertex:
         particles: canonically sorted tuple of physical field symbols.
         coupling: the full rule ``i × coefficient × ∏ multiplicities!``
             (may contain ``p(φ)`` momentum tags for derivative couplings).
+            For a multi-structure vertex (VVVV) this slot is zero and the
+            real couplings live in ``meta['structures']`` — read them through
+            :attr:`structure_couplings`.
         vertex_type: catalog key (``'VVS'``, …).
     """
 
@@ -93,14 +101,68 @@ class Vertex:
         vtype = classify_spins(field_tuple, spin_map) if spin_map else ""
         return cls(tuple(field_tuple), coupling, vtype)
 
+    @classmethod
+    def from_structures(cls, ordering, structures, vertex_type="VVVV",
+                        coupling=None):
+        """Build a multi-structure vertex (VVVV).
+
+        A VVVV coupling is three numbers, one per Lorentz structure, and they
+        are tied to a specific external leg ordering — a permutation *mixes*
+        them (see ``export.ufo.vvvv.permute_vvvv``).  Neither fits the single
+        scalar ``coupling``, so they live in ``meta`` following the FFFF
+        precedent.
+
+        Args:
+            ordering: the external leg ordering the structures refer to.
+            structures: ``{lorentz name: coupling}``, already carrying the
+                Feynman-rule ``i``.
+            coupling: optional scalar for the ``coupling`` slot; defaults to
+                zero, because no single number is the vertex's coupling and a
+                plausible-looking one would be read by mistake.
+        """
+        unknown = set(structures) - set(LORENTZ_CATALOG.get(vertex_type, []))
+        if unknown:
+            raise ValueError(f"{sorted(unknown)} are not {vertex_type} "
+                             f"structures")
+        return cls(tuple(ordering),
+                   sp.S.Zero if coupling is None else coupling,
+                   vertex_type,
+                   {"structures": dict(structures), "ordering": tuple(ordering)})
+
+    @property
+    def structures(self):
+        """``{lorentz name: coupling}`` for a multi-structure vertex, else
+        ``None``.  Use :attr:`structure_couplings` for a uniform accessor."""
+        return self.meta.get("structures")
+
+    @property
+    def structure_couplings(self):
+        """``{lorentz name: coupling}`` for ANY vertex — the multi-structure
+        dict when there is one, else the single structure carrying
+        :attr:`coupling`."""
+        if self.structures is not None:
+            return dict(self.structures)
+        names = self.lorentz_structures
+        return {names[0]: self.coupling} if names else {}
+
     @property
     def lorentz_structures(self):
         return LORENTZ_CATALOG.get(self.vertex_type, [])
 
     def __repr__(self):
         names = " ".join(str(p) for p in self.particles)
+        if self.structures is not None:
+            body = ", ".join(f"{n}: {c}" for n, c in
+                             sorted(self.structures.items()))
+            return f"Vertex({names} [{self.vertex_type}] : {body})"
         return f"Vertex({names} [{self.vertex_type}] : {self.coupling})"
 
     def _repr_latex_(self):
         fields_tex = "\\, ".join(sp.latex(p) for p in self.particles)
-        return f"$\\displaystyle {fields_tex} \\, : \\; {sp.latex(self.coupling)}$"
+        if self.structures is not None:
+            body = " ,\\; ".join(
+                rf"\text{{{n}}}: {sp.latex(c)}"
+                for n, c in sorted(self.structures.items()))
+        else:
+            body = sp.latex(self.coupling)
+        return f"$\\displaystyle {fields_tex} \\, : \\; {body}$"

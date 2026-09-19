@@ -10,8 +10,11 @@ and tests/test_yangmills.py.
 import sympy as sp
 import pytest
 
-from feynlag import ExternalParameter, ParameterSet, SU3, quartic_couplings
-from feynlag.export.ufo import UFOParticle, assemble_vvvv, write_ufo
+from feynlag import ExternalParameter, ParameterSet, SU3
+from feynlag.export.ufo import UFOParticle, write_ufo
+from feynlag.export.ufo.vvvv import (ADJOINT_VVV_COLOR,
+                                     ADJOINT_VVVV_COLORS,
+                                     adjoint_vvv, adjoint_vvvv)
 
 import importlib
 import sys
@@ -57,30 +60,25 @@ def qcd_ufo(tmp_path_factory):
     # matching tests/test_qcd.py::test_qqg_coupling_pinned.
     fermion_vertices = [
         dict(bar=qbar, field=q, bosons=(g,), left=gs.s / 2,
-             color="T(3,1,2)"),
+             color="T(3,2,1)"),
     ]
-    # ggg: f^123=1 => coupling exactly -gs, matching
-    # tests/test_qcd.py::test_ggg_coupling_pinned. One physical gluon
-    # particle repeated three times — NOT the 8-component weak-basis dict.
-    vvv = {(g, g, g): -gs.s}
-    vvv_colors = {(g, g, g): "f(1,2,3)"}
-
-    # gggg: couplings come from the actual group's weak-basis adjoint
-    # components (G_1..G_8) via assemble_vvvv — the color-tensor sum is
-    # what carries the adjoint index, so the UFO vertex itself is still
-    # ONE physical gluon repeated four times, matching
-    # tests/test_qcd.py::test_gggg_coupling_pinned's (G_1,G_2,G_4,G_5).
     SU3c = SU3("SU3c", coupling=gs)
-    G = SU3c.bosons("G")
-    G1, G2, G4, G5 = (G.components[0], G.components[1], G.components[3],
-                      G.components[4])
-    gggg_couplings = assemble_vvvv(quartic_couplings(SU3c), (G1, G2, G4, G5))
-    vvvv = {(g, g, g, g): gggg_couplings}
-    vvvv_colors = {(g, g, g, g): {
-        "VVVV1": "f(1,2,-1)*f(3,4,-1)",
-        "VVVV2": "f(1,3,-1)*f(2,4,-1)",
-        "VVVV3": "f(1,4,-1)*f(2,3,-1)",
-    }}
+
+    # ggg: ONE physical gluon repeated three times, with the adjoint index
+    # carried by the color tensor — so the coupling is COLOR-STRIPPED, like
+    # the gggg below. This used to be the hardcoded literal -gs.s, which is
+    # cubic_couplings' value for the (G_1,G_2,G_3) triple and contains the
+    # color factor; it was right only because f^123 = 1.
+    vvv = {(g, g, g): adjoint_vvv(SU3c)}
+    vvv_colors = {(g, g, g): ADJOINT_VVV_COLOR}
+
+    # gggg: ONE physical gluon repeated four times, with the adjoint index
+    # carried by the color tensors — so the coupling must be COLOR-STRIPPED.
+    # This used to pass assemble_vvvv's raw values for the specific quadruple
+    # (G_1,G_2,G_4,G_5), which already contain sum_e f_{ije} f_{kle}, and so
+    # multiplied by color twice. adjoint_vvvv divides it back out.
+    vvvv = {(g, g, g, g): adjoint_vvvv(SU3c)}
+    vvvv_colors = {(g, g, g, g): dict(ADJOINT_VVVV_COLORS)}
 
     out = tmp_path_factory.mktemp("ufo") / "QCD_UFO"
     write_ufo(out, "QCD", params, particles, vvv=vvv, vvv_colors=vvv_colors,
@@ -97,7 +95,12 @@ def test_qqg_color_string(qcd_ufo):
     for vert in ufo.all_vertices:
         pnames = sorted(p.name for p in vert.particles)
         if pnames == sorted(["q", "q~", "g"]):
-            assert vert.color == ["T(3,1,2)"]
+            # T(a,i,j): i is the FUNDAMENTAL index, so with the
+            # [bar, field, g] leg order the field leg comes first.
+            # T(3,1,2) transposes a hermitian T^a (= conjugates it)
+            # and flipped the ggg interference; u u~ > g g failed
+            # MadGraph's gauge check until this was corrected.
+            assert vert.color == ["T(3,2,1)"]
             break
     else:
         pytest.fail("qqg vertex not found")
@@ -120,16 +123,10 @@ def test_ggg_color_string_and_coupling(qcd_ufo):
 def test_gggg_color_strings_and_couplings(qcd_ufo):
     path, num = qcd_ufo
     ufo = _import_ufo(path)
-    expected_colors = {
-        "VVVV1": "f(1,2,-1)*f(3,4,-1)",
-        "VVVV2": "f(1,3,-1)*f(2,4,-1)",
-        "VVVV3": "f(1,4,-1)*f(2,3,-1)",
-    }
-    expected_values = {
-        "VVVV1": 1.5 * num["gs"] ** 2,
-        "VVVV2": 0.75 * num["gs"] ** 2,
-        "VVVV3": -0.75 * num["gs"] ** 2,
-    }
+    expected_colors = dict(ADJOINT_VVVV_COLORS)
+    # MadGraph stock sm V_37 [g,g,g,g] carries GC_12 = i*G**2 on all three
+    # structures with these same (cyclically identical) color tensors.
+    expected_values = {name: 1j * num["gs"] ** 2 for name in expected_colors}
     for vert in ufo.all_vertices:
         if [p.name for p in vert.particles] == ["g", "g", "g", "g"]:
             lorentz_names = [l.name for l in vert.lorentz]
@@ -159,3 +156,42 @@ def test_quark_antiquark_color_conjugate(qcd_ufo):
     antiquark = next(p for p in ufo.all_particles if p.name == "q~")
     assert quark.color == 3
     assert antiquark.color == -3
+
+
+def test_coupling_order_is_qcd_only_for_coloured_tensors():
+    """The order decides which diagrams MadGraph builds.
+
+    Tagging gluon vertices QED makes MG reject the model outright
+    (CRITICAL: Model with non QCD emission of gluon). But the mirror mistake
+    is just as bad: Identity(i,j) is the colour SINGLET for a coloured
+    fermion pair with a colourless boson (q qbar gamma), so treating every
+    non-'1' tensor as QCD would tag the whole electroweak quark sector QCD.
+    """
+    from feynlag.export.ufo.writer import _order_name
+    for singlet in ("1", "", " 1 ", "Identity(1,2)"):
+        assert _order_name(singlet) == "QED", singlet
+    for coloured in ("T(3,2,1)", "f(1,2,3)", "f(1,2,-1)*f(3,4,-1)",
+                     "d(1,2,3)"):
+        assert _order_name(coloured) == "QCD", coloured
+
+
+def test_same_value_different_colour_gets_distinct_couplings():
+    """A coupling's order is part of its identity: two vertices sharing a
+    VALUE but differing in colour must not collapse onto one GC_n, or
+    whichever registered first would silently decide the order for both."""
+    import sympy as sp
+    from feynlag.export.ufo.writer import _UFOBuilder, UFOParticle
+
+    q, qbar, g = sp.symbols("q qbar g")
+    builder = _UFOBuilder("X", None, [
+        UFOParticle(q, 1, "q", antiname="q~", spin=2, color=3,
+                    antisymbol=qbar),
+        UFOParticle(g, 21, "g", spin=3, color=8),
+    ])
+    gs = sp.Symbol("gs", positive=True)
+    singlet = builder._coupling(sp.I * gs, 3, "1")
+    coloured = builder._coupling(sp.I * gs, 3, "T(3,2,1)")
+    assert singlet != coloured, "same GC_n reused across colour classes"
+    orders = {name: order for (name, order) in builder.couplings.values()}
+    assert orders[singlet] == {"QED": 1}
+    assert orders[coloured] == {"QCD": 1}

@@ -63,6 +63,10 @@ from .charges import (
     derive_charge_operator, physical_charges,
 )
 from .flavor import CKM_ELEMENT_NAMES, cabibbo_2x2, standard_ckm
+from .gauge_basis import (
+    adjoint_rotation, gauge_self_couplings, physical_vector_basis,
+)
+from .export.ufo.legs import ufo_leg_sign
 from .models import (
     ElectroweakScaffold, PhysicalBasis, StandardModel,
     charged_current_rotation, electroweak_gauge, electroweak_scaffold,
@@ -116,6 +120,8 @@ __all__ = [
     "check_charge_consistency", "check_hermiticity_pairing",
     "derive_charge_operator", "physical_charges",
     "standard_ckm", "cabibbo_2x2", "CKM_ELEMENT_NAMES",
+    "adjoint_rotation", "gauge_self_couplings", "physical_vector_basis",
+    "ufo_leg_sign",
     "ElectroweakScaffold", "PhysicalBasis", "StandardModel",
     "electroweak_gauge", "higgs_doublet", "weinberg_rotation",
     "charged_current_rotation", "electroweak_scaffold", "to_physical_basis",
