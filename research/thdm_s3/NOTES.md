@@ -12,7 +12,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `model.py` | the reusable build — algebra only. `build_model()` (with `soft=True` for soft S₃ breaking), the three mass matrices, the geometric rotation, the lambdified spectrum, the quartic potential + its numerical boundedness scan. Lifts the tutorial's notebook-local §6–§8 into importable form. |
 | `constraints.py` | numpy-vectorized boundedness-from-below + tree-unitarity conditions, quoted from [DasDey14] — **plus** the corrected neutral-direction condition derived in finding 4 below. |
 | `fermions.py` | the S₃ fermion sectors — basis map to [LFVHD], the five Yukawa structures, mass-matrix extraction, the two-stage diagonalization, the $G_k$/$Q_i$ LFV couplings. |
-| `LFVHD_3HDMS3.tex` | the draft this work checks against; **patched** (findings 6–8). |
+| `paper_lfvhd/LFVHD_3HDMS3.tex` | the draft this work checks against; **patched** (findings 6–8). |
 | `01_scalar_parameter_space.ipynb` | scalar parameter space under theory constraints. **Done.** |
 | `02_s3_fermion_sector.ipynb` | lepton + quark Yukawa sectors, the draft's derivations, the CKM obstruction, soft breaking. **Done.** |
 | `decays.py` | the physical basis registered on the `Model` at general δ, the electroweak kinetic sector, the lepton mass basis, and the benchmark-point loaders. |
@@ -504,10 +504,10 @@ than merely incomplete), and the spin-0 form factor `A_zero` plus a general
   are also called $\lambda_1\ldots\lambda_9$ and are **not** ours — their $\lambda_4$
   is $(\phi_1^\dagger\phi_1)(\phi_2^\dagger\phi_2)$.
 - **[LFVHD]** M. Zeleny-Mora, M. Mondragón, T. A. Valencia-Pérez, *"Exploring LFV
-  Higgs decays in the Three Higgs Doublet Model"*, draft — `LFVHD_3HDMS3.tex` in
-  this directory. Supplies the S₃ lepton assignment, the Yukawa Lagrangian, the
-  charged-lepton mass matrix and its diagonalization, and the $Q_i$ LFV
-  couplings. Checked (and patched) in findings 6–8.
+  Higgs decays in the Three Higgs Doublet Model"*, draft —
+  `paper_lfvhd/LFVHD_3HDMS3.tex`. Supplies the S₃ lepton assignment, the
+  Yukawa Lagrangian, the charged-lepton mass matrix and its diagonalization,
+  and the $Q_i$ LFV couplings. Checked (and patched) in findings 6–8.
 - **[DasDeyPal16]** D. Das, U. K. Dey, P. B. Pal, *"S₃ symmetry and the quark
   mixing matrix"*, Phys. Lett. B **753**, 315 (2016),
   [arXiv:1507.06509](https://arxiv.org/abs/1507.06509),

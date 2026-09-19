@@ -32,7 +32,7 @@ anyway, so the sectors are genuinely disjoint.
 References
 ----------
 [LFVHD] M. Zeleny-Mora, M. Mondragón, T. A. Valencia-Pérez, "Exploring LFV
-    Higgs decays in the Three Higgs Doublet Model", draft (`LFVHD_3HDMS3.tex`).
+    Higgs decays in the Three Higgs Doublet Model", draft (`paper_lfvhd/LFVHD_3HDMS3.tex`).
 [GomezBock21] Eur. Phys. J. C 81, 942 (2021), arXiv:2102.02800.  Eq. (29) the
     geometric rotation; Eqs. (54)–(55) the alignment scenarios.
 [CMS21] CMS Collaboration, Phys. Rev. D 104, 032013 (2021), arXiv:2105.03007 —
