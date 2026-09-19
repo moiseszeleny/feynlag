@@ -345,7 +345,7 @@ def test_aligned_vacuum_can_meet_the_electroweak_scale(s3_model):
 # ---------------------------------------------------------------------------
 # The S₃ FERMION sector (leptons and quarks).
 #
-# Physics input: the S₃ irrep assignment of research/thdm_s3/LFVHD_3HDMS3.tex —
+# Physics input: the S₃ irrep assignment of research/thdm_s3/paper_lfvhd/LFVHD_3HDMS3.tex —
 # (F1, F2) a doublet and F_S a singlet, for every left- and right-handed
 # species.  Rebuilt here from scratch, deliberately NOT importing
 # research/thdm_s3/fermions.py (see the note above the s3_sectors fixture).

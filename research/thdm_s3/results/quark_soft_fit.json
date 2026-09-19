@@ -1,5 +1,5 @@
 {
-  "description": "S3-3HDM quark sector with soft S3 breaking (mu5 = mu4 ansatz). Exact S3 forces |r| = |v1/v2| = sqrt(3) and V_us = 0; releasing r reproduces the observed Cabibbo angle. Demonstration of the MECHANISM, not a global fit: V_ub, V_cb and the CP phase are not targeted, and the converged solution puts |V_ub| = 0.96 and |V_cb| = 0.032 against measured ~0.004 and 0.0408 -- see finding 6 of notebook 02.",
+  "description": "S3-3HDM quark sector with soft S3 breaking (mu5 = mu4 ansatz). Exact S3 forces |r| = |v1/v2| = sqrt(3) and V_us = 0; releasing r reproduces the observed six quark masses AND all three targeted CKM magnitudes |V_us|, |V_cb|, |V_ub| simultaneously, to numerical precision. The CP phase (and hence the full unitarity triangle) stays out of reach: this sector's Yukawas are real, so its CKM matrix is real and the Jarlskog invariant is exactly zero. With 9 parameters against 9 targeted observables the system is exactly determined, and the least-squares scan finds several distinct exact (cost~0) solutions at different r depending on the restart seed -- quote r and V_abs here as an existence proof of the mechanism, not a prediction; see finding 6 of notebook 02 and NOTES.md finding 9.",
   "targets": {
     "m_u": 0.00216,
     "m_c": 1.27,
@@ -7,49 +7,51 @@
     "m_d": 0.00467,
     "m_s": 0.0934,
     "m_b": 4.18,
-    "Vus": 0.2243
+    "Vus": 0.2243,
+    "Vcb": 0.0411,
+    "Vub": 0.00382
   },
   "converged": true,
-  "cost": 3.8203324902789313e-19,
-  "r": 1.445618168365951,
+  "cost": 2.7723733840131044e-26,
+  "r": 1.3486753051522378,
   "r_exact_S3": 1.7320508075688772,
   "params_up": [
-    -85.7114525682818,
-    -49.48031600566652,
-    0.0007452871164360535,
-    0.39404570818100726
+    -0.3011421383072655,
+    -0.1951315959021221,
+    -170.8198757233854,
+    -10.684618501028469
   ],
   "params_down": [
-    -0.11328941697793654,
-    -0.07681642108260696,
-    -3.855351166059618,
-    0.6430402664940135
+    -0.040680113874220825,
+    -0.021689000900766392,
+    4.163290227748443,
+    0.15881443062311013
   ],
   "masses_up_GeV": [
-    0.002159999999925155,
-    1.269999999998378,
-    172.6899998494456
+    0.002160000000000051,
+    1.2700000000000093,
+    172.69000000000005
   ],
   "masses_down_GeV": [
-    0.004669999999822395,
-    0.09339999999973071,
-    4.180000000015045
+    0.004670000000001077,
+    0.0934000000000002,
+    4.180000000000003
   ],
   "V_abs": [
     [
-      0.16754115738165892,
-      0.2242999999996355,
-      0.9600101408752816
+      0.974512656459628,
+      0.22430000000000025,
+      0.0038200000000000018
     ],
     [
-      0.8623598365903441,
-      0.5052549119095117,
-      0.03244974926231761
+      0.2242651101024575,
+      0.973661106541046,
+      0.04110000000000031
     ],
     [
-      0.4777713604006521,
-      0.833310856758434,
-      0.27807830406098744
+      0.005499344573013391,
+      0.04090916290108236,
+      0.9991477356227162
     ]
   ]
 }

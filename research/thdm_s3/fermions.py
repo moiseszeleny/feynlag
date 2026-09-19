@@ -20,7 +20,7 @@ dictionary is the identity.
 References
 ----------
 [LFVHD] M. Zeleny-Mora, M. Mondragón, T. A. Valencia-Pérez, "Exploring LFV Higgs
-    decays in the Three Higgs Doublet Model", draft (`LFVHD_3HDMS3.tex`).
+    decays in the Three Higgs Doublet Model", draft (`paper_lfvhd/LFVHD_3HDMS3.tex`).
     Eq. (S3_representations_leptons) the S₃ assignment; the Yukawa Lagrangian and
     Eq. (ML_mass_matrix); Eq. (O12_definition)/(O23) the two-stage
     diagonalization; Eq. (RS)/(RAT)/(R_H) the scalar rotations;

@@ -51,7 +51,11 @@ new point have `cost` ~1e-19 and reproduce all six masses and $V_{us}=0.2243$.
 before, $1.446$ now, against the exact-S₃ $\sqrt3=1.732$), and §11's claim is only
 that soft breaking frees $r$ from $\sqrt3$ and switches the Cabibbo angle on, which
 holds at either point. Quote `r` or `V_abs` from this file as an existence proof,
-never as a determination.
+never as a determination. (This described the original 7-target fit — six masses
+plus $V_{us}$. Finding 9 below extended it to all three CKM magnitudes, nine
+targets against nine parameters, which is exactly determined rather than a free
+family; the same "quote `r` as an existence proof" rule applies there too, for a
+different reason — see finding 9.)
 
 Re-execute with the **miniconda** nbconvert, not the one first on `PATH`
 (`~/.local/bin/jupyter-nbconvert` runs under a different Python and dies on a
@@ -340,17 +344,25 @@ vacuum from $r=\sqrt3$: `build_model(soft=True)` adds the four CP-conserving
 S₃-breaking quadratics (the $\mathbf2$ pair and the $H_S^\dagger H_{1,2}$ pair;
 the hermitian quadratic space is 6-dimensional in the real symmetric case, of
 which 2 are invariant), and the tadpole system stops being over-constrained.
-A bounded fit then reproduces all six quark masses and the Cabibbo angle at a
-misalignment of $r-\sqrt3\approx-0.29$ (`results/quark_soft_fit.json`).
+A bounded fit now targets all three CKM magnitudes as well as the six masses, and
+reproduces all nine simultaneously to numerical precision (`cost`$\sim10^{-26}$),
+at a misalignment of $r-\sqrt3\approx-0.38$ (`results/quark_soft_fit.json`).
 
-**Caveat, and it is a big one.** That fit targets six masses and $|V_{us}|$ only.
-The untargeted elements come out badly wrong: at the converged point
-$|V_{ub}|\approx0.96$ (measured $\sim0.004$) and $|V_{cb}|\approx0.032$ (measured
-$0.0408$), i.e. near-maximal 1–3 mixing. So finding 9 establishes the
-*mechanism* by which soft breaking generates the Cabibbo angle, **not** that this
-model reproduces the observed CKM matrix. A genuine global fit (all four CKM
-parameters and six masses at once) may well fail, since the two-stage structure
-ties the 2–3 rotation to the same few parameters that fix the masses. Open.
+**Caveat, smaller than it was, but still real.** With 9 parameters against 9
+targeted observables the system is exactly determined rather than
+under-determined, and the least-squares scan turns up several *distinct* exact
+(`cost`$\sim0$) solutions at different $r$ depending on the restart seed — and,
+as the switch note above documents, on the numpy/scipy version too. So $r$ is
+still an *existence proof*, not a *prediction*, though now for a different reason
+(a discrete set of exact branches, not a continuous free family). What the fit
+does newly establish is that the two-stage structure does **not** prevent
+$|V_{us}|$, $|V_{cb}|$ and $|V_{ub}|$ from being matched simultaneously — the
+concern in the previous version of this note (that tying the 2–3 rotation to the
+same few mass-fixing parameters might make that impossible) does not hold. What
+remains structurally out of reach is the CP phase: these Yukawas are real, so the
+CKM matrix built from them is real and the Jarlskog invariant $J$ vanishes
+identically, independent of the couplings. Whether a complex-Yukawa extension of
+this sector can additionally reproduce $\delta$ (equivalently $J\neq0$) is open.
 
 ### 10. The physical basis, the gauge sector, and LFV rates (notebook 03)
 
