@@ -10,6 +10,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | file | what it is |
 |---|---|
 | `model.py` | the reusable build — algebra only. `build_model()` (with `soft=True` for soft S₃ breaking), the three mass matrices, the geometric rotation, the lambdified spectrum, the quartic potential + its numerical boundedness scan. Lifts the tutorial's notebook-local §6–§8 into importable form. |
+| `scan.py` | the parameter sweep at scan size — the cuts of notebook 01 in a chunked loop, sole writer of `results/viable_points.json`. |
 | `constraints.py` | numpy-vectorized boundedness-from-below + tree-unitarity conditions, quoted from [DasDey14] — **plus** the corrected neutral-direction condition derived in finding 4 below. |
 | `fermions.py` | the S₃ fermion sectors — basis map to [LFVHD], the five Yukawa structures, mass-matrix extraction, the two-stage diagonalization, the $G_k$/$Q_i$ LFV couplings. |
 | `paper_lfvhd/LFVHD_3HDMS3.tex` | the draft this work checks against; **patched** (findings 6–8). |
@@ -21,9 +22,9 @@ pedagogical walk-through). This directory is where the open questions go.
 | `03_scalar_decays.ipynb` | physical basis, gauge couplings, VSS + loop γγ, and the LFV rates. **Done.** |
 | `04_bfb_conditions.ipynb` | the [BotoRomaoSilva22] BFB method read and executed: their $V_N/V_{CB}/V_G$ split, copositivity, the lower-bound strategy — then applied to our $S_3$ potential. **Done.** |
 | `derivations_04.tex` | printable appendix emitted by notebook 04 §8. |
-| `results/viable_points.json` | every point surviving the scalar scan's cuts (319 at 2M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`); the first 12 are the historical benchmarks. |
+| `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
-| `results/decay_benchmarks.json` | per-point δ, VV couplings and LFV branching ratios. |
+| `results/decay_benchmarks.json` | per-point δ and VV couplings, plus the LFV branching-ratio distribution per (state, channel, $\mu_3$) and a 200-entry sample. |
 
 Notebooks import `model.py` from their own directory; from the repo root use
 `sys.path.insert(0, "research/thdm_s3")`.
@@ -379,20 +380,39 @@ g_{h_2VV}=\sin\delta\,g^{\rm SM},\qquad \sum_i g_{h_iVV}^2=(g^{\rm SM})^2 .$$
 
 This also settles the old *"the 125 GeV cut is a mass condition only"* entry:
 with the electroweak kinetic terms in place the alignment scenarios are testable,
-and $\delta$ is **predicted** at each viable point (from `cp_even_angle`), giving
-a coupling-based SM-likeness cut notebook 01 could not apply. Over the 12 viable
-points δ lands in $[-1.40,\,0.24]$ rad — i.e. the model does *not* sit at either
-idealised scenario.
+and $\delta$ is **predicted** at each viable point, giving a coupling-based
+SM-likeness cut that notebook 01 now applies (finding 11).
+
+**δ is $-\psi$, not $\alpha-\theta_v$** (corrected; the first version of
+`decays.delta_of_point` used the latter). $R_A(\phi,\theta_v)R_H(\delta)=
+R_A(\phi,\theta_v+\delta)$ identically, so δ is the rotation *on top of* the
+geometric basis and the draft's total angle is $\alpha=\theta_v+\delta$ — there is
+no θ_v to subtract from a block angle already measured from that basis. The sign
+then comes from the transpose: $R_H$'s $(0,2)$ block is $\mathrm{rot}(\delta)$ and
+the physical basis needs $R_H^{\mathsf T}BR_H$ diagonal, while
+`solve_mixing_angle_2x2` returns ψ with $RBR^{\mathsf T}$ diagonal. The old formula
+left $R_S^{\mathsf T}M_SR_S$ off-diagonal at the $10^5$ level and mis-assigned every
+coupling. Since $\psi=\tfrac12\arctan(\cdot)$, **$|\delta|<\pi/4$ always**, so
+$\cos^2\delta\ge\tfrac12$ and $h_1$ is *by convention* the larger-coupling state;
+scenario B ($\delta\to\pi/2$) is a symbolic limit, not a reachable point. Over the
+viable set δ lands in $[-0.32,\,0.32]$ rad — the model sits near, but not at,
+scenario A. Pinned in `tests/test_thdm_s3.py::test_delta_is_minus_the_block_angle`,
+which checks the two wrong candidates genuinely fail.
 
 **The draft's Scenario-C relations are exact**, not approximate: $Q_i$ is linear
 in the columns of $R_S$, so $Q_1(C)=\cos\delta\,Q_1(A)-\sin\delta\,Q_3(A)$ etc.
 hold for all δ, and $Q_2$ is entirely δ-independent. Combined with the above,
 $h_0$ has no $VV$ coupling *and* δ-independent lepton couplings.
 
-**LFV.** $\mathcal B(h\to\tau\mu)$ generically overshoots [CMS21]'s $0.15\%$ —
-a majority of sampled entries for the SM-like state, nearly all for $h_0$ — so
-LFV data really constrains this model. And $\mathcal B(h\to\tau e)$ is **zero to
-machine precision**: the same first-generation decoupling of $O_{12}$ that forced
+**LFV.** $\mathcal B(h\to\tau\mu)$ exceeds [CMS21]'s $0.15\%$ in **18%** of the
+sampled entries for the SM-like state and **81%** for $h_0$, so LFV data really
+constrains this model — but it bounds $\mu_3^\ell$ rather than the scalar sector:
+the SM-like fraction runs 0.3% → 6.4% → 48% across $\mu_3=0.5,\,0.9,\,1.4$, and the
+median point sits a factor ~9 *below* the limit. (Superseded reading: "generically
+overshoots, a majority of entries". That was computed with the wrong δ and before
+the coupling cut, which together moved the SM-like median from $1.9\times10^{-3}$
+to $1.7\times10^{-4}$.) And $\mathcal B(h\to\tau e)$ is **zero to machine
+precision**: the same first-generation decoupling of $O_{12}$ that forced
 $V_{us}=0$ in finding 9 forbids any $e$–$\tau$ entry. The quark and lepton
 flavour structures are tied together by the exact-S₃ vacuum, and findings 9 and
 10 are the same fact seen from opposite ends.
@@ -447,18 +467,22 @@ than merely incomplete), and the spin-0 form factor `A_zero` plus a general
   factor, the analogue of what `A_zero` did for $\gamma\gamma$. Untouched.
 - The LFV rates depend on $\mu_3^\ell$, the one dial the lepton mass relations
   leave free; notebook 03 scans it rather than fixing it from anything.
-- **A neutral direct-search bound is missing from the scalar scan.** Notebook 01
-  applies $m_{H^\pm}>80$ GeV to the charged states and nothing to the neutral
-  ones, so its theory-allowed set contains CP-even scalars down to a couple of
-  GeV — including a 39.8 GeV $h_0$ and a 33.3 GeV $H_2$ among the twelve saved
-  benchmarks. A light $h_0$ is genuinely safe: it is the geometric-basis state
-  and $g_{h_0VV}=0$ *exactly* for any δ (finding 10), so LEP's $Z\to Zh$ search
-  does not reach it. A light $H_1$/$H_2$ is not — they carry $\cos\delta$ and
-  $\sin\delta$ times the SM coupling. Notebook 03 now supplies those couplings,
-  so re-cutting the scan with a coupling-aware neutral bound is the most valuable
-  follow-up to notebook 01.
+- ~~A neutral direct-search bound is missing from the scalar scan.~~ **Closed.**
+  `model.hvv_function` gives every CP-even state's $hVV$ coupling² alongside its
+  mass (validated against brute-force diagonalization of the un-rotated matrix),
+  so `constraints.sm_like_cut`/`lep_neutral_mask` cut on the **coupling**: the
+  state carrying $g_{hVV}$ must sit at $125\pm3$ GeV with $\kappa^2\ge0.9$, and
+  nothing below 114.4 GeV may have $\xi^2\ge0.05$ ([LEP2003]). A light $h_0$ passes
+  on the physics — $g_{h_0VV}=0$ exactly — not on an exemption. Because the two
+  non-phobic states share the SM strength, the $\kappa^2$ threshold already implies
+  the LEP one, so the result is unchanged for any floor in $[0.01,0.10]$: the step
+  approximation of [LEP2003] Fig. 10 carries no weight. 2M → 322 under the old
+  mass-only cut, 64 under this one.
 - The scan samples λ uniformly, which is inefficient given the shape of the
   viable region. A targeted sampler would resolve its boundary far better.
+  Mitigated for now by brute force: `scan.py` sweeps 60M points in ~3.5 min
+  (30 chunks of 2M) for ~2000 survivors, and chunk 0 reproduces notebook 01's own
+  sample exactly, which is what the notebook asserts against the cached file.
 
 ## References
 
@@ -508,6 +532,11 @@ than merely incomplete), and the spin-0 form factor `A_zero` plus a general
   `paper_lfvhd/LFVHD_3HDMS3.tex`. Supplies the S₃ lepton assignment, the
   Yukawa Lagrangian, the charged-lepton mass matrix and its diagonalization,
   and the $Q_i$ LFV couplings. Checked (and patched) in findings 6–8.
+- **[LEP2003]** ALEPH, DELPHI, L3, OPAL Collaborations and the LEP Working Group
+  for Higgs Boson Searches, *"Search for the Standard Model Higgs boson at LEP"*,
+  Phys. Lett. B **565** (2003) 61, arXiv:hep-ex/0306033,
+  doi:10.1016/S0370-2693(03)00614-2. Fig. 10 is the 95% CL bound on
+  $\xi^2=(g_{HZZ}/g^{\rm SM}_{HZZ})^2$; $\xi^2=1$ is excluded below 114.4 GeV.
 - **[DasDeyPal16]** D. Das, U. K. Dey, P. B. Pal, *"S₃ symmetry and the quark
   mixing matrix"*, Phys. Lett. B **753**, 315 (2016),
   [arXiv:1507.06509](https://arxiv.org/abs/1507.06509),
