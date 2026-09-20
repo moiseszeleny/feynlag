@@ -64,6 +64,12 @@ References
 [GomezBock21] M. Gómez-Bock, M. Mondragón, A. Pérez-Martínez, Eur. Phys. J. C
     81, 942 (2021), arXiv:2102.02800.  §2.2 delegates these bounds to
     [DasDey14]; Eq. (8) is the v = 246 GeV constraint.
+[LEP2003] ALEPH, DELPHI, L3, OPAL Collaborations and LEP Working Group for
+    Higgs Boson Searches, "Search for the Standard Model Higgs boson at LEP",
+    Phys. Lett. B 565 (2003) 61, arXiv:hep-ex/0306033,
+    doi:10.1016/S0370-2693(03)00614-2.  Fig. 10 is the 95% CL upper bound on
+    ξ² = (g_HZZ/g_HZZ^SM)² versus mass; the quotable endpoint is that ξ² = 1 is
+    excluded below 114.4 GeV.  Used by `KAPPA2_MIN` / `XI2_LEP_FLOOR` above.
 [BentoRomaoSilva22] M. P. Bento, J. C. Romão, J. P. Silva, JHEP 08 (2022) 273,
     arXiv:2204.13130.  Independent post-erratum recomputation of 3HDM unitarity
     bounds — the cross-check target for Eq. (37).
@@ -266,6 +272,70 @@ def unitarity_mask(lam, bound=UNITARITY_BOUND):
     return _chunked(
         lambda block: (np.abs(unitarity_eigenvalues(block)) <= bound).all(axis=1),
         lam)
+
+
+# --------------------------------------------------------------------------
+# collider cuts on the CP-even sector
+# --------------------------------------------------------------------------
+
+#: The state at 125 GeV must carry at least this fraction of the SM hVV
+#: coupling².  A mass-only "125 ± 3 GeV" cut does not say the 125 GeV state is
+#: the one that couples to W/Z — over the scan's own survivors only 45% of the
+#: points that pass the mass cut put the coupling on the state at 125 GeV.
+KAPPA2_MIN = 0.9
+
+#: [LEP2003] excludes a scalar with SM-strength ZZ coupling (ξ² = 1) below this
+#: mass, at 95% CL.
+M_LEP_ZH = 114.4
+
+#: Below `M_LEP_ZH`, a CP-even state is allowed only if its ξ² is under this.
+#:
+#: **This is a step approximation of [LEP2003] Fig. 10, not a digitization of
+#: it** — the ξ²(m) exclusion curve is published as a figure and is not on
+#: HEPData, so the honest statement is the one quotable endpoint (ξ² = 1 is
+#: excluded below 114.4 GeV) plus a flat floor standing in for the rest.
+#:
+#: Nothing in the headline result rests on the value.  The two non-gauge-phobic
+#: CP-even states share the SM strength (ξ²₁ + ξ²₂ = 1), so `KAPPA2_MIN` = 0.9
+#: already forces the other state under 0.1: at that threshold the veto removes
+#: **zero** points for any floor in [0.01, 0.10] (measured on the scan's 319
+#: survivors).  It does bite at looser thresholds — 144 → 142 at κ² ≥ 0.5 — which
+#: is why it is applied rather than dropped.
+XI2_LEP_FLOOR = 0.05
+
+
+def sm_like_cut(xi2, masses, m_ref=125.0, window=3.0, kappa2_min=KAPPA2_MIN):
+    """(N,) boolean: the hVV-carrying CP-even state sits at ``m_ref ± window``.
+
+    ``xi2`` and ``masses`` are dicts of (N,) arrays over the CP-even states, as
+    `model.hvv_function` and `model.spectrum_function` return them.  The carrier
+    is identified *by its coupling* — the state with the largest ξ² — not by a
+    label or a mass ordering, so no assumption about which state is SM-like
+    enters.  It then has to be heavy enough to carry the coupling honestly:
+    ξ² ≥ ``kappa2_min``.
+    """
+    keys = list(xi2)
+    xi_stack = np.stack([np.asarray(xi2[k], dtype=float) for k in keys])
+    m_stack = np.stack([np.asarray(masses[k], dtype=float) for k in keys])
+    carrier = xi_stack.argmax(axis=0)
+    take = lambda stack: np.take_along_axis(stack, carrier[None, :], axis=0)[0]
+    return (np.abs(take(m_stack) - m_ref) <= window) & (take(xi_stack) >= kappa2_min)
+
+
+def lep_neutral_mask(xi2, masses, m_lep=M_LEP_ZH, floor=XI2_LEP_FLOOR):
+    """(N,) boolean: no CP-even state is both light and appreciably coupled.
+
+    Every state below ``m_lep`` must have ξ² < ``floor`` ([LEP2003] Fig. 10, as
+    approximated by `XI2_LEP_FLOOR`).  A gauge-phobic state needs no special
+    case: ``h0`` has ξ² = 0 **exactly** (its column of R_S is R_A's middle one,
+    orthogonal to the vacuum direction for any δ), so LEP's Z→Zh search does not
+    reach it and it passes on the physics, not on an exemption.
+    """
+    ok = np.ones(len(np.atleast_1d(next(iter(masses.values())))), dtype=bool)
+    for k in masses:
+        light = np.asarray(masses[k], dtype=float) < m_lep
+        ok &= ~light | (np.asarray(xi2[k], dtype=float) < floor)
+    return ok
 
 
 # --------------------------------------------------------------------------

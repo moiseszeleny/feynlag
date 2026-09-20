@@ -6,12 +6,14 @@ Model* — the step `NOTES.md` recorded as notebook 03's blocker — adds the
 electroweak kinetic terms, and turns the resulting vertices into widths.
 
 **General δ, not the aligned limit.**  The physical CP-even basis is
-``R_S = R_A · R_H(δ)`` with ``δ = α − θ_v`` ([LFVHD] Eqs. RS_AH, R_H).  δ is
+``R_S = R_A · R_H(δ)`` ([LFVHD] Eqs. RS_AH, R_H), where δ is the rotation on
+top of the geometric basis and the draft's total angle is ``α = θ_v + δ``.  δ is
 kept **symbolic** throughout: the draft's Scenario A is δ→0 and Scenario B is
 δ→π/2, and both are recovered as limits rather than assumed up front.  δ is
-also not a free dial — α is the residual CP-even 2×2 mixing angle that
-`model.cp_even_angle` computes, so at any benchmark point the λ's *predict*
-where the model sits among the scenarios.
+also not a free dial — it is minus the residual CP-even 2×2 block angle that
+`model.cp_even_angle` computes (see `delta_of_point` for why the sign and the
+absence of a θ_v shift are both forced), so at any benchmark point the λ's
+*predict* where the model sits among the scenarios.
 
 Two exact, δ-independent consequences fall straight out (both asserted in
 `03_scalar_decays.ipynb`): ``R_H`` acts only in the 1–3 plane, so ``h_0``'s
@@ -56,7 +58,8 @@ from model import build_model, cp_even_angle, rotation
 
 __all__ = [
     "DecayModel", "build_decay_model", "boson_vertices", "vv_couplings",
-    "delta_of_point", "load_points", "point_substitution", "LFV_LIMITS",
+    "delta_of_point", "alpha_of_point", "load_points", "point_substitution",
+    "LFV_LIMITS",
 ]
 
 #: 95% CL observed upper limits on LFV Higgs branching ratios, [CMS21].
@@ -281,16 +284,47 @@ def point_substitution(dm: DecayModel, point):
 
 
 def delta_of_point(dm: DecayModel, point):
-    """The **predicted** δ = α − θ_v at a benchmark point.
+    """The **predicted** δ at a benchmark point: ``δ = −ψ``.
 
-    α is the residual CP-even 2×2 mixing angle (`model.cp_even_angle`) and
-    θ_v the vacuum angle, so δ is fixed by the λ's and the vacuum — the model
-    says which of the draft's scenarios it realises, rather than being told.
+    ψ is the residual CP-even 2×2 block angle (`model.cp_even_angle`), so δ is
+    fixed by the λ's and the vacuum — the model says which of the draft's
+    scenarios it realises, rather than being told.
+
+    **Why −ψ and not ψ − θ_v.**  Two conventions have to be composed, and both
+    are checkable rather than quotable:
+
+    1. ``R_A(φ, θ_v)·R_H(δ) = R_A(φ, θ_v + δ)`` *identically* (asserted in
+       `03_scalar_decays.ipynb`; it is why `fermions.R_S(φ, α) = R_A(φ, α)`).
+       So δ is purely the **extra** rotation on top of the geometric basis, and
+       the draft's total angle is ``α = θ_v + δ``.  Subtracting θ_v from a
+       *block* angle — which is already measured from the geometric basis —
+       subtracts it twice.
+    2. ``R_H(δ)``'s (0,2) submatrix is ``rotation_2x2(δ)``, and the physical
+       basis needs ``R_Sᵀ M_S R_S`` diagonal, i.e. ``R_H(δ)ᵀ B R_H(δ)`` for the
+       block B.  But `solve_mixing_angle_2x2` returns ψ with ``R B Rᵀ``
+       diagonal — the transpose.  Hence ``rotation_2x2(δ)ᵀ = rotation_2x2(ψ)``,
+       i.e. **δ = −ψ**.
+
+    Pinned in `tests/test_thdm_s3.py::test_delta_is_minus_the_block_angle`,
+    which also checks that ``+ψ`` and ``ψ − θ_v`` genuinely fail to diagonalize.
+    The consequence worth knowing: ``ψ = ½ atan(...) ∈ (−π/4, π/4)``, so
+    ``cos²δ ≥ ½`` always — ``h_1`` is *by convention* the CP-even state carrying
+    the larger ``hVV`` coupling, and ``h_2`` the smaller.  Scenarios A and B
+    remain the symbolic δ→0 and δ→π/2 limits of the general expressions.
     """
-    alpha_expr = cp_even_angle(dm.scalar)[0]
+    psi_expr = cp_even_angle(dm.scalar)[0]
     sub = point_substitution(dm, point)
-    alpha = complex(sp.N(alpha_expr.subs(dm.scalar.align).subs(sub))).real
+    psi = complex(sp.N(psi_expr.subs(dm.scalar.align).subs(sub))).real
+    return -psi
+
+
+def alpha_of_point(dm: DecayModel, point):
+    """The draft's total CP-even angle ``α = θ_v + δ`` ([LFVHD] Eq. RS).
+
+    `delta_of_point` is the quantity the physical basis is built from; this is
+    the same information in the draft's variable, for comparing against it.
+    """
     v2, vS = point["vevs_GeV"]["v2"], point["vevs_GeV"]["vS"]
     v12 = 2 * v2 / sp.sqrt(3)                    # v12 = 2 v1, v2 = √3 v1
     theta_v = float(sp.N(sp.atan2(v12, vS)))
-    return alpha - theta_v
+    return theta_v + delta_of_point(dm, point)

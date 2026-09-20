@@ -453,6 +453,37 @@ def spectrum_function(m: S3Model, modules="math") -> Callable:
     return spectrum
 
 
+def delta_function(m: S3Model) -> Callable:
+    """Vectorized (λ₁…λ₈, v₂, v_S) → δ, the CP-even Higgs-basis angle.
+
+    ``δ = −ψ`` with ``ψ = ½ atan(2b/(a−c))`` the residual 2×2 block angle that
+    `cp_even_angle` returns symbolically — the same quantity, evaluated without
+    sympy so a scan can tag every point with it.  `decays.delta_of_point`
+    documents why the sign is negative and why there is no θ_v shift; notebook
+    03 cross-checks the two routes against each other.
+
+    ``atan`` (not ``atan2``) is deliberate: it is the branch `cp_even_angle`
+    uses, and it puts δ in (−π/4, π/4), which is the convention that makes
+    ``h_1`` the state carrying the larger ``hVV`` coupling.
+    """
+    import numpy as np
+
+    if "delta" in m._cache:
+        return m._cache["delta"]
+
+    D_S = diagonal_blocks(m)[0]
+    fn = sp.lambdify(m.lam_symbols + [m.v2.s, m.vS.s],
+                     [D_S[0, 0], D_S[0, 2], D_S[2, 2]], "numpy")
+
+    def delta(lam_values, v2_val, vS_val):
+        a, b, c = (np.asarray(x, dtype=float)
+                   for x in np.broadcast_arrays(*fn(*lam_values, v2_val, vS_val)))
+        return -0.5 * np.arctan(2.0 * b / (a - c))
+
+    m._cache["delta"] = delta
+    return m._cache["delta"]
+
+
 def hvv_function(m: S3Model) -> Callable:
     """Vectorized (λ₁…λ₈, v₂, v_S) → ``{"h0": g², "H1": g², "H2": g²}``.
 

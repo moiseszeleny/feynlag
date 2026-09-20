@@ -385,7 +385,13 @@ def R_A(phi, theta_v):
 
 
 def R_H(delta):
-    """[LFVHD] Eq. (R_H) — the Higgs-basis → mass-basis rotation, ``δ = α − θ_v``."""
+    """[LFVHD] Eq. (R_H) — the Higgs-basis → mass-basis rotation.
+
+    δ is the rotation *on top of* the geometric basis, so the draft's total
+    angle is ``α = θ_v + δ`` (``R_A(φ,θ_v)·R_H(δ) = R_A(φ,θ_v+δ)`` identically,
+    which is exactly what `R_S` below relies on).  `decays.delta_of_point`
+    derives its value, ``δ = −ψ``, from `model.cp_even_angle`.
+    """
     c, s = sp.cos(delta), sp.sin(delta)
     return sp.Matrix([[c, 0, s], [0, 1, 0], [-s, 0, c]])
 

@@ -313,6 +313,83 @@ def test_block_overlap_is_the_hvv_coupling(s3_sectors):
     assert wrong_matches == 0
 
 
+def test_delta_is_minus_the_block_angle(s3_sectors):
+    """R_S = R·R_H(δ) diagonalizes M_S for δ = −ψ, and for neither ψ nor ψ−θ_v.
+
+    Two conventions compose here and the research code got their combination
+    wrong (it used δ = ψ − θ_v), so both halves are pinned:
+
+    1. ``R_A(φ,θ)·R_H(δ) = R_A(φ,θ+δ)`` identically, so δ is the rotation *on
+       top of* the geometric basis — there is no θ_v to subtract from a block
+       angle that is already measured from that basis.
+    2. ``R_H(δ)``'s (0,2) submatrix is ``rotation_2x2(δ)`` and the physical basis
+       needs ``R_Hᵀ B R_H`` diagonal, while `solve_mixing_angle_2x2` returns ψ
+       with ``R B Rᵀ`` diagonal — the transpose.  Hence δ = −ψ.
+
+    The wrong candidates are asserted to *fail*, so the test has teeth.
+    """
+    import math
+
+    import numpy as np
+
+    from feynlag.vacuum.diagonalize import rotation_2x2, solve_mixing_angle_2x2
+
+    M_S, M_A, M_C, R, (v1, v2, vS), l = s3_sectors
+
+    def R_H(d):
+        c, s = sp.cos(d), sp.sin(d)
+        return sp.Matrix([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+
+    # (1) the composition identity, symbolically
+    phi, th, d = sp.symbols("phi theta d")
+    R_A = sp.Matrix([[sp.sin(th) * sp.cos(phi), -sp.sin(phi), -sp.cos(th) * sp.cos(phi)],
+                     [sp.sin(th) * sp.sin(phi), sp.cos(phi), -sp.cos(th) * sp.sin(phi)],
+                     [sp.cos(th), 0, sp.sin(th)]])
+    shifted = R_A.subs(th, th + d)
+    assert sp.simplify(R_A * R_H(d) - shifted) == sp.zeros(3, 3)
+
+    # the VV coupling of each column: overlap with the vacuum direction, R_A's
+    # first column.  cos δ, 0, sin δ -- h_0 gauge-phobic for ANY δ.
+    nhat = R_A[:, 0]
+    overlaps = sp.simplify((R_A * R_H(d)).T * nhat)
+    assert sp.simplify(overlaps[0] - sp.cos(d)) == 0
+    assert sp.simplify(overlaps[1]) == 0
+    assert sp.simplify(overlaps[2] - sp.sin(d)) == 0
+
+    # (2) the sign, numerically on the real mass matrix
+    D = sp.simplify(R.T * M_S * R)
+    block = sp.Matrix([[D[0, 0], D[0, 2]], [D[2, 0], D[2, 2]]])
+    psi_expr = solve_mixing_angle_2x2(block)[0]
+    assert sp.simplify(rotation_2x2(-psi_expr) - rotation_2x2(psi_expr).T) == sp.zeros(2, 2)
+
+    rng = np.random.default_rng(20260920)
+    for _ in range(5):
+        vals = {l[k]: float(rng.uniform(-2.0, 2.0)) for k in l}
+        vals[v2.s] = float(rng.uniform(40.0, 200.0))
+        vals[vS.s] = float(rng.uniform(40.0, 200.0))
+        psi = float(psi_expr.subs(vals))
+        v1n = vals[v2.s] / math.sqrt(3.0)
+        theta_v = math.atan2(math.hypot(v1n, vals[v2.s]), vals[vS.s])
+        Rn = np.array(R.subs(vals).evalf().tolist(), dtype=float)
+        Mn = np.array(M_S.subs(vals).evalf().tolist(), dtype=float)
+
+        def off(delta):
+            RH = np.array(R_H(sp.Float(delta)).evalf().tolist(), dtype=float)
+            RS = Rn @ RH
+            Dn = RS.T @ Mn @ RS
+            return np.abs(Dn - np.diag(np.diag(Dn))).max() / np.abs(np.diag(Dn)).max()
+
+        assert off(-psi) < 1e-12                      # the fix
+        assert off(psi) > 1e-3                        # the un-transposed sign
+        assert off(psi - theta_v) > 1e-3              # the old research formula
+
+    # the branch of atan pins the labelling: |cos δ| >= |sin δ| always, i.e.
+    # h_1 IS the state carrying the larger hVV coupling.
+    assert sp.atan(sp.Symbol("x", real=True)).is_real
+    for x in (-50.0, -1.0, 0.0, 1.0, 50.0):
+        assert abs(math.atan(x) / 2) <= math.pi / 4
+
+
 def test_masses_match_gomezbock_closed_forms(s3_sectors):
     """feynlag's derived masses reproduce [GomezBock21] Eqs. (30)-(33) exactly.
 
