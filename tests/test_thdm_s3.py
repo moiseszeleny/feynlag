@@ -258,6 +258,61 @@ def test_cp_even_block_diagonalizes_to_2x2(s3_sectors):
     assert sp.simplify(D[0, 2] - D[2, 0]) == 0
 
 
+def test_block_overlap_is_the_hvv_coupling(s3_sectors):
+    """A CP-even state's hVV coupling² is its overlap with block index 0.
+
+    The coupling of a mass eigenstate to W/Z is its component along the vacuum
+    direction v̂ = (v1, v2, vS)/v, because every doublet carries the same gauge
+    charges.  R's first column IS v̂, so that direction is index 0 of D_S = RᵀM_SR
+    and, with h0 decoupled, the two block states share the SM strength as
+
+        g²± = ½ (1 ± (a−c)/√((a−c)² + 4b²)),   a, b, c = D_S[0,0], D_S[0,2], D_S[2,2].
+
+    Checked against the definition (numerically diagonalize the *un-rotated*
+    M_S, project each eigenvector on v̂) at random points, not derived from the
+    block; and the opposite assignment fails, so the test has teeth.  The
+    research scan (research/thdm_s3/model.py::hvv_function) tags every viable
+    point with this quantity and relies on it.
+    """
+    import numpy as np
+    M_S, M_A, M_C, R, (v1, v2, vS), l = s3_sectors
+    D = sp.simplify(R.T * M_S * R)
+    a, b, c = D[0, 0], D[0, 2], D[2, 2]
+
+    rng = np.random.default_rng(20260920)
+    wrong_matches = 0
+    for _ in range(8):
+        vals = {l[k]: float(rng.uniform(-2.0, 2.0)) for k in l}
+        vals[v2.s] = float(rng.uniform(40.0, 200.0))
+        vals[vS.s] = float(rng.uniform(40.0, 200.0))
+        Mn = np.array(M_S.subs(vals).evalf().tolist(), dtype=float)
+        w, U = np.linalg.eigh((Mn + Mn.T) / 2)
+        v1n = vals[v2.s] / np.sqrt(3.0)
+        vhat = np.array([v1n, vals[v2.s], vals[vS.s]])
+        vhat /= np.linalg.norm(vhat)
+        true_g2 = np.sort((U.T @ vhat) ** 2)
+
+        an, bn, cn = (float(x.subs(vals)) for x in (a, b, c))
+        root = np.hypot(an - cn, 2.0 * bn)
+        ours = np.sort([0.0, 0.5 * (1 + (an - cn) / root),
+                        0.5 * (1 - (an - cn) / root)])
+        assert np.allclose(true_g2, ours, atol=1e-9), (true_g2, ours)
+        assert abs(true_g2.sum() - 1.0) < 1e-12               # Σ g² = (g^SM)²
+
+        # the eigenvalue each overlap belongs to: (tr + root)/2 carries the + sign
+        eig_plus = 0.5 * (an + cn + root)
+        assert any(np.isclose(eig_plus, x, rtol=1e-9) for x in w)
+
+        # swapping the two block states' couplings must be caught whenever they differ
+        g_plus = 0.5 * (1 + (an - cn) / root)
+        k_plus = int(np.argmin(np.abs(w - eig_plus)))
+        assert np.isclose((U[:, k_plus] @ vhat) ** 2, g_plus, atol=1e-9)
+        if abs(g_plus - 0.5) > 1e-3:
+            wrong_matches += int(np.isclose((U[:, k_plus] @ vhat) ** 2,
+                                            1 - g_plus, atol=1e-6))
+    assert wrong_matches == 0
+
+
 def test_masses_match_gomezbock_closed_forms(s3_sectors):
     """feynlag's derived masses reproduce [GomezBock21] Eqs. (30)-(33) exactly.
 

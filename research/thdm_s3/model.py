@@ -397,6 +397,28 @@ def _block_eigs(a, b, c):
     return (tr + root) / 2.0, (tr - root) / 2.0
 
 
+def _block_vv_overlaps(a, b, c):
+    """hVV coupling² (in units of the SM's) of the two states of [[a,b],[b,c]].
+
+    Index 0 of the geometric-basis CP-even block is the vacuum direction
+    (``R_A``'s first column, notebook 03 §2) and ``h0`` decouples exactly, so a
+    mass eigenstate's coupling to VV is its eigenvector's overlap with index 0.
+    For the eigenvalue ``(tr ± root)/2`` that overlap² is
+    ``½ (1 ± (a−c)/√((a−c)²+4b²))`` — the same ordering as `_block_eigs`, so the
+    first return value belongs to ``H1`` and the second to ``H2``.  They sum to
+    1: together with ``h0``'s exact 0 this is the sum rule Σ g²ᵢ = (g^SM)².
+    """
+    import numpy as np
+
+    d = a - c
+    root = (d * d + 4.0 * b * b) ** 0.5
+    # root == 0 only when a == c and b == 0: the block is a multiple of the
+    # identity, every direction is an eigenvector, and ½ is the honest answer
+    safe = np.where(root > 0.0, root, 1.0)
+    frac = np.where(root > 0.0, d / safe, 0.0)
+    return 0.5 * (1.0 + frac), 0.5 * (1.0 - frac)
+
+
 def spectrum_function(m: S3Model, modules="math") -> Callable:
     """Lambdified (λ₁…λ₈, v₂, v_S) → {name: mass², …} over `SPECTRUM_KEYS`.
 
@@ -429,6 +451,34 @@ def spectrum_function(m: S3Model, modules="math") -> Callable:
 
     m._cache[key] = spectrum
     return spectrum
+
+
+def hvv_function(m: S3Model) -> Callable:
+    """Vectorized (λ₁…λ₈, v₂, v_S) → ``{"h0": g², "H1": g², "H2": g²}``.
+
+    The hVV coupling² of each CP-even mass eigenstate relative to the SM's, read
+    from the same block entries as `spectrum_function` — no sympy at scan time,
+    and no dependence on how `cp_even_angle` labels its states.  ``h0`` is
+    gauge-phobic exactly, so its entry is 0 (an array of zeros, so callers can
+    stack the three).  The overlaps sum to 1 at every point.
+    """
+    import numpy as np
+
+    if "hvv" in m._cache:
+        return m._cache["hvv"]
+
+    D_S = diagonal_blocks(m)[0]
+    fn = sp.lambdify(m.lam_symbols + [m.v2.s, m.vS.s],
+                     [D_S[0, 0], D_S[0, 2], D_S[2, 2]], "numpy")
+
+    def hvv(lam_values, v2_val, vS_val):
+        a, b, c = (np.asarray(x, dtype=float)
+                   for x in np.broadcast_arrays(*fn(*lam_values, v2_val, vS_val)))
+        g2_H1, g2_H2 = _block_vv_overlaps(a, b, c)
+        return {"h0": np.zeros_like(g2_H1), "H1": g2_H1, "H2": g2_H2}
+
+    m._cache["hvv"] = hvv
+    return hvv
 
 
 # --------------------------------------------------------------------------

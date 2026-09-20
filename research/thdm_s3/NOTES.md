@@ -21,7 +21,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `03_scalar_decays.ipynb` | physical basis, gauge couplings, VSS + loop γγ, and the LFV rates. **Done.** |
 | `04_bfb_conditions.ipynb` | the [BotoRomaoSilva22] BFB method read and executed: their $V_N/V_{CB}/V_G$ split, copositivity, the lower-bound strategy — then applied to our $S_3$ potential. **Done.** |
 | `derivations_04.tex` | printable appendix emitted by notebook 04 §8. |
-| `results/viable_points.json` | benchmark points from the scalar scan. |
+| `results/viable_points.json` | every point surviving the scalar scan's cuts (319 at 2M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`); the first 12 are the historical benchmarks. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
 | `results/decay_benchmarks.json` | per-point δ, VV couplings and LFV branching ratios. |
 
