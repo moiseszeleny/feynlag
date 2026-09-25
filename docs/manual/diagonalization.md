@@ -129,7 +129,7 @@ diagonalization $M = O^TDO$ (ordinary spectral theorem), but the diagonal
 entries $D_{ii}$ can be **negative** — unphysical for a mass. Takagi
 factorization instead seeks $M = UD_{\rm abs}U^T$ with $U$ unitary and
 $D_{\rm abs}\ge0$, absorbing the sign into a phase. `diagonalize_takagi`
-(`vacuum/diagonalize.py:247`) builds this directly: with `phases` diagonal,
+(`vacuum/diagonalize.py`) builds this directly: with `phases` diagonal,
 `phases[i,i] = i` (imaginary unit) wherever $D_{ii}<0$ and $1$ otherwise,
 
 $$
@@ -144,6 +144,22 @@ negative, so $\text{phases}^2 D_{\rm abs} = D$ recovers the original
 when at least one eigenvalue was negative — the standard Majorana-phase
 convention for absorbing an unphysical negative mass into the field
 redefinition.
+
+**Symbolic vs numeric.** The orthogonal $O$ can come from two places
+(`method=`). `"symbolic"` uses SymPy's exact `Matrix.diagonalize`, which is
+fine for a 2×2 or a block-diagonal matrix. It stalls on a generic $N>2$
+matrix, though: a 3+2 seesaw with a generic $3\times2$ $m_D$ has
+characteristic polynomial $\lambda\times$(quartic) and does not finish.
+`"numeric"` uses mpmath's symmetric eigensolver (`eigsy`, which ships with
+SymPy) at `dps` digits (default 50) and orders the columns by increasing
+mass. The high precision is needed because a seesaw spectrum spans about 14
+orders of magnitude, so double precision would lose the light states. An
+eigenvalue below $10^{-\rm dps}$ of the largest counts as an exact zero mode
+($D=0$, no phase, since the sign of a round-off-level eigenvalue is noise).
+The default `"auto"` picks numeric for a numeric matrix larger than 2×2 and
+symbolic otherwise, so every 2×2 and every symbolic call keeps its exact
+result. The phase convention is the same on both routes, so the numeric $U$
+feeds `MajoranaRotation` unchanged.
 
 ## 7.4 Fermion mass-basis rotations
 
