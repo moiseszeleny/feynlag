@@ -9,6 +9,8 @@
 - Larger symbolic matrices: use a :func:`rotation_2x2`-style user ansatz and
   ``solve_mixing_angle_2x2`` per block, or numeric diagonalization at export
   time — never rely on symbolic ``eigenvects`` for >2×2 (see plan risks).
+  :func:`diagonalize_takagi` follows this rule itself: a numeric matrix
+  larger than 2×2 goes through a high-precision numeric eigensolver.
 
 SVD (Dirac) and Takagi (Majorana) arrive with the fermion sector (Phase 4).
 """
@@ -244,20 +246,91 @@ def diagonalize_svd_2x2(M, left_fields, right_fields, new_left, new_right,
     return rot_left, rot_right
 
 
-def diagonalize_takagi(M, old_fields=None, new_fields=None):
+def _numeric_takagi(M, dps):
+    """Numeric ``(U, |D|)`` for a real symmetric numeric ``M`` at ``dps`` digits.
+
+    mpmath's symmetric eigensolver (mpmath ships with SymPy — no new
+    dependency) replaces the symbolic characteristic polynomial.  Columns are
+    ordered by increasing mass; the phase convention is the symbolic path's.
+    """
+    import mpmath
+
+    if M.free_symbols:
+        raise ValueError("numeric Takagi factorization needs a numeric matrix "
+                         f"(free symbols: {sorted(M.free_symbols, key=str)})")
+    entries = [sp.N(x, dps + 10) for x in M]
+    if any(sp.im(x) != 0 for x in entries):
+        raise ValueError("numeric Takagi factorization handles real matrices "
+                         "only")
+    n = M.rows
+    with mpmath.workdps(dps + 10):
+        A = mpmath.matrix(n, n)
+        for a in range(n):
+            for b in range(n):
+                A[a, b] = mpmath.mpf(str(sp.re(entries[a * n + b])))
+        E, Q = mpmath.eigsy(A)
+        # an eigenvalue at round-off level is an exact zero mode: its sign
+        # (hence the i phase) would otherwise be noise
+        scale = max((abs(e) for e in E), default=0)
+        E = [e if abs(e) > scale * mpmath.mpf(10) ** -dps else mpmath.mpf(0)
+             for e in E]
+        order = sorted(range(n), key=lambda k: abs(E[k]))
+        U = sp.Matrix(n, n, lambda a, c: sp.Float(str(Q[a, order[c]]), dps)
+                      * (sp.I if E[order[c]] < 0 else 1))
+        D = sp.diag(*[sp.Float(str(abs(E[k])), dps) if E[k] != 0
+                      else sp.S.Zero for k in order])
+    return U, D
+
+
+def diagonalize_takagi(M, old_fields=None, new_fields=None, method="auto",
+                       dps=50):
     """Takagi factorization of a (real) symmetric Majorana mass matrix.
 
     Returns ``(U, D)`` with ``M = U D Uᵀ`` and ``D`` diagonal non-negative:
     a real orthogonal diagonalization with factors of ``i`` absorbing
     negative eigenvalues (the standard Majorana phase convention).
 
+    Args:
+        method: ``"symbolic"`` diagonalizes exactly through SymPy's
+            ``Matrix.diagonalize`` (eigenvalue order as SymPy returns it).
+            ``"numeric"`` uses mpmath's symmetric eigensolver at ``dps``
+            digits and orders the columns by increasing mass; it needs a real
+            matrix without free symbols.  ``"auto"`` (default) is numeric for
+            a numeric matrix larger than 2×2 and symbolic otherwise — the
+            exact route stalls on a generic ``N > 2`` matrix (its
+            characteristic polynomial has no usable closed-form roots; a
+            generic 5×5 seesaw does not finish), while the numeric one is
+            instant.  Numerically, an eigenvalue below ``10^-dps`` of the
+            largest is an exact zero mode (``D = 0``, no phase).
+        dps: working precision of the numeric route.  It must be high: a
+            seesaw spectrum spans ~14 orders of magnitude, so double
+            precision would lose the light states entirely.
+
     If ``old_fields``/``new_fields`` are given, also returns the
     corresponding unitary :class:`Rotation` (``new = U† old``) as third
     element.
     """
     M = sp.Matrix(M)
+    if method not in ("auto", "symbolic", "numeric"):
+        raise ValueError(f"unknown Takagi method {method!r}")
     if sp.simplify(M - M.T) != sp.zeros(*M.shape):
         raise ValueError("Takagi factorization needs a symmetric matrix")
+    if method == "auto":
+        method = ("numeric" if M.rows > 2 and not M.free_symbols
+                  else "symbolic")
+    if method == "numeric":
+        U, D_abs = _numeric_takagi(M, dps)
+    else:
+        U, D_abs = _symbolic_takagi(M)
+    if old_fields is not None and new_fields is not None:
+        rot = Rotation(old_fields, new_fields, U.conjugate().T,
+                       kind="unitary")
+        return U, D_abs, rot
+    return U, D_abs
+
+
+def _symbolic_takagi(M):
+    """Exact ``(U, |D|)`` through SymPy's diagonalization (small ``M`` only)."""
     O, D = _orthogonal_diagonalizer(M)      # O M Oᵀ = D (may be negative)
     n = D.shape[0]
     phases = sp.eye(n)
@@ -267,10 +340,6 @@ def diagonalize_takagi(M, old_fields=None, new_fields=None):
     # M = Oᵀ D O ⇒ with U = Oᵀ·phases:  U |D| Uᵀ = Oᵀ phases |D| phases Oᵀᵀ
     U = O.T * phases
     D_abs = sp.Matrix(n, n, lambda a, b: sp.Abs(D[a, b]) if a == b else 0)
-    if old_fields is not None and new_fields is not None:
-        rot = Rotation(old_fields, new_fields, U.conjugate().T,
-                       kind="unitary")
-        return U, D_abs, rot
     return U, D_abs
 
 
