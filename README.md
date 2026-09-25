@@ -121,9 +121,9 @@ tested (400+ tests pinning physical results), and the exported SM UFO is
 **cross-checked against MadGraph** (`e+e-→μ+μ-` and the gauge-cancelling
 `e+e-→W+W-` reproduce the stock `sm` cross sections to MC precision, and a
 four-fermion UFO reproduces the muon width — see
-[`docs/benchmark.md`](docs/benchmark.md)).
+[`docs/benchmark.md`](https://github.com/moiseszeleny/feynlag/blob/main/docs/benchmark.md)).
 
-Known limitations (planned, see [`docs/roadmap.md`](docs/roadmap.md)):
+Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszeleny/feynlag/blob/main/docs/roadmap.md)):
 
 - no R_ξ gauge fixing or ghosts (Goldstone bosons are kept, but no
   gauge-fixing terms, ghost vertices or ξ dependence);
@@ -137,4 +137,4 @@ plausible-looking wrong answer.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](https://github.com/moiseszeleny/feynlag/blob/main/LICENSE).
