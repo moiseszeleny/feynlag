@@ -493,14 +493,14 @@ class _UFOBuilder:
             value = float(sp.sympify(p.value))
             lines.append(
                 f"{p.name} = Parameter(name='{p.name}', nature='external', "
-                f"type='real', value={value!r}, texname='{p.tex}', "
+                f"type='real', value={value!r}, texname={p.tex!r}, "
                 f"lhablock='FEYNLAG', lhacode=[{idx}])")
         lines.append("")
         for p in self.parameters.dependency_order():
             value = ufo_expr(p.expr)
             lines.append(
                 f"{p.name} = Parameter(name='{p.name}', nature='internal', "
-                f"type='complex', value={value!r}, texname='{p.tex}')")
+                f"type='complex', value={value!r}, texname={p.tex!r})")
         lines.append("")
         return "\n".join(lines)
 
@@ -516,8 +516,8 @@ class _UFOBuilder:
                 f"{_pyname(spec.name)} = Particle(pdg_code={spec.pdg}, "
                 f"name='{spec.name}', antiname='{spec.antiname}', "
                 f"spin={spec.spin}, color={spec.color}, mass={mass}, "
-                f"width={width}, texname='{spec.texname}', "
-                f"antitexname='{spec.antitexname}', charge={spec.charge}, "
+                f"width={width}, texname={spec.texname!r}, "
+                f"antitexname={spec.antitexname!r}, charge={spec.charge}, "
                 f"goldstoneboson={spec.goldstone})")
             if not spec.self_conjugate:
                 lines.append(f"{_pyname(spec.antiname)} = "

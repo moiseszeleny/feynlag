@@ -26,6 +26,12 @@ All notable changes to feynlag are documented here. The format follows
 - A `TexSymbol` sorts exactly like a plain `Symbol` of the same name, so
   adding a tex never reorders vertex legs or printed terms.
 
+### Fixed
+- The UFO writer now escapes `texname`/`antitexname`. It wrote them as bare
+  `'...'` literals, so a tex containing a quote (`g'`) made `parameters.py`
+  a `SyntaxError`, and a backslash was read as a Python escape (`\tau` →
+  TAB + `au`).
+
 ### Changed
 - A field component or parameter declared with a tex is a `TexSymbol`, which
   is not equal to a plain `Symbol` of the same name. Code that rebuilds such a
