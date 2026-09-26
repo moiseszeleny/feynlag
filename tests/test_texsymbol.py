@@ -175,3 +175,38 @@ class TestPipelineBlindToTex:
         for a in range(3):
             for b in range(3):
                 assert sp.simplify(M[a, b] - Y[a, b] * v.s / sp.sqrt(2)) == 0
+
+
+class TestOverridesAndBuilders:
+    def test_symbol_names_override_wins(self):
+        a = TexSymbol("Gp", "G^+")
+        assert sp.latex(a, symbol_names={a: "X"}) == "X"
+        assert sp.latex(a, symbol_names={sp.Symbol("y"): "Y"}) == "G^+"
+
+    def test_bosons_cache_rejects_conflicting_tex(self, ew):
+        SU2L, *_ = ew
+        W = SU2L.bosons("W", component_tex=["W^1", "W^2", "W^3"])
+        assert SU2L.bosons() is W
+        assert SU2L.bosons(component_tex=["W^1", "W^2", "W^3"]) is W
+        with pytest.raises(ValueError, match="already created"):
+            SU2L.bosons(component_tex=["A", "B", "C"])
+
+    def test_electroweak_scaffold_opt_in(self):
+        from feynlag.models import electroweak_scaffold
+        plain = electroweak_scaffold()
+        assert all(type(c) is sp.Symbol
+                   for F in plain.fields for c in F.components)
+        ew = electroweak_scaffold(higgs_tex=["G^+", "H^0"],
+                                  w_tex=["W^1", "W^2", "W^3"], b_tex="B")
+        assert [sp.latex(c) for c in ew.H.components] == ["G^+", "H^0"]
+        assert sp.latex(ew.W[0]) == "W^1" and sp.latex(ew.B[0]) == "B"
+
+    def test_to_physical_basis_gm_tex(self):
+        from feynlag.models import electroweak_scaffold, to_physical_basis
+        ew = electroweak_scaffold(higgs_tex=["G^+", "H^0"])
+        L = ew.add_higgs(Lagrangian())
+        model = Model("sm", gauge_groups=ew.gauge_groups, fields=ew.fields,
+                      parameters=ew.parameters, lagrangian=L)
+        pb = to_physical_basis(model, ew, gm_tex="G^-")
+        assert sp.latex(pb.Gm) == "G^-"
+        assert pb.cmap == {sp.conjugate(ew.H[0]): pb.Gm}

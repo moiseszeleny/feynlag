@@ -330,11 +330,26 @@ class GaugeBoson(Field):
 
 
 def _gauge_bosons(self, name=None, component_tex=None, tex=None):
-    """Create (once) and return this group's gauge boson field."""
+    """Create (once) and return this group's gauge boson field.
+
+    A later call's ``component_tex``/``tex`` must agree with the first one's
+    (the field is cached, so a different LaTeX name would be ignored).
+    """
     if self._gauge_bosons is None:
         self._gauge_bosons = GaugeBoson(name or self.name, self, tex=tex,
                                         component_tex=component_tex)
-    return self._gauge_bosons
+        return self._gauge_bosons
+    W = self._gauge_bosons
+    if component_tex is not None:
+        have = [getattr(c, "_tex", None) for c in W.components]
+        if list(component_tex) != have:
+            raise ValueError(
+                f"{self.name}: gauge bosons already created with component "
+                f"tex {have}, not {list(component_tex)}")
+    if tex is not None and tex != W.tex:
+        raise ValueError(f"{self.name}: gauge bosons already created with "
+                         f"tex {W.tex!r}, not {tex!r}")
+    return W
 
 
 GaugeGroup.bosons = _gauge_bosons

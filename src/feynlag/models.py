@@ -65,7 +65,7 @@ def electroweak_gauge(gw=GW_DEFAULT, g1=G1_DEFAULT, names=("SU2L", "U1Y")):
 
 
 def higgs_doublet(SU2L, U1Y, v=VEV_DEFAULT, mh=MH_DEFAULT, lam=None,
-                  extra_reps=None, name="H"):
+                  extra_reps=None, name="H", component_tex=None):
     """The SM Higgs doublet with its VEV expanded and potential parameters.
 
     Args:
@@ -78,6 +78,8 @@ def higgs_doublet(SU2L, U1Y, v=VEV_DEFAULT, mh=MH_DEFAULT, lam=None,
         extra_reps: additional ``{group: rep}`` charges to merge into the
             doublet (e.g. a U(1)_X charge for a Z′ model).
         name: field name.
+        component_tex: LaTeX names for ``(Gp, H0)``, e.g. ``["G^+", "H^0"]``
+            (see :class:`~feynlag.texsymbol.TexSymbol`).  Default: none.
 
     Returns:
         ``(H, v_param, lam_param, mu2_param)``.  ``mu2`` is an
@@ -90,7 +92,8 @@ def higgs_doublet(SU2L, U1Y, v=VEV_DEFAULT, mh=MH_DEFAULT, lam=None,
     lam_val = lam if lam is not None else mh**2 / (2 * v**2)
     lam_p = ExternalParameter("lam", lam_val)
     mu2_p = InternalParameter("mu2", unit_dim=2)
-    H = Scalar(name, reps=reps, component_names=["Gp", "H0"])
+    H = Scalar(name, reps=reps, component_names=["Gp", "H0"],
+               component_tex=component_tex)
     H.expand_vev({H.components[1]: v_p})
     return H, v_p, lam_p, mu2_p
 
@@ -191,12 +194,20 @@ class ElectroweakScaffold:
 
 
 def electroweak_scaffold(gw=GW_DEFAULT, g1=G1_DEFAULT, v=VEV_DEFAULT,
-                         mh=MH_DEFAULT, lam=None, extra_higgs_reps=None):
-    """Build an :class:`ElectroweakScaffold` at the given parameter point."""
+                         mh=MH_DEFAULT, lam=None, extra_higgs_reps=None,
+                         higgs_tex=None, w_tex=None, b_tex=None):
+    """Build an :class:`ElectroweakScaffold` at the given parameter point.
+
+    ``higgs_tex`` (the doublet's ``component_tex``), ``w_tex`` (the three
+    ``W^a``) and ``b_tex`` (``B``) opt into LaTeX-carrying symbols; by default
+    every symbol is plain.
+    """
     SU2L, U1Y, gw_p, g1_p = electroweak_gauge(gw, g1)
     H, v_p, lam_p, mu2_p = higgs_doublet(SU2L, U1Y, v=v, mh=mh, lam=lam,
-                                         extra_reps=extra_higgs_reps)
-    W, B = SU2L.bosons("W"), U1Y.bosons("B")
+                                         extra_reps=extra_higgs_reps,
+                                         component_tex=higgs_tex)
+    W = SU2L.bosons("W", component_tex=w_tex)
+    B = U1Y.bosons("B", tex=b_tex)
     return ElectroweakScaffold(SU2L, U1Y, gw_p, g1_p, H, v_p, lam_p, mu2_p, W, B)
 
 
@@ -225,13 +236,15 @@ class PhysicalBasis:
     bosons: list = field(default_factory=list)
 
 
-def to_physical_basis(model, scaffold, gm_name="Gm"):
+def to_physical_basis(model, scaffold, gm_name="Gm", gm_tex=None):
     """Apply the standard EW rotations and wire up the Goldstone bookkeeping.
 
     Registers the Weinberg (``W³,B → Z,γ``) and charged-current
     (``W¹,W² → W⁺,W⁻``) rotations, then reads the physical Higgs ``h`` and
     neutral Goldstone ``G0`` off the doublet's VEV expansion and builds the
     charged-Goldstone conjugate map.
+
+    ``gm_tex`` gives the ``Gm`` symbol a LaTeX name (e.g. ``"G^-"``).
 
     Returns:
         :class:`PhysicalBasis`.
@@ -242,7 +255,7 @@ def to_physical_basis(model, scaffold, gm_name="Gm"):
     H = scaffold.H
     _, h, G0 = H.vev_expansions[H.components[1]]     # (vev, re, im)
     Gp = H.components[0]
-    Gm, cmap = conjugate_pair(Gp, gm_name)
+    Gm, cmap = conjugate_pair(Gp, gm_name, tex=gm_tex)
     bosons = [h, G0, Gp, Gm, Z, A, Wp, Wm]
     return PhysicalBasis(Z, A, Wp, Wm, h, G0, Gp, Gm, cmap, bosons)
 

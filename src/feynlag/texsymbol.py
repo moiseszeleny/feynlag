@@ -34,7 +34,8 @@ class TexSymbol(sp.Symbol):
         return super()._hashable_content() + (self._tex,)
 
     def _latex(self, printer):
-        return self._tex
+        # an explicit ``symbol_names`` entry still wins, as for a plain Symbol
+        return printer._settings.get("symbol_names", {}).get(self, self._tex)
 
     def _sympyrepr(self, printer):
         args = [repr(self.name), repr(self._tex)]
