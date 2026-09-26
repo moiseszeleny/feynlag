@@ -247,6 +247,16 @@ class TestOverridesAndBuilders:
         assert type(Wp) is TexSymbol
 
 
+    def test_standard_ckm_tex(self):
+        from feynlag import standard_ckm
+        params, V = standard_ckm(tex={"th12": r"\theta_{12}", "Vus": "V_{us}"})
+        by_name = {p.name: p for p in params}
+        assert sp.latex(by_name["th12"].s) == r"\theta_{12}"
+        assert sp.latex(V[0, 1]) == "V_{us}" and not V[0, 1].is_real
+        assert type(by_name["th13"].symbol) is sp.Symbol
+        assert all(type(p.symbol) is sp.Symbol for p in standard_ckm()[0])
+
+
 #: one global name-keyed table, as a downstream model library passes it
 SM_TEX = {
     "gw": "g", "g1": "{g'}", "v": "v", "lam": r"\lambda", "mu2": r"\mu^2",

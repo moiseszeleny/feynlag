@@ -16,7 +16,8 @@ All notable changes to feynlag are documented here. The format follows
 - Opt-in LaTeX names in the SM builders and `Scalar.expand_vev`: each takes
   `tex=`, a map from the *name* of a symbol it creates to a LaTeX name
   (`electroweak_gauge`, `higgs_doublet`, `electroweak_scaffold`,
-  `weinberg_rotation`, `charged_current_rotation`, `to_physical_basis`), so
+  `weinberg_rotation`, `charged_current_rotation`, `to_physical_basis`,
+  `standard_ckm`), so
   one global table covers the couplings, the Higgs parameters, the doublet
   and its fluctuations (`H0_r`→`h`), and the physical `Z`, `A`, `W±`, `G⁻`.
   Names missing from the map stay plain. An explicit `symbol_names` printer setting
