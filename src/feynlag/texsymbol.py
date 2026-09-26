@@ -27,6 +27,13 @@ class TexSymbol(sp.Symbol):
         obj._tex = str(tex)
         return obj
 
+    @classmethod
+    def class_key(cls):
+        # sort (and so print) exactly like a Symbol of the same name — with
+        # its own class name in the key, every TexSymbol would sort after all
+        # plain Symbols and reshuffle vertex legs and printed terms
+        return sp.Symbol.class_key()
+
     def __getnewargs_ex__(self):
         return ((self.name, self._tex), self._assumptions_orig)
 
