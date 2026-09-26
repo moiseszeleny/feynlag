@@ -12,6 +12,11 @@ plan file, this is committed and discoverable in any future session.
 reusable SM builders (`feynlag.models`) and the any-SU(N) irrep support —
 414 tests green, `pytest` ~4 min. See `CHANGELOG.md` for the release notes.
 
+**v0.2.0** adds per-symbol LaTeX names (`TexSymbol`: `component_tex=`,
+parameter `tex=`, a name-keyed `tex=` map on the SM builders), numeric Takagi
+factorisation for large numeric matrices, and a UFO `texname` escaping fix —
+512 tests green. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
