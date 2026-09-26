@@ -25,6 +25,7 @@ from .verify import (
     verify_ufo_numeric,
 )
 from .export import latex_feynman_table
+from .texsymbol import TexSymbol, tex_symbol
 from .parameters import (
     ExternalParameter, InternalParameter, Parameter, ParameterSet,
 )
@@ -78,6 +79,7 @@ from .suggest import (
 )
 
 __all__ = [
+    "TexSymbol", "tex_symbol",
     "Parameter", "ExternalParameter", "InternalParameter", "ParameterSet",
     "GaugeGroup", "U1", "SUN", "SU2", "SU3", "DiscreteSymmetry", "ZN", "S3",
     "Field", "Scalar", "Fermion", "WeylFermion", "DiracFermion",

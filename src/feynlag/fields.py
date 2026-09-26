@@ -20,6 +20,7 @@ import sympy as sp
 
 from .conventions import SQRT2
 from .groups.base import GaugeGroup
+from .texsymbol import tex_symbol
 
 __all__ = ["Field", "Scalar", "Fermion", "WeylFermion", "DiracFermion",
            "MajoranaFermion", "GaugeBoson", "dag", "hc", "conjugate_pair",
@@ -52,11 +53,16 @@ class Field:
             ``name_1 … name_n`` (or just ``name`` for a singlet).
         real: whether components are real symbols.
         self_conjugate: particle is its own antiparticle.
-        tex: LaTeX name.
+        tex: LaTeX name.  For a one-component field without
+            ``component_tex`` it also names the component.
+        component_tex: LaTeX names for the components (e.g.
+            ``['H^+', 'H^0']``), carried by the component symbols themselves
+            (:class:`~feynlag.texsymbol.TexSymbol`) so ``sympy.latex`` of any
+            expression renders them.  Default: raw component names.
     """
 
     def __init__(self, name, reps=None, component_names=None, real=False,
-                 self_conjugate=False, tex=None):
+                 self_conjugate=False, tex=None, component_tex=None):
         self.name = name
         self.tex = tex if tex is not None else name
         self.reps = dict(reps) if reps else {}
@@ -69,7 +75,8 @@ class Field:
                     f"reps keys must be gauge groups; register discrete "
                     f"multiplets with group.assign(...): got {group!r}")
 
-        self.components = self._make_components(component_names)
+        self.components = self._make_components(component_names, component_tex,
+                                                tex)
         #: column matrix of components — use in matrix expressions.
         self.mat = sp.Matrix(len(self.components), 1, self.components)
 
@@ -83,11 +90,11 @@ class Field:
             d *= group.rep_dim(rep)
         return d
 
-    def _component_symbol(self, cname):
+    def _component_symbol(self, cname, tex=None):
         assumptions = {"real": True} if self.real else {}
-        return sp.Symbol(cname, **assumptions)
+        return tex_symbol(cname, tex, **assumptions)
 
-    def _make_components(self, component_names):
+    def _make_components(self, component_names, component_tex=None, tex=None):
         n = self.dim
         if component_names is None:
             component_names = ([self.name] if n == 1 else
@@ -95,7 +102,13 @@ class Field:
         if len(component_names) != n:
             raise ValueError(f"{self.name}: expected {n} component names, "
                              f"got {len(component_names)}")
-        return [self._component_symbol(c) for c in component_names]
+        if component_tex is None:
+            component_tex = [tex] if n == 1 else [None] * n
+        if len(component_tex) != n:
+            raise ValueError(f"{self.name}: expected {n} component tex names, "
+                             f"got {len(component_tex)}")
+        return [self._component_symbol(c, t)
+                for c, t in zip(component_names, component_tex)]
 
     # ------------------------------------------------------------- interface
 
@@ -158,11 +171,12 @@ class Scalar(Field):
     spin = 0
 
     def __init__(self, name, reps=None, component_names=None, real=False,
-                 self_conjugate=None, tex=None):
+                 self_conjugate=None, tex=None, component_tex=None):
         if self_conjugate is None:
             self_conjugate = real
         super().__init__(name, reps=reps, component_names=component_names,
-                         real=real, self_conjugate=self_conjugate, tex=tex)
+                         real=real, self_conjugate=self_conjugate, tex=tex,
+                         component_tex=component_tex)
         #: {component: (vev_symbol, re_symbol, im_symbol_or_None)}
         self.vev_expansions = {}
 
@@ -221,22 +235,26 @@ class Fermion(Field):
     spin = sp.Rational(1, 2)
 
     def __init__(self, name, reps=None, component_names=None, chirality=None,
-                 nflavors=1, self_conjugate=False, tex=None):
+                 nflavors=1, self_conjugate=False, tex=None, component_tex=None):
         if chirality not in (None, "L", "R"):
             raise ValueError("chirality must be 'L', 'R' or None")
         self.chirality = chirality
         self.nflavors = nflavors
         super().__init__(name, reps=reps, component_names=component_names,
-                         real=False, self_conjugate=self_conjugate, tex=tex)
+                         real=False, self_conjugate=self_conjugate, tex=tex,
+                         component_tex=component_tex)
         #: Dirac adjoints ψ̄, one IndexedBase per gauge component
-        self.bar_components = [sp.IndexedBase(f"{c.label}bar")
-                               for c in self.components]
+        self.bar_components = [sp.IndexedBase(tex_symbol(
+            f"{c.label}bar",
+            None if (t := getattr(c.label, "_tex", None)) is None
+            else rf"\overline{{{t}}}"))
+            for c in self.components]
         for comp, bar in zip(self.components, self.bar_components):
             _BAR_PARTNER[comp] = bar
             _BAR_PARTNER[bar] = comp
 
-    def _component_symbol(self, cname):
-        return sp.IndexedBase(cname)
+    def _component_symbol(self, cname, tex=None):
+        return sp.IndexedBase(tex_symbol(cname, tex))
 
     def bar(self, component):
         """The ψ̄ IndexedBase matching a gauge component."""
@@ -293,7 +311,8 @@ class GaugeBoson(Field):
 
     spin = 1
 
-    def __init__(self, name, group, component_names=None, tex=None):
+    def __init__(self, name, group, component_names=None, tex=None,
+                 component_tex=None):
         self.group = group
         n = group.n_generators
         if component_names is None and n > 1:
@@ -306,13 +325,15 @@ class GaugeBoson(Field):
             reps = {group: n}
         super().__init__(name, reps=reps,
                          component_names=component_names if n > 1 else [name],
-                         real=True, self_conjugate=True, tex=tex)
+                         real=True, self_conjugate=True, tex=tex,
+                         component_tex=component_tex)
 
 
-def _gauge_bosons(self, name=None):
+def _gauge_bosons(self, name=None, component_tex=None, tex=None):
     """Create (once) and return this group's gauge boson field."""
     if self._gauge_bosons is None:
-        self._gauge_bosons = GaugeBoson(name or self.name, self)
+        self._gauge_bosons = GaugeBoson(name or self.name, self, tex=tex,
+                                        component_tex=component_tex)
     return self._gauge_bosons
 
 
@@ -338,7 +359,7 @@ def hc(expr):
     return sp.conjugate(expr)
 
 
-def conjugate_pair(sym, name=None):
+def conjugate_pair(sym, name=None, tex=None):
     """Antiparticle symbol for a complex physical field.
 
     The vertex extractor works on plain Symbols, so ``conjugate(G⁺)`` must be
@@ -348,11 +369,12 @@ def conjugate_pair(sym, name=None):
         sym: the complex field symbol (e.g. ``Gp``).
         name: name for the conjugate symbol (default ``{sym}_c``; pass the
             physics name, e.g. ``'Gm'``).
+        tex: LaTeX name for the conjugate symbol (e.g. ``'G^-'``).
 
     Returns:
         ``(partner_symbol, {conjugate(sym): partner_symbol})`` — merge the
         dicts of several pairs and pass as ``conjugate_map`` to
         ``Model.interactions`` / ``Model.feynman_rules``.
     """
-    partner = sp.Symbol(name if name is not None else f"{sym.name}_c")
+    partner = tex_symbol(name if name is not None else f"{sym.name}_c", tex)
     return partner, {sp.conjugate(sym): partner}

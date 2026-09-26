@@ -12,6 +12,8 @@
 
 import sympy as sp
 
+from .texsymbol import tex_symbol
+
 __all__ = ["Parameter", "ExternalParameter", "InternalParameter",
            "ParameterSet"]
 
@@ -21,7 +23,9 @@ class Parameter:
 
     Args:
         name: symbol name.
-        tex: LaTeX string (defaults to ``name``).
+        tex: LaTeX string (defaults to ``name``).  When given, the symbol
+            carries it (:class:`~feynlag.texsymbol.TexSymbol`), so
+            ``sympy.latex`` of any expression renders it.
         real: SymPy assumption (default True — most Lagrangian parameters).
         positive: SymPy assumption (use for VEVs, masses; enables ``sqrt``
             simplifications per CONVENTIONS.md).
@@ -32,7 +36,7 @@ class Parameter:
         self.name = name
         self.tex = tex if tex is not None else name
         assumptions = {"positive": True} if positive else {"real": True} if real else {}
-        self.symbol = sp.Symbol(name, **assumptions)
+        self.symbol = tex_symbol(name, tex, **assumptions)
         self.unit_dim = unit_dim
 
     @property
