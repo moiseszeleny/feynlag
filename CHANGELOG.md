@@ -18,6 +18,8 @@ All notable changes to feynlag are documented here. The format follows
   `to_physical_basis(gm_tex=)`. An explicit `symbol_names` printer setting
   still overrides a symbol's own tex. `GaugeGroup.bosons()` raises if a later
   call asks for a different tex than the cached bosons carry.
+- A `TexSymbol` sorts exactly like a plain `Symbol` of the same name, so
+  adding a tex never reorders vertex legs or printed terms.
 
 ### Changed
 - A field component or parameter declared with a tex is a `TexSymbol`, which

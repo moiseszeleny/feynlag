@@ -45,6 +45,16 @@ class TestTexSymbol:
         assert b == a and sp.latex(b) == "W^1" and b.is_real
         assert eval(sp.srepr(a), {"TexSymbol": TexSymbol}) == a
 
+    def test_sorts_like_symbol(self):
+        """A tex'd name must not reorder vertex legs or printed terms."""
+        from sympy import default_sort_key
+        h, v = sp.Symbol("h", real=True), sp.Symbol("v", positive=True)
+        Gp, Gm = TexSymbol("Gp", "G^+"), TexSymbol("Gm", "G^-")
+        lam = TexSymbol("lam", r"\lambda", real=True)
+        assert sorted([h, Gp, Gm], key=default_sort_key) == [Gm, Gp, h]
+        assert str(lam * v**2) == "lam*v**2"
+        assert sp.latex(lam * v**2) == r"\lambda v^{2}"
+
     def test_tex_symbol_switch(self):
         assert type(tex_symbol("x")) is sp.Symbol
         assert type(tex_symbol("x", "X")) is TexSymbol
