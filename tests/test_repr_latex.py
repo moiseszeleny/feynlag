@@ -19,6 +19,8 @@ def _assert_latex(s):
 def test_parameter_repr_latex_uses_tex_override():
     theta = ExternalParameter("theta_c", 0.1, tex=r"\theta_c")
     assert _assert_latex(theta._repr_latex_()) == r"$\displaystyle \theta_c$"
+    # the tex also reaches plain sympy.latex through the symbol (UG-2)
+    assert sp.latex(theta.symbol) == r"\theta_c"
 
 
 def test_parameter_repr_latex_falls_back_to_sympy_printer():

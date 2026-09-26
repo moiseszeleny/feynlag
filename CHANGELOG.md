@@ -4,6 +4,27 @@ All notable changes to feynlag are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Per-symbol LaTeX: `component_tex=[...]` on `Scalar`, `WeylFermion`/
+  `MajoranaFermion`, `GaugeBoson` and `GaugeGroup.bosons()`, `tex=` on
+  `conjugate_pair`, and a parameter's existing `tex=` now reach plain
+  `sympy.latex` through the symbol itself (`TexSymbol`), so downstream code
+  needs no name→LaTeX map. A one-component field's `tex=` also names its
+  component, and fermion bar legs print as `\overline{…}`.
+- Opt-in LaTeX names in the SM builders: `higgs_doublet(component_tex=)`,
+  `electroweak_scaffold(higgs_tex=, w_tex=, b_tex=)` and
+  `to_physical_basis(gm_tex=)`. An explicit `symbol_names` printer setting
+  still overrides a symbol's own tex. `GaugeGroup.bosons()` raises if a later
+  call asks for a different tex than the cached bosons carry.
+
+### Changed
+- A field component or parameter declared with a tex is a `TexSymbol`, which
+  is not equal to a plain `Symbol` of the same name. Code that rebuilds such a
+  symbol by name (`sp.Symbol("lam")`) must use the object instead. Without a
+  tex nothing changes.
+
 ## [0.1.0] — 2026-09-16
 
 First public release (beta).
