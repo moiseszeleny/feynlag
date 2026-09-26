@@ -180,7 +180,7 @@ class Scalar(Field):
         #: {component: (vev_symbol, re_symbol, im_symbol_or_None)}
         self.vev_expansions = {}
 
-    def expand_vev(self, vev_map):
+    def expand_vev(self, vev_map, tex=None):
         """Register VEVs for components: ``{component_symbol: vev}``.
 
         For a complex component ``phi``, creates real symbols ``phi_r``,
@@ -188,7 +188,12 @@ class Scalar(Field):
         For a real component, registers ``phi → v + phi``.
 
         ``vev`` may be a Parameter or a SymPy symbol/expression.
+
+        ``tex`` optionally maps a new fluctuation's *name* (``phi_r``,
+        ``phi_i``) to a LaTeX name, e.g. ``{"H0_r": "h", "H0_i": "G^0"}``
+        (see :class:`~feynlag.texsymbol.TexSymbol`).
         """
+        tex = tex or {}
         for comp, vev in vev_map.items():
             if comp not in self.components:
                 raise ValueError(f"{comp} is not a component of {self.name}")
@@ -196,8 +201,10 @@ class Scalar(Field):
             if self.real:
                 self.vev_expansions[comp] = (vev_expr, comp, None)
             else:
-                re = sp.Symbol(f"{comp.name}_r", real=True)
-                im = sp.Symbol(f"{comp.name}_i", real=True)
+                re = tex_symbol(f"{comp.name}_r", tex.get(f"{comp.name}_r"),
+                                real=True)
+                im = tex_symbol(f"{comp.name}_i", tex.get(f"{comp.name}_i"),
+                                real=True)
                 self.vev_expansions[comp] = (vev_expr, re, im)
         return self
 

@@ -206,17 +206,61 @@ class TestOverridesAndBuilders:
         plain = electroweak_scaffold()
         assert all(type(c) is sp.Symbol
                    for F in plain.fields for c in F.components)
-        ew = electroweak_scaffold(higgs_tex=["G^+", "H^0"],
-                                  w_tex=["W^1", "W^2", "W^3"], b_tex="B")
+        assert all(type(p.symbol) is sp.Symbol for p in plain.parameters)
+        assert all(type(s) is sp.Symbol
+                   for s in plain.H.vev_expansions[plain.H[1]][1:])
+        ew = electroweak_scaffold(tex=SM_TEX)
         assert [sp.latex(c) for c in ew.H.components] == ["G^+", "H^0"]
         assert sp.latex(ew.W[0]) == "W^1" and sp.latex(ew.B[0]) == "B"
+        assert [sp.latex(p.s) for p in ew.parameters] == \
+            ["g", "{g'}", "v", r"\lambda", r"\mu^2"]
+        _, h, G0 = ew.H.vev_expansions[ew.H[1]]
+        assert (sp.latex(h), sp.latex(G0)) == ("h", "G^0")
+        assert h.name == "H0_r" and h.is_real
+        assert sp.latex(ew.g1.s**2) == "{g'}^{2}"
 
-    def test_to_physical_basis_gm_tex(self):
+    def test_to_physical_basis_tex(self):
         from feynlag.models import electroweak_scaffold, to_physical_basis
-        ew = electroweak_scaffold(higgs_tex=["G^+", "H^0"])
+        ew = electroweak_scaffold(tex=SM_TEX)
         L = ew.add_higgs(Lagrangian())
         model = Model("sm", gauge_groups=ew.gauge_groups, fields=ew.fields,
                       parameters=ew.parameters, lagrangian=L)
-        pb = to_physical_basis(model, ew, gm_tex="G^-")
-        assert sp.latex(pb.Gm) == "G^-"
+        pb = to_physical_basis(model, ew, tex=SM_TEX)
+        assert [sp.latex(b) for b in pb.bosons] == \
+            ["h", "G^0", "G^+", "G^-", "Z", r"\gamma", "W^+", "W^-"]
         assert pb.cmap == {sp.conjugate(ew.H[0]): pb.Gm}
+        assert pb.Z.is_real and pb.A.is_real
+
+    def test_partial_map_and_default(self):
+        """Names missing from the map stay plain; no map means no TexSymbol."""
+        from feynlag.models import (
+            charged_current_rotation, electroweak_scaffold, weinberg_rotation)
+        ew = electroweak_scaffold(tex={"lam": r"\lambda"})
+        assert type(ew.v.symbol) is sp.Symbol
+        assert type(ew.lam.symbol) is TexSymbol
+        L = ew.add_higgs(Lagrangian())
+        model = Model("sm", gauge_groups=ew.gauge_groups, fields=ew.fields,
+                      parameters=ew.parameters, lagrangian=L)
+        Z, A = weinberg_rotation(model, ew.SU2L, ew.U1Y)
+        Wp, Wm = charged_current_rotation(model, ew.SU2L, tex={"Wp": "W^+"})
+        assert type(Z) is sp.Symbol and type(Wm) is sp.Symbol
+        assert type(Wp) is TexSymbol
+
+
+    def test_standard_ckm_tex(self):
+        from feynlag import standard_ckm
+        params, V = standard_ckm(tex={"th12": r"\theta_{12}", "Vus": "V_{us}"})
+        by_name = {p.name: p for p in params}
+        assert sp.latex(by_name["th12"].s) == r"\theta_{12}"
+        assert sp.latex(V[0, 1]) == "V_{us}" and not V[0, 1].is_real
+        assert type(by_name["th13"].symbol) is sp.Symbol
+        assert all(type(p.symbol) is sp.Symbol for p in standard_ckm()[0])
+
+
+#: one global name-keyed table, as a downstream model library passes it
+SM_TEX = {
+    "gw": "g", "g1": "{g'}", "v": "v", "lam": r"\lambda", "mu2": r"\mu^2",
+    "Gp": "G^+", "H0": "H^0", "H0_r": "h", "H0_i": "G^0", "Gm": "G^-",
+    "W_1": "W^1", "W_2": "W^2", "W_3": "W^3", "B": "B",
+    "Z": "Z", "A": r"\gamma", "Wp": "W^+", "Wm": "W^-",
+}

@@ -26,11 +26,13 @@ from feynlag import verify_ufo_numeric
 @pytest.fixture(scope="module")
 def sm_ufo(tmp_path_factory):
     gw = ExternalParameter("gw", 0.6535, positive=True)
-    g1 = ExternalParameter("g1", 0.3580, positive=True)
+    # texs with a quote and backslashes (incl. the \t of \theta) pin that the
+    # writer escapes them: an unquoted '{g'}' is a SyntaxError in the UFO
+    g1 = ExternalParameter("g1", 0.3580, positive=True, tex="{g'}")
     SU2L, U1Y = SU2("SU2L", coupling=gw), U1("U1Y", coupling=g1)
 
     v = ExternalParameter("v", 246.0, positive=True, unit_dim=1)
-    lam = ExternalParameter("lam", 0.129)
+    lam = ExternalParameter("lam", 0.129, tex=r"\lambda_{\theta}")
     mu2 = InternalParameter("mu2", unit_dim=2)
     MH = InternalParameter("MH", positive=True, unit_dim=1)
     MW = InternalParameter("MW", positive=True, unit_dim=1)
@@ -94,7 +96,7 @@ def sm_ufo(tmp_path_factory):
         UFOParticle(Gp, 251, "G+", antiname="G-", spin=1, mass="MW",
                     charge=1, antisymbol=Gm, goldstone=True),
         UFOParticle(Z, 23, "Z", spin=3, mass="MZ"),
-        UFOParticle(A, 22, "a", spin=3),
+        UFOParticle(A, 22, "a", spin=3, texname=r"\gamma"),
         UFOParticle(Wp, 24, "W+", antiname="W-", spin=3, mass="MW",
                     charge=1, antisymbol=Wm),
     ]
@@ -147,6 +149,16 @@ def test_ufo_uses_absolute_imports(sm_ufo):
         text = (path / fname).read_text()
         assert "from ." not in text and "from . import" not in text, \
             f"{fname} has a relative import"
+
+
+def test_texnames_survive_export(sm_ufo):
+    """LaTeX names reach the UFO verbatim (quotes and backslashes escaped)."""
+    out, *_ = sm_ufo
+    lib = _import_ufo(out)
+    tex = {p.name: p.texname for p in lib.all_parameters}
+    assert tex["g1"] == "{g'}" and tex["lam"] == r"\lambda_{\theta}"
+    (photon,) = [p for p in lib.all_particles if p.name == "a"]
+    assert photon.texname == r"\gamma"
 
 
 def test_ufo_roundtrip_reproduces_pinned_hWW(sm_ufo):

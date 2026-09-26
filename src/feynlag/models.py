@@ -34,6 +34,7 @@ from .lagrangian import Lagrangian, Model
 from .operators import Dmu
 from .parameters import ExternalParameter, InternalParameter
 from .vacuum import Rotation, rotation_2x2
+from .texsymbol import tex_symbol
 from .vertices.bilinear import fermion_gauge_current
 
 __all__ = [
@@ -50,22 +51,34 @@ VEV_DEFAULT, MH_DEFAULT = 246.0, 125.25
 
 # --------------------------------------------------------------- primitives
 
-def electroweak_gauge(gw=GW_DEFAULT, g1=G1_DEFAULT, names=("SU2L", "U1Y")):
+def _tex_list(tex, names):
+    """``component_tex`` for ``names`` from a name-keyed map (``None`` if none)."""
+    texs = [tex.get(n) for n in names]
+    return texs if any(t is not None for t in texs) else None
+
+
+def electroweak_gauge(gw=GW_DEFAULT, g1=G1_DEFAULT, names=("SU2L", "U1Y"),
+                      tex=None):
     """The electroweak gauge groups and their coupling parameters.
+
+    ``tex`` (every builder in this module takes one) maps the *name* of a
+    symbol the builder creates to a LaTeX name, so one global table can be
+    passed everywhere; names it lacks stay plain Symbols.
 
     Returns:
         ``(SU2L, U1Y, gw_param, g1_param)`` — the two :class:`GaugeGroup`\\ s
         and their ``ExternalParameter`` couplings.
     """
-    gw_p = ExternalParameter("gw", gw, positive=True)
-    g1_p = ExternalParameter("g1", g1, positive=True)
+    tex = tex or {}
+    gw_p = ExternalParameter("gw", gw, positive=True, tex=tex.get("gw"))
+    g1_p = ExternalParameter("g1", g1, positive=True, tex=tex.get("g1"))
     SU2L = SU2(names[0], coupling=gw_p)
     U1Y = U1(names[1], coupling=g1_p)
     return SU2L, U1Y, gw_p, g1_p
 
 
 def higgs_doublet(SU2L, U1Y, v=VEV_DEFAULT, mh=MH_DEFAULT, lam=None,
-                  extra_reps=None, name="H", component_tex=None):
+                  extra_reps=None, name="H", tex=None):
     """The SM Higgs doublet with its VEV expanded and potential parameters.
 
     Args:
@@ -78,8 +91,9 @@ def higgs_doublet(SU2L, U1Y, v=VEV_DEFAULT, mh=MH_DEFAULT, lam=None,
         extra_reps: additional ``{group: rep}`` charges to merge into the
             doublet (e.g. a U(1)_X charge for a Z′ model).
         name: field name.
-        component_tex: LaTeX names for ``(Gp, H0)``, e.g. ``["G^+", "H^0"]``
-            (see :class:`~feynlag.texsymbol.TexSymbol`).  Default: none.
+        tex: ``{symbol name: LaTeX}`` for ``v``, ``lam``, ``mu2``, ``Gp``,
+            ``H0`` and the fluctuations ``H0_r``, ``H0_i`` (see
+            :class:`~feynlag.texsymbol.TexSymbol`).  Default: none.
 
     Returns:
         ``(H, v_param, lam_param, mu2_param)``.  ``mu2`` is an
@@ -88,13 +102,14 @@ def higgs_doublet(SU2L, U1Y, v=VEV_DEFAULT, mh=MH_DEFAULT, lam=None,
     reps = {SU2L: 2, U1Y: sp.Rational(1, 2)}
     if extra_reps:
         reps.update(extra_reps)
-    v_p = ExternalParameter("v", v, positive=True, unit_dim=1)
+    tex = tex or {}
+    v_p = ExternalParameter("v", v, positive=True, unit_dim=1, tex=tex.get("v"))
     lam_val = lam if lam is not None else mh**2 / (2 * v**2)
-    lam_p = ExternalParameter("lam", lam_val)
-    mu2_p = InternalParameter("mu2", unit_dim=2)
+    lam_p = ExternalParameter("lam", lam_val, tex=tex.get("lam"))
+    mu2_p = InternalParameter("mu2", unit_dim=2, tex=tex.get("mu2"))
     H = Scalar(name, reps=reps, component_names=["Gp", "H0"],
-               component_tex=component_tex)
-    H.expand_vev({H.components[1]: v_p})
+               component_tex=_tex_list(tex, ["Gp", "H0"]))
+    H.expand_vev({H.components[1]: v_p}, tex=tex)
     return H, v_p, lam_p, mu2_p
 
 
@@ -113,35 +128,38 @@ def higgs_lagrangian(H, lam, mu2):
     }
 
 
-def weinberg_rotation(model, SU2L, U1Y, z="Z", a="A"):
+def weinberg_rotation(model, SU2L, U1Y, z="Z", a="A", tex=None):
     """Register the ``W³,B → Z,γ`` Weinberg rotation on ``model``.
 
     Args:
         z, a: output symbol names (``z`` is overridable — a chained model, e.g.
             U(1)_X, names the intermediate neutral state ``"Z0"`` because it
             still mixes with a Z′ in a following rotation).
+        tex: ``{name: LaTeX}`` for the ``z``/``a`` symbols.
 
     Returns:
         ``(Z, A)`` symbols.
     """
     W3 = SU2L.bosons().components[2]
     B = U1Y.bosons().components[0]
-    Z, A = sp.symbols(f"{z} {a}", real=True)
+    tex = tex or {}
+    Z, A = (tex_symbol(n, tex.get(n), real=True) for n in (z, a))
     theta_w = sp.atan(U1Y.coupling.s / SU2L.coupling.s)
     model.rotate(Rotation([W3, B], [Z, A], rotation_2x2(-theta_w)))
     return Z, A
 
 
-def charged_current_rotation(model, SU2L, wp="Wp", wm="Wm"):
+def charged_current_rotation(model, SU2L, wp="Wp", wm="Wm", tex=None):
     """Register the ``W¹,W² → W⁺,W⁻`` unitary rotation on ``model``.
 
-    ``W± = (W¹ ∓ i W²)/√2``.
+    ``W± = (W¹ ∓ i W²)/√2``.  ``tex``: ``{name: LaTeX}`` for ``wp``/``wm``.
 
     Returns:
         ``(Wp, Wm)`` symbols.
     """
     W1, W2 = SU2L.bosons().components[0], SU2L.bosons().components[1]
-    Wp, Wm = sp.symbols(f"{wp} {wm}")
+    tex = tex or {}
+    Wp, Wm = (tex_symbol(n, tex.get(n)) for n in (wp, wm))
     U = sp.Matrix([[1, -sp.I], [1, sp.I]]) / sp.sqrt(2)
     model.rotate(Rotation([W1, W2], [Wp, Wm], U, kind="unitary"))
     return Wp, Wm
@@ -195,19 +213,19 @@ class ElectroweakScaffold:
 
 def electroweak_scaffold(gw=GW_DEFAULT, g1=G1_DEFAULT, v=VEV_DEFAULT,
                          mh=MH_DEFAULT, lam=None, extra_higgs_reps=None,
-                         higgs_tex=None, w_tex=None, b_tex=None):
+                         tex=None):
     """Build an :class:`ElectroweakScaffold` at the given parameter point.
 
-    ``higgs_tex`` (the doublet's ``component_tex``), ``w_tex`` (the three
-    ``W^a``) and ``b_tex`` (``B``) opt into LaTeX-carrying symbols; by default
-    every symbol is plain.
+    ``tex`` maps symbol names (``gw``, ``g1``, ``v``, ``lam``, ``mu2``,
+    ``Gp``, ``H0``, ``H0_r``, ``H0_i``, ``W_1``…``W_3``, ``B``) to LaTeX
+    names; by default every symbol is plain.
     """
-    SU2L, U1Y, gw_p, g1_p = electroweak_gauge(gw, g1)
+    tex = tex or {}
+    SU2L, U1Y, gw_p, g1_p = electroweak_gauge(gw, g1, tex=tex)
     H, v_p, lam_p, mu2_p = higgs_doublet(SU2L, U1Y, v=v, mh=mh, lam=lam,
-                                         extra_reps=extra_higgs_reps,
-                                         component_tex=higgs_tex)
-    W = SU2L.bosons("W", component_tex=w_tex)
-    B = U1Y.bosons("B", tex=b_tex)
+                                         extra_reps=extra_higgs_reps, tex=tex)
+    W = SU2L.bosons("W", component_tex=_tex_list(tex, ["W_1", "W_2", "W_3"]))
+    B = U1Y.bosons("B", tex=tex.get("B"))
     return ElectroweakScaffold(SU2L, U1Y, gw_p, g1_p, H, v_p, lam_p, mu2_p, W, B)
 
 
@@ -236,7 +254,7 @@ class PhysicalBasis:
     bosons: list = field(default_factory=list)
 
 
-def to_physical_basis(model, scaffold, gm_name="Gm", gm_tex=None):
+def to_physical_basis(model, scaffold, gm_name="Gm", tex=None):
     """Apply the standard EW rotations and wire up the Goldstone bookkeeping.
 
     Registers the Weinberg (``W³,B → Z,γ``) and charged-current
@@ -244,18 +262,19 @@ def to_physical_basis(model, scaffold, gm_name="Gm", gm_tex=None):
     neutral Goldstone ``G0`` off the doublet's VEV expansion and builds the
     charged-Goldstone conjugate map.
 
-    ``gm_tex`` gives the ``Gm`` symbol a LaTeX name (e.g. ``"G^-"``).
+    ``tex`` maps ``Z``, ``A``, ``Wp``, ``Wm`` and ``gm_name`` to LaTeX names.
 
     Returns:
         :class:`PhysicalBasis`.
     """
-    Z, A = weinberg_rotation(model, scaffold.SU2L, scaffold.U1Y)
-    Wp, Wm = charged_current_rotation(model, scaffold.SU2L)
+    tex = tex or {}
+    Z, A = weinberg_rotation(model, scaffold.SU2L, scaffold.U1Y, tex=tex)
+    Wp, Wm = charged_current_rotation(model, scaffold.SU2L, tex=tex)
 
     H = scaffold.H
     _, h, G0 = H.vev_expansions[H.components[1]]     # (vev, re, im)
     Gp = H.components[0]
-    Gm, cmap = conjugate_pair(Gp, gm_name, tex=gm_tex)
+    Gm, cmap = conjugate_pair(Gp, gm_name, tex=tex.get(gm_name))
     bosons = [h, G0, Gp, Gm, Z, A, Wp, Wm]
     return PhysicalBasis(Z, A, Wp, Wm, h, G0, Gp, Gm, cmap, bosons)
 
