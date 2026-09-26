@@ -6,7 +6,14 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-26
+
 ### Added
+- `diagonalize_takagi(method="auto"|"symbolic"|"numeric", dps=50)`: for a
+  numeric matrix larger than 2×2, `auto` factorises with mpmath's `eigsy` at
+  high precision (columns by increasing mass, round-off eigenvalues as exact
+  zero modes), so a generic 3+2 seesaw 5×5 finishes instead of stalling in the
+  exact route. Exact 2×2 and symbolic calls are unchanged.
 - Per-symbol LaTeX: `component_tex=[...]` on `Scalar`, `WeylFermion`/
   `MajoranaFermion`, `GaugeBoson` and `GaugeGroup.bosons()`, `tex=` on
   `conjugate_pair`, and a parameter's existing `tex=` now reach plain
@@ -17,12 +24,12 @@ All notable changes to feynlag are documented here. The format follows
   `tex=`, a map from the *name* of a symbol it creates to a LaTeX name
   (`electroweak_gauge`, `higgs_doublet`, `electroweak_scaffold`,
   `weinberg_rotation`, `charged_current_rotation`, `to_physical_basis`,
-  `standard_ckm`), so
-  one global table covers the couplings, the Higgs parameters, the doublet
-  and its fluctuations (`H0_r`→`h`), and the physical `Z`, `A`, `W±`, `G⁻`.
-  Names missing from the map stay plain. An explicit `symbol_names` printer setting
-  still overrides a symbol's own tex. `GaugeGroup.bosons()` raises if a later
-  call asks for a different tex than the cached bosons carry.
+  `standard_ckm`), so one global table covers the couplings, the Higgs
+  parameters, the doublet and its fluctuations (`H0_r`→`h`), and the physical
+  `Z`, `A`, `W±`, `G⁻`. Names missing from the map stay plain. An explicit
+  `symbol_names` printer setting still overrides a symbol's own tex.
+  `GaugeGroup.bosons()` raises if a later call asks for a different tex than
+  the cached bosons carry.
 - A `TexSymbol` sorts exactly like a plain `Symbol` of the same name, so
   adding a tex never reorders vertex legs or printed terms.
 
