@@ -13,9 +13,13 @@ All notable changes to feynlag are documented here. The format follows
   `sympy.latex` through the symbol itself (`TexSymbol`), so downstream code
   needs no name→LaTeX map. A one-component field's `tex=` also names its
   component, and fermion bar legs print as `\overline{…}`.
-- Opt-in LaTeX names in the SM builders: `higgs_doublet(component_tex=)`,
-  `electroweak_scaffold(higgs_tex=, w_tex=, b_tex=)` and
-  `to_physical_basis(gm_tex=)`. An explicit `symbol_names` printer setting
+- Opt-in LaTeX names in the SM builders and `Scalar.expand_vev`: each takes
+  `tex=`, a map from the *name* of a symbol it creates to a LaTeX name
+  (`electroweak_gauge`, `higgs_doublet`, `electroweak_scaffold`,
+  `weinberg_rotation`, `charged_current_rotation`, `to_physical_basis`), so
+  one global table covers the couplings, the Higgs parameters, the doublet
+  and its fluctuations (`H0_r`→`h`), and the physical `Z`, `A`, `W±`, `G⁻`.
+  Names missing from the map stay plain. An explicit `symbol_names` printer setting
   still overrides a symbol's own tex. `GaugeGroup.bosons()` raises if a later
   call asks for a different tex than the cached bosons carry.
 - A `TexSymbol` sorts exactly like a plain `Symbol` of the same name, so
