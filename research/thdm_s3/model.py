@@ -90,7 +90,7 @@ class S3Model:                # the lru_caches below can key on the instance
 
 
 def build_model(vevs=(200.0, 115.0, 80.0), tex=False, check=False,
-                soft=False) -> S3Model:
+                soft=False, soft_solve_for="mD2sq") -> S3Model:
     """Build the S₃-invariant 3HDM and solve its tadpoles on the alignment.
 
     Parameters
@@ -114,6 +114,14 @@ def build_model(vevs=(200.0, 115.0, 80.0), tex=False, check=False,
         ``align`` comes back empty.  This is what lets the residual Z₂ break
         and, in turn, what generates a non-zero Cabibbo angle
         (`02_s3_fermion_sector.ipynb` §11, [DasDeyPal16]).
+    soft_solve_for : which soft quadratic of the doublet pair (``"mD1sq"`` or
+        ``"mD2sq"``) the tadpoles are solved for, alongside μ0² and μ1².  The
+        other three soft terms stay free inputs.  **The choice is not
+        cosmetic**: solving for ``mD2sq`` divides by ``v₁² − v₂²``, singular on
+        the ``v₁ = v₂`` (φ = 45°) line, while solving for ``mD1sq`` divides by
+        ``v₁v₂`` only, regular everywhere inside the φ ∈ (0, π/3) fundamental
+        domain.  `scan_soft.py` therefore uses ``"mD1sq"``; the ``"mD2sq"``
+        default is kept because notebook 02 was executed with it.
     """
     nm = (lambda plain, latex: latex if tex else plain)
 
@@ -205,7 +213,10 @@ def build_model(vevs=(200.0, 115.0, 80.0), tex=False, check=False,
         # *general* (v₁, v₂, v_S) minimizes the potential.  Nothing forces the
         # alignment, so `align` is empty — that is the whole point.
         align = {}
-        unknowns = [mu0sq.s, mu1sq.s, softs["mD2sq"].s]
+        if soft_solve_for not in ("mD1sq", "mD2sq"):
+            raise ValueError(f"soft_solve_for must be 'mD1sq' or 'mD2sq', "
+                             f"got {soft_solve_for!r}")
+        unknowns = [mu0sq.s, mu1sq.s, softs[soft_solve_for].s]
         sol = sp.solve([sp.Eq(tadpoles[v.s], 0) for v in (v1, v2, vS)],
                        unknowns, dict=True)[0]
     else:
@@ -510,6 +521,201 @@ def hvv_function(m: S3Model) -> Callable:
 
     m._cache["hvv"] = hvv
     return hvv
+
+
+# --------------------------------------------------------------------------
+# the soft-broken vacuum: a general (v₁, v₂, v_S), numeric spectrum
+# --------------------------------------------------------------------------
+#
+# With the four soft quadratics the tadpoles stop forcing the √3 alignment, so
+# nothing above that leans on `m.align` carries over: `mass_matrices` simplifies
+# on the aligned vacuum, `spectrum_function` takes v₂ alone, and the CP-even
+# sector no longer has a gauge-phobic state.  What *does* carry over is the
+# geometric rotation's defining property — its first column is the vacuum
+# direction for ANY vacuum — so the Goldstones still sit in the [0,0] slot of
+# RᵀM_A R and RᵀM_C R.  Everything past that is a numeric eigensolve, since the
+# leftover blocks are generic.
+
+#: Order of the masses² returned by `soft_spectrum_function`.  Unlike
+#: `SPECTRUM_KEYS` these are mass-ordered within each sector (h1 < h2 < h3,
+#: A1 < A2, Hpm1 < Hpm2): with the √3 alignment gone there is no geometric
+#: label (no gauge-phobic "h0") left to name the states by.
+SOFT_SPECTRUM_KEYS = ("h1", "h2", "h3", "A1", "A2", "Hpm1", "Hpm2")
+
+#: CP-even states of the soft-broken spectrum, lightest first.
+SOFT_CP_EVEN_KEYS = ("h1", "h2", "h3")
+
+
+def soft_vevs(theta, phi, v=V_EW):
+    """(v₁, v₂, v_S) for a general vacuum on the v = 246 GeV sphere.
+
+        v₁ = v sinθ cosφ,   v₂ = v sinθ sinφ,   v_S = v cosθ
+
+    the same angles `rotation` builds R from.  The exact-S₃ vacuum is the
+    φ = π/3 slice (`aligned_vevs`).  Works elementwise on numpy arrays.
+    """
+    import numpy as np
+
+    theta, phi = np.asarray(theta, dtype=float), np.asarray(phi, dtype=float)
+    return (v * np.sin(theta) * np.cos(phi), v * np.sin(theta) * np.sin(phi),
+            v * np.cos(theta))
+
+
+def draft_r(phi):
+    """[LFVHD]'s ``r = v₁/v₂`` (the vacuum ratio notebook 02's CKM depends on).
+
+    The draft's doublet basis is feynlag's reflected at π/6
+    (`fermions.tex_basis_map`, ``v_draft = Oᵀ v_feynlag``), so for
+    ``(v₁, v₂) ∝ (cosφ, sinφ)`` the draft components are
+    ``(cos(φ−π/6), −sin(φ−π/6))`` and
+
+        r = −cot(φ − π/6).
+
+    At the exact-S₃ φ = π/3 this is −√3, i.e. notebook 02's ``|r| = √3``.
+
+    **Each φ stands for two draft ratios.**  The S₃ image 2π/3 − φ of a vacuum
+    (`scan_soft.py`'s fundamental-domain argument) is the same physics but has
+    ``draft_r(2π/3 − φ) = −tan φ``: the fermion fit of notebook 02, done at fixed
+    fermion assignment, sees the two representatives as different ``r`` (with
+    rescaled Yukawas).  Both coincide, at √3, only on the exact-S₃ vacuum.
+
+    The sign is a doublet-basis convention (flipping the draft's second component
+    conjugates the up and down mass matrices alike, leaving |V_CKM| alone),
+    which is why notebook 02 and `results/quark_soft_fit.json` quote |r|.
+    """
+    import numpy as np
+
+    return -1.0 / np.tan(np.asarray(phi, dtype=float) - np.pi / 6)
+
+
+def soft_free_names(m: S3Model):
+    """The soft quadratics left as free inputs — those the tadpoles did not fix."""
+    solved = set(m.tadpole_sol)
+    return [n for n, p in m.softs.items() if p.s not in solved]
+
+
+def soft_solved_names(m: S3Model):
+    """(μ0², μ1², the solved soft quadratic) names, in `tadpole_sol` order."""
+    return [str(k) for k in m.tadpole_sol]
+
+
+def _soft_args(m: S3Model):
+    return (m.lam_symbols + [m.v1.s, m.v2.s, m.vS.s]
+            + [m.softs[n].s for n in soft_free_names(m)])
+
+
+def soft_mass_function(m: S3Model) -> Callable:
+    """Lambdified (λ₁…λ₈, v₁, v₂, v_S, free softs) → the weak-basis mass matrices.
+
+    Returns ``(M_S, M_A, M_C, solved)`` with each matrix a nested 3×3 list of
+    numpy-broadcast entries and ``solved`` the tadpole-fixed parameters
+    (`soft_solved_names` order).  The tadpole solution is substituted but, unlike
+    `mass_matrices`, nothing is simplified: that path assumes the alignment, and
+    here every entry is a plain rational function evaluated numerically anyway.
+    """
+    if "soft_mass" in m._cache:
+        return m._cache["soft_mass"]
+    if not m.soft:
+        raise ValueError("soft_mass_function needs build_model(soft=True)")
+
+    def build(fields, charged=False):
+        M = m.model.mass_matrix(fields, charged=charged) if charged \
+            else m.model.mass_matrix(fields)
+        return m.on_vacuum(M)
+
+    Ms = [build(_neutral_symbols(m, "r")), build(_neutral_symbols(m, "i")),
+          build([H.components[0] for H in m.doublets], charged=True)]
+    for M in Ms:
+        if any(e.has(sp.I) for e in M) or not (M - M.T).is_zero_matrix:
+            raise ValueError("expected real symmetric mass matrices for a "
+                             "CP-conserving soft-broken vacuum")
+    solved = list(m.tadpole_sol.values())
+    fn = sp.lambdify(_soft_args(m), [M.tolist() for M in Ms] + [solved], "numpy")
+    m._cache["soft_mass"] = fn
+    return fn
+
+
+def _geometric_rotation_numeric(v1, v2, vS):
+    """(N,3,3) numeric `rotation` for arrays of VEVs — first column = vacuum."""
+    import numpy as np
+
+    v12 = np.hypot(v1, v2)
+    vt = np.sqrt(v1 * v1 + v2 * v2 + vS * vS)
+    cphi, sphi, cth, sth = v1 / v12, v2 / v12, vS / vt, v12 / vt
+    zero = np.zeros_like(v1)
+    return np.stack([np.stack([sth * cphi, -sphi, -cth * cphi], -1),
+                     np.stack([sth * sphi, cphi, -cth * sphi], -1),
+                     np.stack([cth, zero, sth], -1)], -2)
+
+
+def soft_spectrum_function(m: S3Model) -> Callable:
+    """Vectorized soft-broken spectrum: masses², hVV couplings², mixing, softs.
+
+    The returned callable takes ``(lam_cols, v1, v2, vS, soft_cols)`` — eight λ
+    arrays, the three VEV arrays, and the free soft quadratics in
+    `soft_free_names` order — and returns a dict with
+
+    ``mass2``      {`SOFT_SPECTRUM_KEYS`: (N,)} masses², mass-ordered per sector;
+    ``hvv``        {`SOFT_CP_EVEN_KEYS`: (N,)} hVV coupling² in SM units;
+    ``mixing``     (N,3,3) weak-basis CP-even mixing: column k is state h_k in
+                   the (H₁⁰, H₂⁰, H_S⁰) real-part basis, sign fixed so its hVV
+                   coupling is ≥ 0;
+    ``solved``     {`soft_solved_names`: (N,)} the tadpole-fixed parameters;
+    ``goldstone``  (N,) the largest |[0,·]| entry of RᵀM_A R and RᵀM_C R over
+                   the largest |entry| — ~1e-16 when the vacuum really is the
+                   stationary point the tadpoles say it is.
+
+    **hVV.**  A weak-basis state φᵢ couples to VV in proportion to vᵢ, so a mass
+    eigenstate's coupling relative to the SM is its overlap with the vacuum
+    direction v̂ = (v₁, v₂, v_S)/v — the first column of R.  The three overlaps²
+    sum to 1 at every point (the sum rule), and in the exact-S₃ limit one of
+    them is exactly zero (the gauge-phobic h0 of `hvv_function`).
+    """
+    import numpy as np
+
+    if "soft_spectrum" in m._cache:
+        return m._cache["soft_spectrum"]
+    fn = soft_mass_function(m)
+    solved_names = soft_solved_names(m)
+
+    def as_array(M, n):
+        return np.stack([np.stack([np.broadcast_to(np.asarray(e, dtype=float), (n,))
+                                   for e in row], -1) for row in M], -2)
+
+    def spectrum(lam_cols, v1, v2, vS, soft_cols):
+        v1, v2, vS = (np.atleast_1d(np.asarray(x, dtype=float)) for x in (v1, v2, vS))
+        n = len(v1)
+        M_S, M_A, M_C, solved = fn(*lam_cols, v1, v2, vS, *soft_cols)
+        R = _geometric_rotation_numeric(v1, v2, vS)
+        rot = lambda M: np.einsum("nji,njk,nkl->nil", R, as_array(M, n), R)
+        D_S, D_A, D_C = rot(M_S), rot(M_A), rot(M_C)
+
+        scale = np.maximum(np.abs(D_A).max(axis=(1, 2)), np.abs(D_C).max(axis=(1, 2)))
+        gold = np.maximum(np.abs(D_A[:, 0, :]).max(axis=1),
+                          np.abs(D_C[:, 0, :]).max(axis=1)) / np.where(scale > 0, scale, 1.0)
+
+        # the leftover CP-odd and charged 2×2 blocks, closed form (larger first)
+        A_hi, A_lo = _block_eigs(D_A[:, 1, 1], D_A[:, 1, 2], D_A[:, 2, 2])
+        C_hi, C_lo = _block_eigs(D_C[:, 1, 1], D_C[:, 1, 2], D_C[:, 2, 2])
+
+        # the CP-even 3×3: fully mixed, so a numeric eigensolve (ascending)
+        w, V = np.linalg.eigh(D_S)
+        sign = np.where(V[:, 0, :] < 0, -1.0, 1.0)      # hVV coupling ≥ 0
+        V = V * sign[:, None, :]
+        hvv = V[:, 0, :] ** 2
+        mixing = np.einsum("nij,njk->nik", R, V)
+
+        mass2 = dict(zip(SOFT_SPECTRUM_KEYS,
+                         (w[:, 0], w[:, 1], w[:, 2], A_lo, A_hi, C_lo, C_hi)))
+        return {"mass2": mass2,
+                "hvv": dict(zip(SOFT_CP_EVEN_KEYS, (hvv[:, 0], hvv[:, 1], hvv[:, 2]))),
+                "mixing": mixing,
+                "solved": {k: np.broadcast_to(np.asarray(s, dtype=float), (n,))
+                           for k, s in zip(solved_names, solved)},
+                "goldstone": gold}
+
+    m._cache["soft_spectrum"] = spectrum
+    return spectrum
 
 
 # --------------------------------------------------------------------------

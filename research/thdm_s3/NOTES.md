@@ -22,8 +22,12 @@ pedagogical walk-through). This directory is where the open questions go.
 | `03_scalar_decays.ipynb` | physical basis, gauge couplings, VSS + loop γγ, and the LFV rates. **Done.** |
 | `04_bfb_conditions.ipynb` | the [BotoRomaoSilva22] BFB method read and executed: their $V_N/V_{CB}/V_G$ split, copositivity, the lower-bound strategy — then applied to our $S_3$ potential. **Done.** |
 | `derivations_04.tex` | printable appendix emitted by notebook 04 §8. |
+| `scan_soft.py` | the parameter sweep in the **soft-broken** vacuum — notebook 01's cuts over λ, (θ, φ) and the three free soft quadratics; sole writer of `results/viable_points_soft.json`. |
+| `05_soft_scalar_scan.ipynb` | the soft-broken vacuum: released tadpoles, the φ fundamental domain, the general-vacuum spectrum, and the scan against notebook 01. **Done.** |
+| `derivations_05.tex` | printable appendix emitted by notebook 05 §7. |
 | `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
+| `results/viable_points_soft.json` | 2021 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
 | `results/decay_benchmarks.json` | per-point δ and VV couplings, plus the LFV branching-ratio distribution per (state, channel, $\mu_3$) and a 200-entry sample. |
 
 Notebooks import `model.py` from their own directory; from the repo root use
@@ -423,6 +427,57 @@ gauge-strength, so omitting them would have made heavy-state BRs wrong rather
 than merely incomplete), and the spin-0 form factor `A_zero` plus a general
 `higgs_diphoton_amplitude` so a charged Higgs can run in the $\gamma\gamma$ loop.
 
+### 11. The soft-broken vacuum: a decoupling-like spectrum (notebook 05)
+
+**Soft means dimension 2, not small.** The S₃-breaking spurions renormalize only in
+proportion to themselves, so small values are technically natural ['tHooft80] but
+not required. The three free soft terms were sampled as signed uniform variables up
+to (500 GeV)², and the size of the breaking was tagged per point instead of imposed.
+
+**Two structural results, both pinned in `tests/test_thdm_s3.py`.**
+- Solving the tadpoles for $m_{D2}^2$ (the `build_model(soft=True)` default,
+  which notebook 02 was run with) divides by $v_1^2-v_2^2$, a coordinate pole at
+  φ = 45°. Solving for $m_{D1}^2$ divides only by $v_1v_2$. `scan_soft.py` uses
+  `soft_solve_for="mD1sq"`.
+- φ ∈ (0, π/3) is a fundamental domain. The S₃ reflection about 60° maps φ to
+  2π/3 − φ, with the same matrix acting on *both* spurion doublets, and gives an
+  identical spectrum. Both edges are residual-Z₂ directions, and φ = π/3 is
+  notebook 01's alignment. One consequence for notebook 02: each point stands
+  for two draft-basis ratios, $r=-\cot(\varphi-\pi/6)$ and $-\tan\varphi$. The
+  quark-fit $|r|=1.349$ is φ = 53.44° in the domain.
+
+**The spectrum machinery generalizes.** The geometric rotation still isolates
+both Goldstones, with exact zeros at a rational point. The CP-even sector becomes a
+full 3×3 with no gauge-phobic state (hVV sum rule to 1e-15). Brute-force mpmath
+diagonalization agrees in all three sectors, and the aligned zero-soft slice
+reproduces notebook 01 to 1e-10.
+
+**Scan: 2021 points from 1.1×10⁸** (`results/viable_points_soft.json`, ~5 min).
+- The quartic cuts are identical to notebook 01's (5.15%).
+- No tachyons passes 2.5× more often.
+- The 125 GeV coupling cut is where the soft space dies.
+
+**Physics:**
+- **Decoupling-like.** The SM-like state is the lightest CP-even state in 99.7% of
+  points. The heaviest scalar has a median of 1.0 TeV, against 0.44 TeV in the
+  exact scan, where unitarity caps masses at λv². The heavy CP-even, CP-odd and
+  charged states are near-degenerate: median spread 4%, and 1.5% above 1 TeV. Non-SM
+  CP-even states couple to VV at the 1e-4 level.
+- **The exact scan's light scalars do not survive generic soft breaking.** A non-SM
+  scalar below 100 GeV appears in 16% of exact points and 0.7% of soft ones. The
+  light states are a property of the measure-zero exact slice, not of the S₃
+  quartics. λ₄ > 0 is likewise exact-scan-only (100% against 51%).
+- **Survivors pile up at both residual-Z₂ edges of φ.** At φ → 0 this is the
+  decoupling tail: the solved $m_{D1}^2\propto1/(v_1v_2)$ blows up, and all 34
+  points with a state above 5 TeV sit at φ < 7°. At φ → π/3 the breaking is
+  moderate (median 3.5v² within 10°). The quark-fit vacuum lies in the populated
+  upper range (205 points within ±2°).
+
+**Caveats.** The near-S₃ corner is barely populated under a uniform prior in $m^2$
+(15 points with every soft term below v²). Only a *local* minimum is required.
+Notebook 03's decays/LFV are not redone, because its δ assumes the aligned 2×2
+block. All three are open items.
+
 ## Open questions / next
 
 - ~~Get the [DasDey14] erratum.~~ **Closed** — see finding 4. It corrects only the
@@ -449,10 +504,20 @@ than merely incomplete), and the spin-0 form factor `A_zero` plus a general
   is open, and the $|V_{cb}|$ result is mild evidence against it without further
   structure. CP violation would additionally need complex Yukawas; everything in
   notebook 02 is real.
-- **Soft breaking and the scalar spectrum.** The four soft quadratics shift the
-  scalar mass matrices. Finding 4 / notebook 01 are untouched (quartics only),
-  but the *spectrum* is not — re-running the parameter scan in the soft-broken
-  vacuum is the natural follow-up, and would connect notebooks 01 and 02.
+- ~~Soft breaking and the scalar spectrum.~~ **Done** — finding 11,
+  `05_soft_scalar_scan.ipynb`, `scan_soft.py`.
+- **The near-S₃ corner of the soft scan.** A uniform prior in $m^2$ leaves only 15
+  of 2021 points with every soft term below $v^2$ (finding 11). Whether the exact
+  scan's light gauge-phobic scalars reappear continuously as the breaking shrinks
+  needs a targeted scan: log-uniform soft terms and φ near π/3.
+- **Global minimum in the soft-broken vacuum.** `scan_soft.py` requires only a
+  local minimum (no tachyons). With soft terms the potential can have several
+  minima, so a multi-start minimization of the full potential on the survivors is
+  the missing vacuum-stability cut.
+- **Decays and LFV on the soft-broken points.** Notebook 03 parametrizes the
+  CP-even sector by one angle δ, which assumes the aligned 2×2 block. The soft
+  points carry a full 3×3 `cp_even_mixing` and no gauge-phobic state, so its
+  couplings and rates have to be regenerated from that matrix.
 - **The neutrino sector** (finding 7) is enumerated but not built: Dirac Yukawas
   on $\tilde H$ plus S₃-allowed Majorana $\nu_R$ masses. feynlag has the pieces
   (`seesaw_mass_matrix`, `MajoranaRotation`, Takagi) — see `examples/sm_seesaw.py`.
@@ -554,6 +619,11 @@ than merely incomplete), and the spin-0 form factor `A_zero` plus a general
   Physics*, Phys. Rev. D **110**, 030001 (2024),
   [doi:10.1103/PhysRevD.110.030001](https://doi.org/10.1103/PhysRevD.110.030001).
   Quark masses and CKM elements used in the notebook-02 fit.
+- **['tHooft80]** G. 't Hooft, *"Naturalness, chiral symmetry, and spontaneous
+  chiral symmetry breaking"*, NATO Sci. Ser. B **59**, 135 (1980),
+  [doi:10.1007/978-1-4684-7571-5_9](https://doi.org/10.1007/978-1-4684-7571-5_9).
+  Technical naturalness: a parameter may be small if setting it to zero enlarges
+  the symmetry. Used in finding 11 for why soft terms need not be small, but may be.
 - **[Yildirim26]** E. Yildirim, *"Double SM-like Higgs Production at future
   $e^+e^-$ colliders in the 3-Higgs Doublet Model under the $S_3$ symmetry"*,
   [arXiv:2604.24421](https://arxiv.org/abs/2604.24421) (2026). Applies

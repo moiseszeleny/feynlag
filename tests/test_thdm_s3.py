@@ -32,6 +32,17 @@ from feynlag import (
 
 @pytest.fixture(scope="module")
 def s3_model():
+    return _build_s3_model()
+
+
+def _build_s3_model(soft=False):
+    """The S₃-invariant 3HDM; with ``soft=True`` also the four soft quadratics.
+
+    The soft terms are the S₃-breaking, gauge-invariant dimension-2 operators:
+    the 2 of 2⊗2, ``(x11 − x22, −(x12 + x21))``, and the doublet ``H_S†H_i +
+    h.c.``.  They are returned as a 7th tuple entry ``{name: parameter}`` (empty
+    when ``soft=False``) so the exact-S₃ tests see the same 6-tuple as before.
+    """
     gw = ExternalParameter("gw", 0.6535, positive=True)
     g1 = ExternalParameter("g1", 0.3580, positive=True)
     SU2L, U1Y = SU2("SU2L", coupling=gw), U1("U1Y", coupling=g1)
@@ -99,13 +110,22 @@ def s3_model():
          + l[7] * lam7_term
          + l[8] * sss**2)
 
+    softs = {}
+    if soft:
+        herm = lambda e: e + sp.conjugate(e)
+        for name, struct in (("mD1sq", d2_1), ("mD2sq", d2_2),
+                             ("mS1sq", herm(s11)), ("mS2sq", herm(s22))):
+            softs[name] = ExternalParameter(name, 0.0, unit_dim=2)
+            V += softs[name].s * struct
+
     L = Lagrangian().add(-V, sector="potential")
     model = Model("3HDM-S3", gauge_groups=[SU2L, U1Y], discrete_groups=[s3],
                   fields=[H1, H2, HS],
                   parameters=[gw, g1, v1, v2, vS, mu0sq, mu1sq,
-                              *lams.values()],
+                              *lams.values(), *softs.values()],
                   lagrangian=L)
-    return model, s3, (H1, H2, HS), (v1, v2, vS), (mu0sq, mu1sq), l
+    out = (model, s3, (H1, H2, HS), (v1, v2, vS), (mu0sq, mu1sq), l)
+    return out + (softs,) if soft else out
 
 
 def test_invariance_full_potential(s3_model):
@@ -472,6 +492,157 @@ def test_aligned_vacuum_can_meet_the_electroweak_scale(s3_model):
     v1_t = v2_t / math.sqrt(3)
     assert not math.isclose(math.sqrt(v1_t**2 + v2_t**2 + vS_t**2), v_ew,
                             rel_tol=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# The SOFT-BROKEN vacuum.
+#
+# Four S₃-breaking quadratics release the √3 alignment: the tadpoles become
+# ordinary equations and a general (v1, v2, vS) is a stationary point.  These
+# pin the structural facts research/thdm_s3/scan_soft.py rests on, built from
+# the fixture's own model (never importing research code).
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def s3_soft():
+    """Soft model, tadpoles solved for (μ0², μ1², mD1²), numeric mass matrices."""
+    import numpy as np
+
+    model, s3, (H1, H2, HS), vevs, (mu0sq, mu1sq), l, softs = \
+        _build_s3_model(soft=True)
+    v = [p.s for p in vevs]
+    tad = model.tadpoles()
+    sol = sp.solve([sp.Eq(tad[x], 0) for x in v],
+                   [mu0sq.s, mu1sq.s, softs["mD1sq"].s], dict=True)[0]
+
+    fields = {"S": [sp.Symbol(f"{n}0_r", real=True) for n in ("H1", "H2", "HS")],
+              "A": [sp.Symbol(f"{n}0_i", real=True) for n in ("H1", "H2", "HS")]}
+    Ms = {k: model.mass_matrix(f).subs(sol) for k, f in fields.items()}
+    Ms["C"] = model.mass_matrix([H1.components[0], H2.components[0],
+                                 HS.components[0]], charged=True).subs(sol)
+    free = [softs[n].s for n in ("mD2sq", "mS1sq", "mS2sq")]
+    args = [l[k] for k in range(1, 9)] + v + free
+    fn = sp.lambdify(args, [Ms["S"], Ms["A"], Ms["C"], sol[softs["mD1sq"].s]],
+                     "numpy")
+
+    def at(lam, theta, phi, free_vals):
+        vv = (246 * np.sin(theta) * np.cos(phi), 246 * np.sin(theta) * np.sin(phi),
+              246 * np.cos(theta))
+        M_S, M_A, M_C, mD1 = fn(*lam, *vv, *free_vals)
+        return (np.array(M_S, float), np.array(M_A, float), np.array(M_C, float),
+                float(mD1), np.array(vv))
+
+    return model, tad, softs, (mu0sq, mu1sq), v, sol, at
+
+
+def _geometric_R(vv):
+    import numpy as np
+    v1, v2, vS = vv
+    v12, vt = np.hypot(v1, v2), np.linalg.norm(vv)
+    cphi, sphi, cth, sth = v1 / v12, v2 / v12, vS / vt, v12 / vt
+    return np.array([[sth * cphi, -sphi, -cth * cphi],
+                     [sth * sphi, cphi, -cth * sphi],
+                     [cth, 0.0, sth]])
+
+
+def test_soft_tadpoles_are_regular_only_when_solved_for_mD1(s3_soft):
+    """Which soft term the tadpoles fix is not cosmetic.
+
+    Solving for mD2² divides by v1² − v2², singular on the φ = 45° line in the
+    middle of the scan's domain; solving for mD1² divides only by v1·v2 (and
+    μ0² by vS), regular throughout φ ∈ (0, π/3).
+    """
+    model, tad, softs, (mu0sq, mu1sq), (v1, v2, vS), sol, at = s3_soft
+    for k, e in sol.items():
+        den = sp.factor(sp.denom(sp.together(e)))
+        assert den.free_symbols <= {v1, v2, vS}
+        assert not sp.factor(den).has(v1 - v2) and not sp.factor(den).has(v1 + v2)
+        assert sp.simplify(den.subs(v1, v2)) != 0
+
+    sol2 = sp.solve([sp.Eq(tad[x], 0) for x in (v1, v2, vS)],
+                    [mu0sq.s, mu1sq.s, softs["mD2sq"].s], dict=True)[0]
+    den2 = sp.denom(sp.together(sol2[softs["mD2sq"].s]))
+    assert sp.simplify(den2.subs(v1, v2)) == 0
+
+
+def test_soft_breaking_off_recovers_the_alignment(s3_soft):
+    """On the √3-aligned vacuum with the free soft terms at zero, mD1² = 0.
+
+    So the exact-S₃ model is the φ = π/3, zero-soft slice of the soft one —
+    the limit notebook 01's scan lives in.
+    """
+    model, tad, softs, mus, (v1, v2, vS), sol, at = s3_soft
+    zero = {softs[n].s: 0 for n in ("mD2sq", "mS1sq", "mS2sq")}
+    mD1 = sol[softs["mD1sq"].s].subs(zero).subs(v2, sp.sqrt(3) * v1)
+    assert sp.simplify(mD1) == 0
+
+
+def test_soft_vacuum_goldstones_and_hvv_sum_rule(s3_soft):
+    """For a GENERAL vacuum the geometric rotation still isolates the Goldstones.
+
+    R's first column is the vacuum direction for any (θ, φ), so RᵀM_A R and
+    RᵀM_C R have a vanishing first row.  The CP-even sector is now fully mixed:
+    every state couples to VV (overlap with v̂), and the overlaps² sum to 1.
+    """
+    import numpy as np
+
+    at = s3_soft[-1]
+    rng = np.random.default_rng(11)
+    for _ in range(5):
+        lam = rng.uniform(-2, 2, 8)
+        theta, phi = rng.uniform(0.2, 1.3), rng.uniform(0.1, 1.0)
+        M_S, M_A, M_C, _, vv = at(lam, theta, phi, rng.uniform(-2e5, 2e5, 3))
+        R = _geometric_R(vv)
+        for M in (M_A, M_C):
+            D = R.T @ M @ R
+            assert np.abs(D[0]).max() < 1e-9 * np.abs(D).max()
+            assert np.sum(np.abs(np.linalg.eigvalsh(M)) < 1e-9 * np.abs(M).max()) == 1
+        w, V = np.linalg.eigh(M_S)
+        overlaps2 = (vv / np.linalg.norm(vv) @ V) ** 2
+        assert abs(overlaps2.sum() - 1) < 1e-12
+        assert overlaps2.min() > 1e-8          # no gauge-phobic state in general
+
+
+def test_soft_exact_limit_has_a_gauge_phobic_state(s3_soft):
+    """At φ = π/3 with zero free soft terms one CP-even state decouples from VV."""
+    import numpy as np
+
+    at = s3_soft[-1]
+    rng = np.random.default_rng(12)
+    M_S, _, _, mD1, vv = at(rng.uniform(-2, 2, 8), 0.8, np.pi / 3, [0.0, 0.0, 0.0])
+    assert abs(mD1) < 1e-8 * 246**2
+    w, V = np.linalg.eigh(M_S)
+    overlaps2 = (vv / np.linalg.norm(vv) @ V) ** 2
+    assert overlaps2.min() < 1e-20
+
+
+def test_soft_s3_image_is_the_same_physics(s3_soft):
+    """φ ∈ (0, π/3) is a fundamental domain for the soft-broken scan.
+
+    The S₃ element ab — the reflection P about the 60° axis — maps a vacuum at
+    φ to one at 2π/3 − φ.  Both soft doublets (the 2 of 2⊗2 and H_S†H_i)
+    transform with the same P, and the transformed point has *identical*
+    spectra in all three sectors, with the tadpole-solved mD1² coming out as
+    the first component of P·(mD1², mD2²).  So scanning φ past π/3 only
+    revisits physics already covered.
+    """
+    import numpy as np
+
+    at = s3_soft[-1]
+    P = np.array([[-0.5, np.sqrt(3) / 2], [np.sqrt(3) / 2, 0.5]])
+    rng = np.random.default_rng(13)
+    for _ in range(3):
+        lam = rng.uniform(-2, 2, 8)
+        theta, phi = rng.uniform(0.2, 1.3), rng.uniform(0.05, 1.0)
+        mD2, mS1, mS2 = rng.uniform(-2e5, 2e5, 3)
+        M1 = at(lam, theta, phi, [mD2, mS1, mS2])
+        mD = P @ [M1[3], mD2]
+        mS = P @ [mS1, mS2]
+        M2 = at(lam, theta, 2 * np.pi / 3 - phi, [mD[1], mS[0], mS[1]])
+        assert abs(M2[3] - mD[0]) < 1e-8 * max(1.0, abs(mD[0]))
+        for a, b in zip(M1[:3], M2[:3]):
+            wa, wb = np.linalg.eigvalsh(a), np.linalg.eigvalsh(b)
+            assert np.allclose(wa, wb, rtol=1e-10, atol=1e-6)
 
 
 # ---------------------------------------------------------------------------
