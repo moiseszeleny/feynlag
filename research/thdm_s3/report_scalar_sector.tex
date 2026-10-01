@@ -66,7 +66,17 @@ chain against published results (\S\ref{sec:dictionary}).
 \item \textbf{Boundedness binds; unitarity does not.} Over $\lambda\in U(-2,2)^8$, tree
 unitarity removes \emph{no} points that boundedness has not already removed
 (\S\ref{sec:scan}).
+
+\item \textbf{The 125~GeV condition is now a coupling cut, not a mass coincidence.} The state
+carrying the $hVV$ coupling must sit at $125\pm3$~GeV, and light, appreciably coupled
+neutral states are vetoed. This keeps 64 of the 322 points a mass-only cut would keep. Over
+$6\times10^7$ samples, 1964 points survive (\S\ref{sec:scan}, \S\ref{sec:region}).
 \end{enumerate}
+
+\emph{Revised} to replace the earlier mass-only 125~GeV cut with the coupling cut, and to
+quote the full $6\times10^7$-point scan. The main result (\S\ref{sec:main}) is unchanged.
+Companion reports cover the fermion sector, the scalar decays and LFV rates, and the
+soft-broken vacuum.
 
 \section{The model and our conventions}
 
@@ -241,9 +251,10 @@ finding artefacts, and the sampling is not missing violations at this resolution
 
 Condition \eqref{eq:ft} is exact on the \emph{real neutral} slice only. Complex-neutral and
 charged directions are not covered analytically; the notebook handles them with a numerical
-backstop over $40\,000$ directions in the full 12-dimensional field space, which removes a
-further 3 points of the final 322. The residual gap is therefore real but small once the
-other cuts are applied. Doing this properly --- separate analytic BFB-n and BFB-c
+backstop over $40\,000$ directions in the full 12-dimensional field space. Over the full
+$6\times10^7$-point scan it removes 23 of the 1987 points that pass every other cut (none of
+the 64 in the two-million-point sample of \S\ref{sec:scan}). The residual gap is therefore
+real but small once the other cuts are applied. Doing this properly --- separate analytic BFB-n and BFB-c
 conditions --- is what \cite{BotoRomaoSilva22} does for $U(1)\times U(1)$,
 $U(1)\times Z_2$ and $Z_2\times Z_2$; $S_3$ is not among their cases, and that is the
 natural next piece of work.
@@ -277,7 +288,8 @@ $v_1\leftrightarrow v_2$ exactly as the documented basis difference requires.
 \label{sec:scan}
 
 Two million $\lambda$ points sampled uniformly on $U(-2,2)^8$ (seed \texttt{20260729}), with
-$\theta$ scanned at $v=246$~GeV:
+$\theta$ scanned at $v=246$~GeV. The last three rows are the collider-facing cuts of
+\S\ref{sec:region}:
 
 \begin{center}
 \begin{tabular}{lrr}
@@ -290,16 +302,24 @@ $+$ corrected BFB \eqref{eq:ft} & $103\,465$ & $90.5\%$\\
 $+$ tree unitarity              & $103\,465$ & $100.0\%$\\
 $+$ no tachyons                 & $7\,608$   & $7.35\%$\\
 $+$ $m_{H^\pm}>80$~GeV          & $6\,890$   & $90.6\%$\\
-$+$ one CP-even at $125\pm3$~GeV & $322$     & $4.67\%$\\
-$+$ 12-dimensional BFB backstop  & $319$     & $99.1\%$\\
+$+$ $hVV$ carrier at $125\pm3$~GeV, $\kappa^2\ge0.9$ & $64$ & $0.93\%$\\
+$+$ LEP neutral veto \cite{LEP2003} & $64$ & $100.0\%$\\
+$+$ 12-dimensional BFB backstop  & $64$      & $100.0\%$\\
 \bottomrule
 \end{tabular}
 \end{center}
+{\small A mass-only ``one CP-even state at $125\pm3$~GeV'' cut, which this report originally
+used, would keep 322 points at the sixth row. The sample is chunk~0 of the cached scan
+(\texttt{scan.py}). Swept over 30 such samples ($6\times10^7$ points) the same cuts leave
+\textbf{1964} points (\texttt{results/viable\_points.json}), and chunk~0 reproduces this
+table point for point.\par}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.78\textwidth]{figures/cut_flow.png}
-\caption{Cut flow over the $2\times10^6$-point scan.}
+\caption{Cut flow over the $2\times10^6$-point scan, up to the theory cuts and a mass-only
+$125$~GeV condition. The coupling-based rows that replace the last bar are in the table
+above.}
 \label{fig:cutflow}
 \end{figure}
 
@@ -318,45 +338,58 @@ unitarity side.
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.80\textwidth]{figures/mass_ranges.png}
-\caption{Theory-allowed mass ranges for the seven physical scalars. Charged states carry
-the LEP bound $m_{H^\pm}>80$~GeV; the neutral states carry no direct-search cut (see the
-caveat below).}
+\caption{Theory-allowed mass ranges for the seven physical scalars over the 6890 points
+that pass boundedness, unitarity, no tachyons and $m_{H^\pm}>80$~GeV, \emph{before} the
+125~GeV and neutral-state cuts below.}
 \label{fig:masses}
 \end{figure}
 
-The surviving spectra cluster below a TeV, consistent with \cite{DasDey14}'s own conclusion
-that many new scalars must be light. Five representative benchmark points, spanning the
-viable range of the vacuum angle:
+The theory-allowed spectra cluster below a TeV, consistent with \cite{DasDey14}'s own
+conclusion that many new scalars must be light.
+
+\paragraph{The collider cuts.} The scan originally applied a mass-only condition (one
+CP-even state at $125\pm3$~GeV) and no bound at all on the neutral states. Both gaps are now
+closed with the $hVV$ couplings, which follow from the same CP-even block as the masses:
+\begin{itemize}\itemsep1pt
+\item \textbf{SM-like at 125~GeV}: the state carrying the largest $hVV$ coupling must sit at
+$125\pm3$~GeV with $\kappa^2\ge0.9$ of the SM strength. Over the points that pass the mass
+condition, only a minority put the coupling on the 125~GeV state, so the mass-only cut was
+too loose by a factor of five (322 against 64).
+\item \textbf{LEP neutral veto}: no CP-even state below 114.4~GeV may have
+$\xi^2\ge0.05$, a step approximation of \cite{LEP2003} Fig.~10. The approximation carries no
+weight. $h_0$ is gauge-phobic exactly, for any mixing, and the other two states share the SM
+strength, so $\kappa^2\ge0.9$ already forces the non-SM one below $0.1$. The surviving set
+is the same for any floor in $[0.01,0.10]$.
+\end{itemize}
+A light $h_0$ therefore passes on the physics ($g_{h_0VV}=0$), not on an exemption: 117 of
+the 1964 points have $m_{h_0}<114.4$~GeV.
+
+Five representative points from the 1964, spanning the vacuum angle:
 
 \begin{center}
-\begin{tabular}{cccccccc}
+\begin{tabular}{cccccccccc}
 \toprule
 $\theta$ & $m_{h_0}$ & $m_{H_1}$ & $m_{H_2}$ & $m_{A_1}$ & $m_{A_2}$
-& $m_{H^\pm_1}$ & $m_{H^\pm_2}$\\
+& $m_{H^\pm_1}$ & $m_{H^\pm_2}$ & SM-like & $\kappa^2$\\
 \midrule
-$0.206$ & $40$ & $406$ & $127$ & $414$ & $443$ & $183$ & $209$ \\
-$0.651$ & $126$ & $295$ & $118$ & $345$ & $424$ & $115$ & $259$ \\
-$0.811$ & $499$ & $356$ & $126$ & $137$ & $284$ & $304$ & $193$ \\
-$1.421$ & $127$ & $304$ & $87$ & $481$ & $295$ & $135$ & $211$ \\
-$1.493$ & $123$ & $539$ & $190$ & $435$ & $620$ & $422$ & $556$ \\
+$0.438$ & $318$ & $127$ & $109$ & $253$ & $188$ & $202$ & $127$ & $H_1$ & $0.993$\\
+$0.712$ & $281$ & $328$ & $125$ & $305$ & $326$ & $256$ & $267$ & $H_2$ & $0.999$\\
+$0.859$ & $32$  & $261$ & $127$ & $339$ & $272$ & $197$ & $211$ & $H_2$ & $0.922$\\
+$1.040$ & $345$ & $245$ & $127$ & $484$ & $370$ & $310$ & $194$ & $H_2$ & $0.995$\\
+$1.459$ & $102$ & $322$ & $127$ & $472$ & $383$ & $231$ & $345$ & $H_2$ & $0.940$\\
 \bottomrule
 \end{tabular}
 \end{center}
-{\small All masses in GeV. The $125\pm3$~GeV state is whichever CP-even scalar carries it ---
-note it is $h_0$ in none of these, which is a coupling question the gauge sector settles, not
-a mass-ordering one.\par\medskip
-\textbf{Caveat.} The only direct-search bound applied in the scan is $m_{H^\pm}>80$~GeV;
-\emph{no} bound constrains the neutral states, hence the $40$~GeV $h_0$ in the first row.
-That particular entry is defensible --- $h_0$ is the geometric-basis state and
-$g_{h_0VV}=0$ \emph{exactly} for any $\delta$, so LEP's $Z\to Zh$ search does not reach it.
-But $H_1$ and $H_2$ carry $\cos\delta$ and $\sin\delta$ times the SM coupling, so a light one
-of those would need small mixing, which the scalar-sector notebook has no gauge couplings to
-test. Re-cutting the scan with the couplings now available is the natural follow-up.}
+{\small All masses in GeV, at the 2nd, 25th, 50th, 75th and 98th percentiles of $\theta$.
+$\kappa^2$ is the SM-like state's $hVV$ coupling$^2$ in SM units. In the first row the
+non-SM $H_2$ at 109~GeV has $\xi^2=0.007$, under the LEP floor. In the third, the 32~GeV $h_0$
+is gauge-phobic.\par}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/correlations.png}
-\caption{Correlations across the viable region.}
+\caption{Correlations across the theory-allowed region (the 6890 points of
+Fig.~\ref{fig:masses}).}
 \label{fig:corr}
 \end{figure}
 
@@ -365,6 +398,10 @@ test. Re-cutting the scan with the couplings now available is the natural follow
 \label{sec:asks}
 
 \begin{enumerate}\itemsep4pt
+\item \textbf{The neutral direct-search gap is closed.} The scan now cuts on the $hVV$
+coupling (\S\ref{sec:region}). The couplings themselves, the decays and the LFV rates are in
+the companion decays report.
+
 \item \textbf{The erratum question is closed.} Phys.\ Rev.\ D \textbf{91}, 039905 (2015)
 corrects Eqs.~(9a)--(9c) only, and says so itself (\S\ref{sec:erratum}). \S\ref{sec:main} is
 therefore not a rediscovery.
@@ -437,6 +474,12 @@ Eur.\ Phys.\ J.\ C \textbf{81}, 942 (2021),
 JHEP \textbf{08} (2022) 273,
 \href{https://arxiv.org/abs/2204.13130}{arXiv:2204.13130},
 \href{https://doi.org/10.1007/JHEP08(2022)273}{doi:10.1007/JHEP08(2022)273}.
+
+\bibitem{LEP2003} ALEPH, DELPHI, L3, OPAL Collaborations and the LEP Working Group for
+Higgs Boson Searches, \emph{Search for the Standard Model Higgs boson at LEP},
+Phys.\ Lett.\ B \textbf{565}, 61 (2003),
+\href{https://arxiv.org/abs/hep-ex/0306033}{hep-ex/0306033},
+\href{https://doi.org/10.1016/S0370-2693(03)00614-2}{doi:10.1016/S0370-2693(03)00614-2}.
 
 \bibitem{BotoRomaoSilva22} R.~Boto, J.~C.~Romão and J.~P.~Silva,
 \emph{Bounded from below conditions on a class of symmetry constrained 3HDM},

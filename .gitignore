@@ -20,6 +20,8 @@ research/**/cache/
 # LaTeX build products of the generated derivation appendices (the .tex the
 # notebooks emit IS committed; the PDF and friends are rebuilt on demand)
 research/**/*.pdf
+# ...except the report PDFs: those are deliverables, committed so they read on GitHub
+!research/**/report_*.pdf
 research/**/*.aux
 research/**/*.out
 research/**/*.synctex.gz

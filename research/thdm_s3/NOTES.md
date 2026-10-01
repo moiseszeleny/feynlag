@@ -25,6 +25,13 @@ pedagogical walk-through). This directory is where the open questions go.
 | `scan_soft.py` | the parameter sweep in the **soft-broken** vacuum — notebook 01's cuts over λ, (θ, φ) and the three free soft quadratics; sole writer of `results/viable_points_soft.json`. |
 | `05_soft_scalar_scan.ipynb` | the soft-broken vacuum: released tadpoles, the φ fundamental domain, the general-vacuum spectrum, and the scan against notebook 01. **Done.** |
 | `derivations_05.tex` | printable appendix emitted by notebook 05 §7. |
+| `report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
+| `report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
+| `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
+| `report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
+| `build_reports.sh` | rebuilds the four `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
+| `README.md` | the folder's GitHub landing page: the report index. |
+| `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
 | `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
 | `results/viable_points_soft.json` | 2021 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
