@@ -28,6 +28,8 @@ research/**/*.synctex.gz
 research/**/*.fdb_latexmk
 research/**/*.fls
 research/**/*.log
+research/**/*.bbl
+research/**/*.blg
 
 # graphify knowledge-graph output (graph.json, HTML viz, obsidian vault,
 # wiki, cypher/svg/graphml exports — all nested under graphify-out/) and
