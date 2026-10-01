@@ -794,3 +794,89 @@ def test_singular_value_relation_needs_mu4_plus_mu5_squared():
     combined = sp.expand((MU4 + MU5)**2 - p1 * p2
                          - 2 * (MU4**2 + MU5**2 - p1 * p2 / 2))
     assert sp.factor(combined) == -(MU4 - MU5)**2
+
+
+# --------------------------------------------------------------------------
+# the LFV couplings of research/thdm_s3 notebook 03 §7: which CP-even state
+# couples to which lepton flavours at the exact-S₃ vacuum
+# --------------------------------------------------------------------------
+
+_ME, _MMU, _MTAU = 0.51099895e-3, 0.1056584, 1.77686
+
+
+def _draft_lepton_couplings(mu3, v2d=89.0, v3=170.0, split_with_root3=False):
+    """(Q_vac, Q_perp, Q_S) in the draft basis at v₁ = √3 v₂, μ₅ = μ₄.
+
+    ``Q_vac``/``Q_perp`` are the couplings of the real neutral field along /
+    orthogonal to the doublet vacuum direction, ``Q_S`` of the singlet's —
+    i.e. ``Σ_j n_j OᵀG_jO`` for the three orthonormal directions.  With
+    ``split_with_root3`` the mass matrix is written with the √3 typed in, every
+    doublet entry ∝ v₁ — the split notebook 03 first used, which gives G₂ = 0.
+    """
+    import math
+    import numpy as np
+
+    mu1 = (_ME + _MMU + _MTAU - mu3) / 2
+    mu2 = (_MMU + _MTAU - _ME - mu3) / 4
+    p1, p2 = mu3 - _MMU, _MTAU - mu3
+    mu4 = 0.5 * math.sqrt(p1 * p2)
+    tl = math.atan2(math.sqrt(p2), math.sqrt(p1))
+    v1d = math.sqrt(3) * v2d
+    if split_with_root3:
+        s3 = math.sqrt(3)
+        G1 = np.array([[mu2, s3 * mu2, s3 * mu4], [s3 * mu2, -mu2, mu4],
+                       [s3 * mu4, mu4, 0]]) / v1d
+        G2 = np.zeros((3, 3))
+    else:
+        g2, g4 = mu2 / v2d, mu4 / v2d
+        G1 = np.array([[0, g2, g4], [g2, 0, 0], [g4, 0, 0]])
+        G2 = np.array([[g2, 0, 0], [0, -g2, g4], [0, g4, 0]])
+    GS = np.diag([mu1 / v3, mu1 / v3, mu3 / v3])
+    M = v1d * G1 + v2d * G2 + v3 * GS
+    c, s = 0.5, math.sqrt(3) / 2
+    O12 = np.array([[c, s, 0], [-s, c, 0], [0, 0, 1]])
+    O23 = np.array([[1, 0, 0], [0, math.cos(tl), math.sin(tl)],
+                    [0, -math.sin(tl), math.cos(tl)]])
+    O = O12 @ O23
+    assert np.allclose(np.abs(np.diag(O.T @ M @ O)), (_ME, _MMU, _MTAU), rtol=1e-9)
+    Gt = [O.T @ G @ O for G in (G1, G2, GS)]
+    u = np.array([v1d, v2d]) / math.hypot(v1d, v2d)
+    q_vac = u[0] * Gt[0] + u[1] * Gt[1]
+    q_perp = -u[1] * Gt[0] + u[0] * Gt[1]
+    return q_vac, q_perp, Gt[2]
+
+
+@pytest.mark.parametrize("mu3", [0.5, 0.9, 1.4])
+def test_exact_s3_lfv_channels_split_by_state(mu3):
+    """At the S₃ vacuum the h₀ direction couples ONLY through the electron.
+
+    Along the vacuum (and for the singlet) the electron is O₁₂-decoupled, so
+    those couplings have no e entry: τμ only.  Orthogonal to the vacuum — the
+    gauge-phobic h₀ — every non-zero entry has an electron leg: eμ and eτ only,
+    and it equals the draft's printed Q₂(A).  The √3-typed-in split
+    (G₂ = 0) gets h₀ wrong while leaving the other two untouched.
+    """
+    import math
+    import numpy as np
+
+    v2d = 89.0
+    q_vac, q_perp, q_S = _draft_lepton_couplings(mu3, v2d=v2d)
+    for q in (q_vac, q_S):
+        assert np.abs(q[0, 1:]).max() < 1e-16 and np.abs(q[1:, 0]).max() < 1e-16
+    assert abs(q_vac[1, 2]) > 1e-6                       # τμ is there
+    assert np.abs(q_perp[1:, 1:]).max() < 1e-16          # no τμ, μμ, ττ for h₀
+    assert abs(q_perp[0, 0]) < 1e-16
+    assert abs(q_perp[0, 1]) > 1e-4 and abs(q_perp[0, 2]) > 1e-4
+
+    # the draft's printed Q₂(A), [LFVHD] Scenario A
+    p1, p2 = mu3 - _MMU, _MTAU - mu3
+    q_emu = math.sqrt(p1) * (_ME - mu3 + p1 - 3 * p2) / (4 * v2d * math.sqrt(p1 + p2))
+    q_etau = math.sqrt(p2) * (_ME - mu3 + 3 * p1 - p2) / (4 * v2d * math.sqrt(p1 + p2))
+    assert np.isclose(abs(q_perp[0, 1]), abs(q_emu), rtol=1e-10)
+    assert np.isclose(abs(q_perp[0, 2]), abs(q_etau), rtol=1e-10)
+
+    # the old split: h₀ wrong, the vacuum direction right
+    o_vac, o_perp, _ = _draft_lepton_couplings(mu3, v2d=v2d, split_with_root3=True)
+    assert np.allclose(np.abs(o_vac), np.abs(q_vac), atol=1e-15)
+    assert np.abs(np.abs(o_perp) - np.abs(q_perp)).max() > 1e-4
+

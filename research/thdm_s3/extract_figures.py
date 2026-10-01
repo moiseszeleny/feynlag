@@ -34,7 +34,7 @@ FIGURES = {
     "fermion_vus_vs_r": (NB02, 58, "Soft $S_3$ breaking turns on the Cabibbo angle"),
     "decays_delta_scenarios": (NB03, 14, "between scenarios A and B"),
     "decays_gammagamma": (NB03, 26, "Charged-Higgs loop in"),
-    "decays_lfv_limits": (NB03, 31, "LFV rates of the SM-like state"),
+    "decays_lfv_limits": (NB03, 33, "LFV rates at the exact-S"),
     "soft_cut_flow": (NB05, 22, "Cut flow: exact vs soft-broken"),
     "soft_masses": (NB05, 24, "Scalar masses: exact $S_3$"),
     "soft_hvv": (NB05, 26, "VV coupling of the non-SM-like CP-even states"),

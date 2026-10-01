@@ -39,6 +39,8 @@ References
     geometric rotation; Eqs. (54)–(55) the alignment scenarios.
 [CMS21] CMS Collaboration, Phys. Rev. D 104, 032013 (2021), arXiv:2105.03007 —
     B(H→μτ) < 0.15%, B(H→eτ) < 0.22% at 95% CL.
+[CMS23] CMS Collaboration, Phys. Rev. D 108, 072004 (2023), arXiv:2305.18106 —
+    B(H→eμ) < 4.4×10⁻⁵ at 95% CL.
 """
 
 from __future__ import annotations
@@ -62,8 +64,9 @@ __all__ = [
     "LFV_LIMITS",
 ]
 
-#: 95% CL observed upper limits on LFV Higgs branching ratios, [CMS21].
-LFV_LIMITS = {("tau", "mu"): 1.5e-3, ("tau", "e"): 2.2e-3}
+#: 95% CL observed upper limits on LFV Higgs branching ratios: τμ and τe from
+#: [CMS21], eμ from [CMS23].
+LFV_LIMITS = {("tau", "mu"): 1.5e-3, ("tau", "e"): 2.2e-3, ("e", "mu"): 4.4e-5}
 
 
 @dataclass(eq=False)

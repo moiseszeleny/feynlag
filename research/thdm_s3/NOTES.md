@@ -415,18 +415,38 @@ in the columns of $R_S$, so $Q_1(C)=\cos\delta\,Q_1(A)-\sin\delta\,Q_3(A)$ etc.
 hold for all δ, and $Q_2$ is entirely δ-independent. Combined with the above,
 $h_0$ has no $VV$ coupling *and* δ-independent lepton couplings.
 
-**LFV.** $\mathcal B(h\to\tau\mu)$ exceeds [CMS21]'s $0.15\%$ in **18%** of the
-sampled entries for the SM-like state and **81%** for $h_0$, so LFV data really
-constrains this model — but it bounds $\mu_3^\ell$ rather than the scalar sector:
-the SM-like fraction runs 0.3% → 6.4% → 48% across $\mu_3=0.5,\,0.9,\,1.4$, and the
-median point sits a factor ~9 *below* the limit. (Superseded reading: "generically
-overshoots, a majority of entries". That was computed with the wrong δ and before
-the coupling cut, which together moved the SM-like median from $1.9\times10^{-3}$
-to $1.7\times10^{-4}$.) And $\mathcal B(h\to\tau e)$ is **zero to machine
-precision**: the same first-generation decoupling of $O_{12}$ that forced
-$V_{us}=0$ in finding 9 forbids any $e$–$\tau$ entry. The quark and lepton
-flavour structures are tied together by the exact-S₃ vacuum, and findings 9 and
-10 are the same fact seen from opposite ends.
+**LFV: each CP-even state has its own channels** (corrected 2026-10-01). At the
+exact-S₃ vacuum the electron decouples under $O_{12}$ only along the vacuum
+direction of doublet space. The SM-like $h_1$ and $h_2$ therefore never couple to the
+electron and give $\tau\mu$ only. The gauge-phobic $h_0$ points orthogonal to the
+vacuum, has an electron on **every** coupling, and gives $e\tau$ and $e\mu$ only, with
+$\tau\mu=0$ exactly (derived in notebook 03 §7.2, checked at every point and every
+$\mu_3$). Results:
+- **SM-like state:** $\mathcal B(h\to\tau\mu)$ exceeds [CMS21]'s $0.15\%$ in **18%** of
+  entries. This bounds $\mu_3^\ell$, not the scalar sector: the fraction runs
+  0.3% → 6.4% → 48% across $\mu_3=0.5,\,0.9,\,1.4$, and the median point sits a
+  factor ~9 below the limit.
+- **$h_0$:** its $e\tau$ and $e\mu$ rate ratios to $\Gamma_h^{\rm SM}$ are large (medians
+  $5\times10^{-3}$, $5\times10^{-2}$). The 125 GeV limits ([CMS21], [CMS23]) do not apply to
+  a gauge-phobic non-125 state. [CMS23]'s 110–160 GeV $e\mu$ resonance search is the
+  relevant comparison, and it needs $h_0$'s production cross section, which this build
+  does not have.
+
+**Superseded readings.**
+- "$h_0$ exceeds the $\tau\mu$ limit in 81%; $\mathcal B(h\to\tau e)$ is zero to
+  machine precision for every state". Notebook 03 built $M_\ell$ with the alignment's
+  $\sqrt3$ typed in, so `g_matrices` put every doublet Yukawa on $G_1$ ($G_2=0$, the trap
+  notebook 02 §7 warns about), and it paired draft-basis $G_k$ with a feynlag-basis $R_S$.
+  $Q_1$ and $Q_3$ only see $\sum_kv_kG_k=M$ and were right; $Q_2$ was wrong. The fix,
+  `lfv.lepton_g_function`, reads $G_k$ off the Lagrangian with all three VEVs symbolic and
+  agrees with an independent draft-basis route to $10^{-17}$. It also reproduces the
+  draft's **printed** $Q_2(A)$ exactly. The draft had $h_0$ right all along, and only
+  this notebook's first version disagreed with it.
+- Earlier still: "generically overshoots, a majority of entries". That used the wrong δ
+  and was computed before the coupling cut.
+
+So the exact-S₃ vacuum ties the quark and lepton flavour structures together: findings
+9 and 10 are the same first-generation decoupling.
 
 **Library work this required** (both in `src/`, pinned by the main suite):
 `VSS` decays ($A\to Zh$, $H^\pm\to W^\pm h$ — open at every benchmark point and
@@ -609,6 +629,17 @@ block. All three are open items.
   Phys. Lett. B **565** (2003) 61, arXiv:hep-ex/0306033,
   doi:10.1016/S0370-2693(03)00614-2. Fig. 10 is the 95% CL bound on
   $\xi^2=(g_{HZZ}/g^{\rm SM}_{HZZ})^2$; $\xi^2=1$ is excluded below 114.4 GeV.
+- **[CMS21]** CMS Collaboration, *"Search for lepton-flavor violating decays of the
+  Higgs boson in the μτ and eτ final states in proton-proton collisions at
+  √s = 13 TeV"*, Phys. Rev. D **104**, 032013 (2021),
+  [arXiv:2105.03007](https://arxiv.org/abs/2105.03007). B(H→μτ) < 0.15%,
+  B(H→eτ) < 0.22% at 95% CL.
+- **[CMS23]** CMS Collaboration, *"Search for the lepton-flavor violating decay of the
+  Higgs boson and additional Higgs bosons in the eμ final state in proton-proton
+  collisions at √s = 13 TeV"*, Phys. Rev. D **108**, 072004 (2023),
+  [arXiv:2305.18106](https://arxiv.org/abs/2305.18106),
+  [doi:10.1103/PhysRevD.108.072004](https://doi.org/10.1103/PhysRevD.108.072004).
+  B(H→eμ) < 4.4×10⁻⁵ at 95% CL; also a search for additional scalars at 110–160 GeV.
 - **[DasDeyPal16]** D. Das, U. K. Dey, P. B. Pal, *"S₃ symmetry and the quark
   mixing matrix"*, Phys. Lett. B **753**, 315 (2016),
   [arXiv:1507.06509](https://arxiv.org/abs/1507.06509),

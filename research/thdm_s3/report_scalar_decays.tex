@@ -34,8 +34,12 @@ $|\delta|\le0.32$ over the viable set. Third, the draft's Scenario-C relations, 
 with ``$\approx$'', are exact. Phenomenologically, $\mathcal B(h\to\mu\tau)$ from the
 SM-like state exceeds the CMS limit \cite{CMS21} in 18\% of entries, and that fraction is
 carried almost entirely by the lepton-sector parameter $\mu_3^\ell$. LFV data therefore
-bound $\mu_3^\ell$, not the scalar sector. $\mathcal B(h\to\tau e)$ vanishes to machine
-precision, for the same reason that exact $S_3$ forces $V_{us}=0$. Two library gaps were
+bound $\mu_3^\ell$, not the scalar sector. Each CP-even state has its own LFV channels:
+the SM-like state never couples to the electron ($\tau\mu$ only), while the gauge-phobic $h_0$
+has an electron on every coupling ($e\tau$, $e\mu$ only). This is the same reason that exact
+$S_3$ forces $V_{us}=0$. (A first version of this report had $h_0$ decaying to $\tau\mu$ and
+no $e\tau$ anywhere. That came from a lepton Yukawa split with $G_2=0$, corrected in
+\S\ref{sec:split}.) Two library gaps were
 closed along the way: VSS decays and the spin-0 $\gamma\gamma$ form factor.
 \end{abstract}
 
@@ -53,8 +57,10 @@ used. That earlier formula mis-assigned the couplings; it is corrected here and 
 downstream number (\S\ref{sec:delta}).
 \item \textbf{The draft's Scenario-C relations are exact}, and $Q_2$ (the $h_0$ couplings)
 does not depend on $\delta$ (\S\ref{sec:scenarioC}).
-\item \textbf{LFV rates}: $h\to\mu\tau$ constrains $\mu_3^\ell$; $h\to\tau e$ is structurally
-zero (\S\ref{sec:lfv}). This is the main phenomenological result.
+\item \textbf{LFV rates}: $h\to\mu\tau$ constrains $\mu_3^\ell$. The SM-like state never
+couples to the electron, and $h_0$ couples \emph{only} through the electron
+($e\tau$, $e\mu$; \S\ref{sec:lfv}). This is the main phenomenological result, and it
+\textbf{corrects} the first version of this report (\S\ref{sec:split}).
 \item \textbf{Two library gaps closed}: VSS decays ($A\to Zh$, $H^\pm\to W^\pm h$) and the
 spin-0 form factor $A_0$ for charged-Higgs $\gamma\gamma$ loops (\S\ref{sec:library}).
 \end{enumerate}
@@ -157,8 +163,26 @@ build.
 The lepton Yukawas are fixed by the three masses up to one free parameter, $\mu_3^\ell$. The
 inversion is verified along the whole $\mu_3$ range: the singular values of $M_\ell$ equal
 $(m_e,m_\mu,m_\tau)$ to $10^{-9}$, and a 1\% change in $\mu_4$ breaks it. The rates are
-evaluated at $\mu_3^\ell=0.5,\ 0.9,\ 1.4$~GeV over all 1964 points, giving 23\,568
+evaluated at $\mu_3^\ell=0.5,\ 0.9,\ 1.4$~GeV over all 1964 points, giving 35\,352
 (point, $\mu_3$, state, channel) entries.
+
+\paragraph{The per-doublet Yukawa matrices.}\label{sec:split}
+$Q_i=\sum_j(R_S)_{ji}O^{\mathsf T}G_jO$ needs each doublet's Yukawa matrix $G_k$, not only
+$M_\ell=\sum_kv_kG_k$. The first version of this report wrote $M_\ell$ with the alignment's
+$\sqrt3$ typed in, which made the split return $G_2=0$. $Q_1$ and $Q_3$ only see the sum and
+were right; $Q_2$, the $h_0$ couplings, was wrong. The $G_k$ are now read off the Lagrangian
+with all three VEVs symbolic. They agree with an independent computation in the draft's own
+basis to $10^{-17}$, and the old split fails that comparison at the $10^{-2}$ level. The
+corrected $Q_2$ also equals the closed form $Q_2(A)$ printed in our draft \cite{LFVHD}
+exactly. The draft had it right; only the first version of this calculation disagreed.
+
+\paragraph{Which state couples to which flavours.} In the eigenbasis of the doublet block,
+the vacuum direction $u=(\cos\varphi,\sin\varphi)$ projects as
+$(\cos\tfrac{3\varphi}2,\sin\tfrac{3\varphi}2)$, which decouples the electron at
+$\varphi=\pi/3$. The orthogonal direction (that of $h_0$) gives a reflection that
+anticommutes with the first, so it is purely off-diagonal and pairs the electron with
+everything else. Hence $h_{1,2}$ give $\tau\mu$ only and $h_0$ gives $e\tau$, $e\mu$ only,
+for any $\mu_3$, $\delta$ and $\lambda$'s. The scan confirms it at every entry.
 
 \begin{center}
 \begin{tabular}{llrrr}
@@ -166,15 +190,20 @@ evaluated at $\mu_3^\ell=0.5,\ 0.9,\ 1.4$~GeV over all 1964 points, giving 23\,5
 state & channel & median $\mathcal B$ & max $\mathcal B$ & over the limit\\
 \midrule
 SM-like & $\mu\tau$ & $1.7\times10^{-4}$ & $0.14$ & $1070/5892$ (18\%)\\
-SM-like & $e\tau$ & $5.7\times10^{-35}$ & $1.3\times10^{-33}$ & $0/5892$\\
-$h_0$ (gauge-phobic) & $\mu\tau$ & $8.8\times10^{-3}$ & $9.1^{\,*}$ & $4760/5892$ (81\%)\\
-$h_0$ (gauge-phobic) & $e\tau$ & $1.5\times10^{-34}$ & $1.9\times10^{-31}$ & $0/5892$\\
+SM-like & $e\tau$ & $1.7\times10^{-33}$ & $1.3\times10^{-31}$ & $0/5892$\\
+SM-like & $e\mu$ & $3.6\times10^{-34}$ & $4.5\times10^{-32}$ & $0/5892$\\
+$h_0$ (gauge-phobic) & $\mu\tau$ & $2.9\times10^{-33}$ & $3.9\times10^{-30}$ & $0/5892$\\
+$h_0$ (gauge-phobic) & $e\tau$ & $5.5\times10^{-3}$ & $3.2^{\,*}$ & $5630/5892^{\,*}$\\
+$h_0$ (gauge-phobic) & $e\mu$ & $5.0\times10^{-2}$ & $11.9^{\,*}$ & $5892/5892^{\,*}$\\
 \bottomrule
 \end{tabular}
 
-{\small CMS limits \cite{CMS21}: $\mathcal B(h\to\mu\tau)<0.15\%$, $\mathcal B(h\to e\tau)<0.22\%$
-at 95\% CL. $^*$For $h_0$ the ``branching ratio'' is a ratio to the SM-like width, not its
-own; see open question~1.}
+{\small CMS limits \cite{CMS21,CMS23}: $\mathcal B(h\to\mu\tau)<0.15\%$,
+$\mathcal B(h\to e\tau)<0.22\%$, $\mathcal B(h\to e\mu)<4.4\times10^{-5}$ at 95\% CL.
+$^*$For $h_0$ the ``branching ratio'' is a ratio to the SM-like width, not its own (open
+question~1), and the limits are for the 125~GeV state, which $h_0$ is not. These are rate
+ratios, not exclusions; the applicable comparison is \cite{CMS23}'s search for additional
+$e\mu$ resonances at 110--160~GeV, which needs $h_0$'s production cross section.}
 \end{center}
 
 \paragraph{$h\to\mu\tau$ bounds $\mu_3^\ell$, not the scalar sector.} The SM-like
@@ -200,17 +229,17 @@ moved the SM-like median from $1.9\times10^{-3}$ to $1.7\times10^{-4}$.)
 \centering
 \includegraphics[width=0.80\textwidth]{figures/decays_lfv_limits.png}
 \caption{LFV branching ratios of the SM-like state over all points and $\mu_3^\ell$ values,
-against the CMS 95\% CL limits (dashed). $h\to\tau\mu$ straddles the limit; $h\to\tau e$ sits
-near $10^{-34}$, which is zero to machine precision.}
+and of $h_0$'s $e\tau$, $e\mu$ rate ratios, against the CMS 95\% CL limits (dashed). The
+SM-like $h\to\tau\mu$ straddles its limit.}
 \label{fig:lfv}
 \end{figure}
 
-\paragraph{$h\to\tau e$ is structurally absent.} The largest value anywhere in the scan is
-$1.9\times10^{-31}$. That is not a small number, it is zero. $O_{12}$ separates the electron
-exactly at the aligned vacuum, so no $e$--$\tau$ entry can be generated. This is the same
-first-generation decoupling that forces $V_{us}=0$ in the quark sector (companion fermion
-report). The exact-$S_3$ vacuum ties the quark and lepton flavour structures together, and
-the two calculations see the same fact from opposite ends.
+\paragraph{The flavour pattern is structural.} The largest SM-like $e\tau$ or $e\mu$ value,
+and the largest $h_0$ $\mu\tau$ value, anywhere in the scan are below $10^{-29}$. That is
+not a small number, it is zero. $O_{12}$ separates the electron exactly along the vacuum
+direction, which is the same first-generation decoupling that forces $V_{us}=0$ in the quark
+sector (companion fermion report). The exact-$S_3$ vacuum ties the quark and lepton flavour
+structures together.
 
 \section{Two library gaps closed}
 \label{sec:library}
@@ -315,6 +344,13 @@ $e\tau$ final states in pp collisions at $\sqrt s=13$~TeV},
 Phys.\ Rev.\ D \textbf{104}, 032013 (2021),
 \href{https://arxiv.org/abs/2105.03007}{arXiv:2105.03007},
 \href{https://doi.org/10.1103/PhysRevD.104.032013}{doi:10.1103/PhysRevD.104.032013}.
+
+\bibitem{CMS23} CMS Collaboration,
+\emph{Search for the lepton-flavor violating decay of the Higgs boson and additional Higgs
+bosons in the $e\mu$ final state in proton-proton collisions at $\sqrt s=13$~TeV},
+Phys.\ Rev.\ D \textbf{108}, 072004 (2023),
+\href{https://arxiv.org/abs/2305.18106}{arXiv:2305.18106},
+\href{https://doi.org/10.1103/PhysRevD.108.072004}{doi:10.1103/PhysRevD.108.072004}.
 
 \bibitem{ChakrabortiEtAl21} M.~Chakraborti, D.~Das, M.~Levy, S.~Mukherjee and I.~Saha,
 \emph{Prospects of light charged scalars in a three Higgs doublet model with $Z_3$

@@ -1,12 +1,14 @@
 {
-  "description": "3HDM-S3 scalar decay observables at general delta, the CP-even Higgs-basis angle (delta = -psi, the residual 2x2 block angle; the draft's total angle is alpha = theta_v + delta). VV couplings, predicted delta per benchmark point, and LFV Higgs branching ratios against the CMS limits.  Quark Yukawas are not part of this build, so BRs use the measured SM-like total width.",
+  "description": "3HDM-S3 scalar decay observables at general delta, the CP-even Higgs-basis angle (delta = -psi, the residual 2x2 block angle; the draft's total angle is alpha = theta_v + delta). VV couplings, predicted delta per benchmark point, and LFV Higgs branching ratios (tau mu, tau e, e mu) against the CMS limits.  Quark Yukawas are not part of this build, so BRs use the measured SM-like total width.",
   "conventions": {
     "delta": "-psi with psi the residual CP-even 2x2 block angle; alpha = theta_v + delta. Scenario A is delta 0, B is pi/2, but |delta| < pi/4 always, so h_1 always carries the larger hVV coupling and B is a limit, not a reachable point.",
     "gamma_h_total_GeV": 0.0041,
-    "lfv_limits_CMS21": {
-      "tau_mu": 0.0015,
-      "tau_e": 0.0022
-    }
+    "lfv_limits": {
+      "tau_mu_CMS21": 0.0015,
+      "tau_e_CMS21": 0.0022,
+      "e_mu_CMS23": 4.4e-05
+    },
+    "lepton_yukawa_split": "G_k read off the Lagrangian with all three VEVs symbolic (lfv.lepton_g_function). Supersedes the first version, whose sqrt3-typed-in M_l gave G_2 = 0 and a wrong Q_2 (h_0 couplings)."
   },
   "vv_couplings": {
     "h_1": "i g_w m_W cos(delta)",
@@ -15733,9 +15735,9 @@
       "pair": "taumu",
       "mu3": 0.5,
       "n": 1964,
-      "min": 1.2387382018118315e-11,
-      "median": 3.9287093768998715e-05,
-      "max": 0.004078149724604595,
+      "min": 1.2387342025581125e-11,
+      "median": 3.928710562507763e-05,
+      "max": 0.004078149722675368,
       "over_limit": 6,
       "over_limit_frac": 0.003054989816700611
     },
@@ -15744,9 +15746,9 @@
       "pair": "taumu",
       "mu3": 0.9,
       "n": 1964,
-      "min": 7.795605629136112e-11,
-      "median": 0.0002472408527384514,
-      "max": 0.025664540661492034,
+      "min": 7.795580461057126e-11,
+      "median": 0.000247240927350922,
+      "max": 0.02566454064935116,
       "over_limit": 126,
       "over_limit_frac": 0.06415478615071284
     },
@@ -15755,9 +15757,9 @@
       "pair": "taumu",
       "mu3": 1.4,
       "n": 1964,
-      "min": 4.3910606607263983e-10,
-      "median": 0.0013926430271572,
-      "max": 0.14456164182231332,
+      "min": 4.391046484250313e-10,
+      "median": 0.0013926434474297194,
+      "max": 0.14456164175392677,
       "over_limit": 938,
       "over_limit_frac": 0.4775967413441955
     },
@@ -15766,9 +15768,9 @@
       "pair": "taue",
       "mu3": 0.5,
       "n": 1964,
-      "min": 1.8866675371839225e-37,
-      "median": 1.0447123864540722e-34,
-      "max": 1.2799449699868022e-33,
+      "min": 4.434945369246482e-37,
+      "median": 2.145119074811644e-33,
+      "max": 1.2685507917927984e-31,
       "over_limit": 0,
       "over_limit_frac": 0.0
     },
@@ -15777,9 +15779,9 @@
       "pair": "taue",
       "mu3": 0.9,
       "n": 1964,
-      "min": 5.914290675241028e-38,
-      "median": 6.983007374950268e-35,
-      "max": 1.2191310498831557e-33,
+      "min": 1.914845372188082e-37,
+      "median": 1.6695748392581354e-33,
+      "max": 3.8011874493592817e-32,
       "over_limit": 0,
       "over_limit_frac": 0.0
     },
@@ -15788,9 +15790,42 @@
       "pair": "taue",
       "mu3": 1.4,
       "n": 1964,
-      "min": 8.700657319054987e-40,
-      "median": 2.5747921739983473e-35,
-      "max": 3.121534477413589e-34,
+      "min": 1.3596364214872516e-37,
+      "median": 1.26151430608536e-33,
+      "max": 8.287073181129683e-32,
+      "over_limit": 0,
+      "over_limit_frac": 0.0
+    },
+    {
+      "state": "SM-like",
+      "pair": "emu",
+      "mu3": 0.5,
+      "n": 1964,
+      "min": 5.554786496273906e-40,
+      "median": 3.846680792849952e-34,
+      "max": 2.5997674378597627e-32,
+      "over_limit": 0,
+      "over_limit_frac": 0.0
+    },
+    {
+      "state": "SM-like",
+      "pair": "emu",
+      "mu3": 0.9,
+      "n": 1964,
+      "min": 4.408951913900877e-37,
+      "median": 4.0110305976561546e-34,
+      "max": 4.527567316396782e-32,
+      "over_limit": 0,
+      "over_limit_frac": 0.0
+    },
+    {
+      "state": "SM-like",
+      "pair": "emu",
+      "mu3": 1.4,
+      "n": 1964,
+      "min": 2.2003719278483805e-39,
+      "median": 2.9771006062887808e-34,
+      "max": 2.6920693061513406e-32,
       "over_limit": 0,
       "over_limit_frac": 0.0
     },
@@ -15799,69 +15834,102 @@
       "pair": "taumu",
       "mu3": 0.5,
       "n": 1964,
-      "min": 0.0007989778744018673,
-      "median": 0.0013883455613652486,
-      "max": 0.257313661701372,
-      "over_limit": 832,
-      "over_limit_frac": 0.42362525458248473
+      "min": 0.0,
+      "median": 2.0664168591493358e-33,
+      "max": 3.912196835747356e-30,
+      "over_limit": 0,
+      "over_limit_frac": 0.0
     },
     {
       "state": "h_0 (gauge-phobic)",
       "pair": "taumu",
       "mu3": 0.9,
       "n": 1964,
-      "min": 0.005028113612775052,
-      "median": 0.008737112052774137,
-      "max": 1.6193218443279531,
-      "over_limit": 1964,
-      "over_limit_frac": 1.0
+      "min": 0.0,
+      "median": 9.894511149254381e-34,
+      "max": 6.958877559758634e-31,
+      "over_limit": 0,
+      "over_limit_frac": 0.0
     },
     {
       "state": "h_0 (gauge-phobic)",
       "pair": "taumu",
       "mu3": 1.4,
       "n": 1964,
-      "min": 0.02832204825791058,
-      "median": 0.04921386592473401,
-      "max": 9.121216215882836,
-      "over_limit": 1964,
-      "over_limit_frac": 1.0
+      "min": 0.0,
+      "median": 1.0316010180161247e-32,
+      "max": 1.1448770965595019e-30,
+      "over_limit": 0,
+      "over_limit_frac": 0.0
     },
     {
       "state": "h_0 (gauge-phobic)",
       "pair": "taue",
       "mu3": 0.5,
       "n": 1964,
-      "min": 2.22520594274839e-37,
-      "median": 2.573721791041963e-34,
-      "max": 1.8646976155271034e-31,
-      "over_limit": 0,
-      "over_limit_frac": 0.0
+      "min": 0.0027082581082991677,
+      "median": 0.0047060004562041674,
+      "max": 0.8721992155546787,
+      "over_limit": 1964,
+      "over_limit_frac": 1.0
     },
     {
       "state": "h_0 (gauge-phobic)",
       "pair": "taue",
       "mu3": 0.9,
       "n": 1964,
-      "min": 4.1041598153843585e-39,
-      "median": 1.3005500376739174e-34,
-      "max": 3.620969105637665e-32,
-      "over_limit": 0,
-      "over_limit_frac": 0.0
+      "min": 0.0019444923748014225,
+      "median": 0.0033788441267320227,
+      "max": 0.6262271379366289,
+      "over_limit": 1702,
+      "over_limit_frac": 0.8665987780040734
     },
     {
       "state": "h_0 (gauge-phobic)",
       "pair": "taue",
       "mu3": 1.4,
       "n": 1964,
-      "min": 1.6616370818371071e-37,
-      "median": 1.0244906474690062e-34,
-      "max": 1.6488224030879672e-32,
-      "over_limit": 0,
-      "over_limit_frac": 0.0
+      "min": 0.01007715874304813,
+      "median": 0.01751055909209804,
+      "max": 3.2453664308334194,
+      "over_limit": 1964,
+      "over_limit_frac": 1.0
+    },
+    {
+      "state": "h_0 (gauge-phobic)",
+      "pair": "emu",
+      "mu3": 0.5,
+      "n": 1964,
+      "min": 0.03680317263011104,
+      "median": 0.0639509752251173,
+      "max": 11.85252550321556,
+      "over_limit": 1964,
+      "over_limit_frac": 1.0
+    },
+    {
+      "state": "h_0 (gauge-phobic)",
+      "pair": "emu",
+      "mu3": 0.9,
+      "n": 1964,
+      "min": 0.03581917607007328,
+      "median": 0.0622411351451593,
+      "max": 11.535627706383176,
+      "over_limit": 1964,
+      "over_limit_frac": 1.0
+    },
+    {
+      "state": "h_0 (gauge-phobic)",
+      "pair": "emu",
+      "mu3": 1.4,
+      "n": 1964,
+      "min": 0.01190849577770316,
+      "median": 0.02069277901941603,
+      "max": 3.8351516954459837,
+      "over_limit": 1964,
+      "over_limit_frac": 1.0
     }
   ],
-  "lfv_n_entries": 23568,
+  "lfv_n_entries": 35352,
   "lfv_sample": [
     {
       "point": 0,
@@ -15869,1799 +15937,1799 @@
       "state": "SM-like",
       "delta": -0.070786,
       "pair": "taumu",
-      "width": 2.184716792161497e-08,
-      "br": 5.328577541857309e-06
+      "width": 2.184724079042543e-08,
+      "br": 5.328595314737909e-06
     },
     {
       "point": 9,
       "mu3": 1.4,
       "state": "SM-like",
       "delta": -0.118373,
-      "pair": "taue",
-      "width": 2.4927845210691216e-37,
-      "br": 6.079962246510052e-35
+      "pair": "emu",
+      "width": 4.336644197396838e-36,
+      "br": 1.057718096926058e-33
     },
     {
       "point": 19,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
       "delta": 0.159763,
-      "pair": "taumu",
-      "width": 3.94117235489526e-05,
-      "br": 0.009612615499744535
+      "pair": "taue",
+      "width": 1.524143970038302e-05,
+      "br": 0.00371742431716659
     },
     {
       "point": 29,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
+      "mu3": 0.9,
+      "state": "SM-like",
       "delta": 0.022718,
-      "pair": "taue",
-      "width": 9.529782055438224e-37,
-      "br": 2.3243370866922497e-34
+      "pair": "taumu",
+      "width": 1.4493216662536855e-08,
+      "br": 3.5349308933016716e-06
     },
     {
       "point": 39,
       "mu3": 0.5,
       "state": "SM-like",
       "delta": -0.185917,
-      "pair": "taumu",
-      "width": 1.4960065612536417e-07,
-      "br": 3.6487964908625404e-05
+      "pair": "emu",
+      "width": 9.288985942878545e-37,
+      "br": 2.265606327531352e-34
     },
     {
       "point": 48,
       "mu3": 1.4,
-      "state": "SM-like",
+      "state": "h_0 (gauge-phobic)",
       "delta": -0.278992,
       "pair": "taue",
-      "width": 6.389741965280033e-38,
-      "br": 1.5584736500683005e-35
+      "width": 7.855178941947211e-05,
+      "br": 0.019158973029139537
     },
     {
       "point": 58,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
+      "mu3": 1.4,
+      "state": "SM-like",
       "delta": -0.086118,
       "pair": "taumu",
-      "width": 3.288538172485616e-05,
-      "br": 0.008020824810940526
+      "width": 1.2188898435860149e-06,
+      "br": 0.0002972902057526865
     },
     {
       "point": 68,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
+      "mu3": 0.9,
+      "state": "SM-like",
       "delta": -0.025871,
-      "pair": "taue",
-      "width": 1.2767794601640733e-37,
-      "br": 3.1140962443026173e-35
+      "pair": "emu",
+      "width": 1.2864925696351245e-36,
+      "br": 3.1377867552076207e-34
     },
     {
       "point": 78,
       "mu3": 0.5,
-      "state": "SM-like",
+      "state": "h_0 (gauge-phobic)",
       "delta": -0.193244,
-      "pair": "taumu",
-      "width": 1.6107481358194206e-07,
-      "br": 3.928653989803465e-05
+      "pair": "taue",
+      "width": 2.108586636853281e-05,
+      "br": 0.005142894236227514
     },
     {
-      "point": 87,
-      "mu3": 1.4,
+      "point": 88,
+      "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.067537,
-      "pair": "taue",
-      "width": 6.986381519953056e-38,
-      "br": 1.703995492671477e-35
+      "delta": -0.061258,
+      "pair": "taumu",
+      "width": 1.7183069808580128e-08,
+      "br": 4.190992636239055e-06
     },
     {
       "point": 97,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
+      "mu3": 1.4,
+      "state": "SM-like",
       "delta": -0.174258,
-      "pair": "taumu",
-      "width": 0.0015724929067576286,
-      "br": 0.38353485530673864
+      "pair": "emu",
+      "width": 1.4476471433827023e-35,
+      "br": 3.530846691177323e-33
     },
     {
       "point": 107,
-      "mu3": 0.5,
+      "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
       "delta": -0.022144,
       "pair": "taue",
-      "width": 1.209491709642789e-36,
-      "br": 2.9499797796165584e-34
+      "width": 1.2718584197863246e-05,
+      "br": 0.0031020937067959132
     },
     {
       "point": 117,
-      "mu3": 0.5,
+      "mu3": 0.9,
       "state": "SM-like",
       "delta": 0.118896,
       "pair": "taumu",
-      "width": 6.320642947827649e-08,
-      "br": 1.541620231177475e-05
+      "width": 3.9777226923329566e-07,
+      "br": 9.701762664226722e-05
     },
     {
-      "point": 126,
-      "mu3": 1.4,
+      "point": 127,
+      "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.214401,
-      "pair": "taue",
-      "width": 1.5865980069360993e-37,
-      "br": 3.86975123642951e-35
+      "delta": 0.053569,
+      "pair": "emu",
+      "width": 9.60088852497378e-37,
+      "br": 2.341680128042385e-34
     },
     {
       "point": 136,
-      "mu3": 0.9,
+      "mu3": 1.4,
       "state": "h_0 (gauge-phobic)",
       "delta": -0.298751,
-      "pair": "taumu",
-      "width": 2.2553101835144036e-05,
-      "br": 0.005500756545157082
+      "pair": "taue",
+      "width": 4.520018666699214e-05,
+      "br": 0.011024435772437106
     },
     {
       "point": 146,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
+      "mu3": 1.4,
+      "state": "SM-like",
       "delta": 0.002883,
-      "pair": "taue",
-      "width": 9.621123541116957e-37,
-      "br": 2.346615497833404e-34
+      "pair": "taumu",
+      "width": 2.817078175442111e-09,
+      "br": 6.870922379127099e-07
     },
     {
       "point": 156,
-      "mu3": 0.5,
+      "mu3": 0.9,
       "state": "SM-like",
       "delta": 0.238205,
-      "pair": "taumu",
-      "width": 2.447297762252234e-07,
-      "br": 5.9690189323225214e-05
+      "pair": "emu",
+      "width": 2.5322068355542856e-36,
+      "br": 6.176114233059233e-34
     },
     {
-      "point": 165,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": -0.263827,
-      "pair": "taue",
-      "width": 4.8371752600394105e-39,
-      "br": 1.1797988439120513e-36
-    },
-    {
-      "point": 175,
-      "mu3": 0.9,
+      "point": 166,
+      "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.052889,
+      "delta": -0.308691,
+      "pair": "taue",
+      "width": 1.7961974045994252e-05,
+      "br": 0.004380969279510793
+    },
+    {
+      "point": 176,
+      "mu3": 0.5,
+      "state": "SM-like",
+      "delta": -0.037518,
       "pair": "taumu",
-      "width": 3.656151246643316e-05,
-      "br": 0.008917442064983697
+      "width": 6.5690935094177424e-09,
+      "br": 1.6022179291262784e-06
     },
     {
       "point": 185,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
+      "mu3": 1.4,
+      "state": "SM-like",
       "delta": -0.175083,
-      "pair": "taue",
-      "width": 2.8669303916481326e-37,
-      "br": 6.992513150361298e-35
+      "pair": "emu",
+      "width": 6.040909951871189e-37,
+      "br": 1.4733926711880947e-34
     },
     {
       "point": 195,
-      "mu3": 0.5,
-      "state": "SM-like",
-      "delta": -0.272482,
-      "pair": "taumu",
-      "width": 3.5942002651781905e-07,
-      "br": 8.766342110190708e-05
-    },
-    {
-      "point": 204,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": 0.153862,
-      "pair": "taue",
-      "width": 1.1363627986576736e-37,
-      "br": 2.771616582091887e-35
-    },
-    {
-      "point": 214,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.047639,
+      "delta": -0.272482,
+      "pair": "taue",
+      "width": 1.1784478198780098e-05,
+      "br": 0.002874262975312219
+    },
+    {
+      "point": 205,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.270987,
       "pair": "taumu",
-      "width": 4.934984774758636e-05,
-      "br": 0.012036548231118624
+      "width": 1.9648793154595764e-06,
+      "br": 0.00047923885742916494
+    },
+    {
+      "point": 215,
+      "mu3": 0.5,
+      "state": "SM-like",
+      "delta": -0.24864,
+      "pair": "emu",
+      "width": 7.872993778351209e-37,
+      "br": 1.9202423849637092e-34
     },
     {
       "point": 224,
-      "mu3": 0.5,
+      "mu3": 1.4,
       "state": "h_0 (gauge-phobic)",
       "delta": -0.099761,
       "pair": "taue",
-      "width": 1.843797290243718e-36,
-      "br": 4.497066561570044e-34
+      "width": 5.771151875716315e-05,
+      "br": 0.014075980184673938
     },
     {
       "point": 234,
-      "mu3": 0.5,
+      "mu3": 1.4,
       "state": "SM-like",
       "delta": -0.283815,
       "pair": "taumu",
-      "width": 4.3565927603772917e-07,
-      "br": 0.00010625836000920223
+      "width": 1.5443196183600196e-05,
+      "br": 0.0037666332155122427
     },
     {
-      "point": 243,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": -0.118004,
-      "pair": "taue",
-      "width": 2.7447324738812696e-37,
-      "br": 6.694469448490901e-35
-    },
-    {
-      "point": 253,
+      "point": 244,
       "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.182676,
-      "pair": "taumu",
-      "width": 2.1896519730439473e-05,
-      "br": 0.005340614568399871
+      "state": "SM-like",
+      "delta": -0.075232,
+      "pair": "emu",
+      "width": 1.5050821055313115e-36,
+      "br": 3.6709319647105156e-34
     },
     {
-      "point": 263,
+      "point": 254,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.074972,
+      "delta": 0.113691,
       "pair": "taue",
-      "width": 1.5806863997215687e-36,
-      "br": 3.855332682247728e-34
+      "width": 2.606109647037473e-05,
+      "br": 0.0063563649927743235
+    },
+    {
+      "point": 264,
+      "mu3": 0.5,
+      "state": "SM-like",
+      "delta": -0.282279,
+      "pair": "taumu",
+      "width": 3.752868576871016e-07,
+      "br": 9.153337992368331e-05
     },
     {
       "point": 273,
-      "mu3": 0.5,
-      "state": "SM-like",
-      "delta": 0.28421,
-      "pair": "taumu",
-      "width": 3.5651504873944473e-07,
-      "br": 8.695488993644993e-05
-    },
-    {
-      "point": 282,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.064677,
-      "pair": "taue",
-      "width": 9.641509213943575e-38,
-      "br": 2.3515876131569695e-35
+      "delta": 0.28421,
+      "pair": "emu",
+      "width": 2.1121857427287817e-37,
+      "br": 5.15167254324093e-35
     },
     {
-      "point": 292,
+      "point": 283,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.011053,
-      "pair": "taumu",
-      "width": 3.499637530351878e-05,
-      "br": 0.008535701293541165
+      "delta": 0.076271,
+      "pair": "taue",
+      "width": 1.1575033729591293e-05,
+      "br": 0.0028231789584369006
     },
     {
-      "point": 302,
+      "point": 293,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.149092,
+      "pair": "taumu",
+      "width": 6.918176240132381e-06,
+      "br": 0.0016873600585688734
+    },
+    {
+      "point": 303,
       "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.266396,
-      "pair": "taue",
-      "width": 8.917141020145234e-37,
-      "br": 2.174912443937862e-34
+      "state": "SM-like",
+      "delta": -0.083064,
+      "pair": "emu",
+      "width": 1.1578256228180388e-36,
+      "br": 2.823964933702533e-34
     },
     {
       "point": 312,
-      "mu3": 0.5,
-      "state": "SM-like",
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
       "delta": -0.111113,
-      "pair": "taumu",
-      "width": 5.597635047880369e-08,
-      "br": 1.3652768409464312e-05
+      "pair": "taue",
+      "width": 6.824479547068747e-05,
+      "br": 0.01664507206602133
     },
     {
-      "point": 321,
+      "point": 322,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.19174,
-      "pair": "taue",
-      "width": 3.008666731594143e-38,
-      "br": 7.338211540473518e-36
-    },
-    {
-      "point": 331,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.302476,
+      "delta": -0.143851,
       "pair": "taumu",
-      "width": 7.26688153839349e-05,
-      "br": 0.017724101313154852
+      "width": 3.221040585285029e-06,
+      "br": 0.000785619654947568
     },
     {
-      "point": 341,
+      "point": 332,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.277407,
+      "pair": "emu",
+      "width": 3.208041305031458e-35,
+      "br": 7.824490987881604e-33
+    },
+    {
+      "point": 342,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.063763,
+      "delta": -0.037641,
       "pair": "taue",
-      "width": 1.2195365561123286e-36,
-      "br": 2.974479405152021e-34
+      "width": 1.95277633022245e-05,
+      "br": 0.004762869098103537
     },
     {
-      "point": 351,
+      "point": 352,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.161544,
+      "delta": 0.224531,
       "pair": "taumu",
-      "width": 1.4518361086974778e-07,
-      "br": 3.541063679749946e-05
+      "width": 2.2084565832383967e-07,
+      "br": 5.3864794713131624e-05
     },
     {
-      "point": 360,
+      "point": 361,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.007815,
-      "pair": "taue",
-      "width": 7.011585176276142e-38,
-      "br": 1.71014272592101e-35
+      "delta": -0.125935,
+      "pair": "emu",
+      "width": 8.728797777207085e-37,
+      "br": 2.128975067611484e-34
     },
     {
-      "point": 370,
+      "point": 371,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.196975,
-      "pair": "taumu",
-      "width": 2.948684913689578e-05,
-      "br": 0.007191914423633116
-    },
-    {
-      "point": 380,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.010191,
+      "delta": -0.31781,
       "pair": "taue",
-      "width": 1.3047199602515435e-37,
-      "br": 3.1822438054915696e-35
+      "width": 1.2831801550922757e-05,
+      "br": 0.0031297076953470137
     },
     {
-      "point": 390,
+      "point": 381,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.267645,
+      "pair": "taumu",
+      "width": 2.1114157803394835e-06,
+      "br": 0.0005149794586193862
+    },
+    {
+      "point": 391,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.19289,
-      "pair": "taumu",
-      "width": 1.6644313384894783e-07,
-      "br": 4.059588630462142e-05
+      "delta": 0.075658,
+      "pair": "emu",
+      "width": 3.791425579033453e-37,
+      "br": 9.247379461057201e-35
     },
     {
-      "point": 399,
+      "point": 400,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.047734,
+      "pair": "taue",
+      "width": 4.1472181914946315e-05,
+      "br": 0.010115166320718613
+    },
+    {
+      "point": 410,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.23312,
-      "pair": "taue",
-      "width": 3.367765452489208e-37,
-      "br": 8.21406207924197e-35
-    },
-    {
-      "point": 409,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.204403,
+      "delta": -0.228251,
       "pair": "taumu",
-      "width": 2.5451465558769332e-05,
-      "br": 0.006207674526529105
+      "width": 1.7811383252852962e-05,
+      "br": 0.004344239817769015
     },
     {
-      "point": 419,
+      "point": 420,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.011074,
+      "pair": "emu",
+      "width": 2.223477982860538e-36,
+      "br": 5.423117031367165e-34
+    },
+    {
+      "point": 430,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.196492,
+      "delta": -0.296445,
       "pair": "taue",
-      "width": 1.930516360583786e-36,
-      "br": 4.708576489228746e-34
+      "width": 1.5087657701154297e-05,
+      "br": 0.0036799165124766576
     },
     {
-      "point": 429,
+      "point": 440,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.229415,
+      "delta": -0.062138,
       "pair": "taumu",
-      "width": 2.388557661302631e-07,
-      "br": 5.8257503934210504e-05
+      "width": 1.879513439989679e-08,
+      "br": 4.584179121926046e-06
     },
     {
-      "point": 438,
+      "point": 449,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.037397,
-      "pair": "taue",
-      "width": 3.110478369107434e-37,
-      "br": 7.586532607579106e-35
+      "delta": -0.078697,
+      "pair": "emu",
+      "width": 2.4430618653652852e-36,
+      "br": 5.9586874765006954e-34
     },
     {
-      "point": 448,
+      "point": 459,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.128573,
-      "pair": "taumu",
-      "width": 5.4166316296541404e-05,
-      "br": 0.013211296657693024
-    },
-    {
-      "point": 458,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.233687,
+      "delta": -0.091283,
       "pair": "taue",
-      "width": 3.8042344854629505e-36,
-      "br": 9.278620696251098e-34
+      "width": 1.8156181128777233e-05,
+      "br": 0.004428336860677374
     },
     {
-      "point": 468,
+      "point": 469,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.117751,
+      "pair": "taumu",
+      "width": 3.858005555075844e-07,
+      "br": 9.409769646526448e-05
+    },
+    {
+      "point": 479,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.162786,
-      "pair": "taumu",
-      "width": 1.2687249684071599e-07,
-      "br": 3.0944511424564875e-05
+      "delta": -0.155733,
+      "pair": "emu",
+      "width": 5.112593263946602e-37,
+      "br": 1.2469739668162442e-34
     },
     {
-      "point": 477,
+      "point": 488,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.145557,
+      "pair": "taue",
+      "width": 8.904792838920307e-05,
+      "br": 0.021719006924195868
+    },
+    {
+      "point": 498,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.233433,
-      "pair": "taue",
-      "width": 1.7222982803951933e-37,
-      "br": 4.2007275131590077e-35
-    },
-    {
-      "point": 487,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.098755,
+      "delta": -0.212212,
       "pair": "taumu",
-      "width": 3.513262599693707e-05,
-      "br": 0.00856893316998465
+      "width": 1.1573328680345936e-05,
+      "br": 0.0028227630927673015
     },
     {
-      "point": 497,
+      "point": 508,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.205472,
+      "pair": "emu",
+      "width": 2.621234285127689e-36,
+      "br": 6.3932543539699725e-34
+    },
+    {
+      "point": 518,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.253096,
+      "delta": 0.28959,
       "pair": "taue",
-      "width": 3.8633513501172285e-36,
-      "br": 9.42280817101763e-34
+      "width": 2.903712886324016e-05,
+      "br": 0.007082226552009794
     },
     {
-      "point": 507,
+      "point": 528,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.240319,
+      "delta": -0.26415,
       "pair": "taumu",
-      "width": 3.4821946928175446e-07,
-      "br": 8.493157787359864e-05
+      "width": 6.675759313588685e-07,
+      "br": 0.00016282339789240694
     },
     {
-      "point": 516,
+      "point": 537,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.039024,
-      "pair": "taue",
-      "width": 1.3353917969935649e-37,
-      "br": 3.2570531633989384e-35
+      "delta": -0.159207,
+      "pair": "emu",
+      "width": 9.462105617119831e-36,
+      "br": 2.3078306383219098e-33
     },
     {
-      "point": 526,
+      "point": 547,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.20665,
-      "pair": "taumu",
-      "width": 3.386354665995833e-05,
-      "br": 0.00825940162438008
-    },
-    {
-      "point": 536,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.290298,
+      "delta": -0.26053,
       "pair": "taue",
-      "width": 7.208618767113511e-37,
-      "br": 1.7581996992959783e-34
+      "width": 1.0668505459014398e-05,
+      "br": 0.0026020745021986336
     },
     {
-      "point": 546,
+      "point": 557,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.082442,
+      "pair": "taumu",
+      "width": 3.768583519140449e-07,
+      "br": 9.191667119854753e-05
+    },
+    {
+      "point": 567,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.138385,
-      "pair": "taumu",
-      "width": 8.894748737951552e-08,
-      "br": 2.1694509116955004e-05
+      "delta": 0.083328,
+      "pair": "emu",
+      "width": 8.254639655236898e-36,
+      "br": 2.013326745179731e-33
     },
     {
-      "point": 555,
+      "point": 576,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.007061,
+      "pair": "taue",
+      "width": 7.638454311961034e-05,
+      "br": 0.018630376370636668
+    },
+    {
+      "point": 586,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.234914,
-      "pair": "taue",
-      "width": 2.3682030305164944e-37,
-      "br": 5.776104952479254e-35
-    },
-    {
-      "point": 565,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.17736,
+      "delta": -0.117787,
       "pair": "taumu",
-      "width": 0.00015760545002737914,
-      "br": 0.03844035366521442
+      "width": 3.814677044378222e-06,
+      "br": 0.0009304090352142005
     },
     {
-      "point": 575,
+      "point": 596,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.176841,
+      "pair": "emu",
+      "width": 1.5028664896642555e-35,
+      "br": 3.6655280235713544e-33
+    },
+    {
+      "point": 606,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.129678,
+      "delta": 0.291584,
       "pair": "taue",
-      "width": 2.6690768941651887e-36,
-      "br": 6.509943644305338e-34
+      "width": 2.8217009703943145e-05,
+      "br": 0.0068821974887666205
     },
     {
-      "point": 585,
+      "point": 616,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.278596,
+      "delta": -0.191546,
       "pair": "taumu",
-      "width": 3.352929267515668e-07,
-      "br": 8.177876262233335e-05
+      "width": 1.5842850195477293e-07,
+      "br": 3.864109803774949e-05
     },
     {
-      "point": 594,
+      "point": 625,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.111733,
-      "pair": "taue",
-      "width": 1.5851407708033659e-37,
-      "br": 3.8661970019594285e-35
+      "delta": 0.251702,
+      "pair": "emu",
+      "width": 1.694951994045684e-37,
+      "br": 4.134029253769961e-35
     },
     {
-      "point": 604,
+      "point": 635,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.265009,
-      "pair": "taumu",
-      "width": 7.835805188618709e-05,
-      "br": 0.019111719972240752
-    },
-    {
-      "point": 614,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.08584,
+      "delta": 0.030623,
       "pair": "taue",
-      "width": 3.8820323415624035e-36,
-      "br": 9.468371564786349e-34
+      "width": 2.2806909301588075e-05,
+      "br": 0.0055626608052653835
     },
     {
-      "point": 624,
+      "point": 645,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.311828,
+      "pair": "taumu",
+      "width": 2.69207750199221e-06,
+      "br": 0.0006566042687785878
+    },
+    {
+      "point": 655,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.296147,
-      "pair": "taumu",
-      "width": 3.7995853873433745e-07,
-      "br": 9.267281432544815e-05
+      "delta": 0.307505,
+      "pair": "emu",
+      "width": 1.0204866485759296e-36,
+      "br": 2.48899182579495e-34
     },
     {
-      "point": 633,
+      "point": 664,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.16462,
+      "pair": "taue",
+      "width": 4.261839780096591e-05,
+      "br": 0.010394731170967295
+    },
+    {
+      "point": 674,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.121902,
-      "pair": "taue",
-      "width": 1.3737137422267529e-37,
-      "br": 3.350521322504275e-35
-    },
-    {
-      "point": 643,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.15841,
+      "delta": -0.053566,
       "pair": "taumu",
-      "width": 3.352407524246029e-05,
-      "br": 0.008176603717673241
+      "width": 4.817437559815864e-07,
+      "br": 0.00011749847706867961
     },
     {
-      "point": 653,
+      "point": 684,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.2668,
+      "pair": "emu",
+      "width": 4.911999221259842e-37,
+      "br": 1.1980485905511808e-34
+    },
+    {
+      "point": 694,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.014599,
+      "delta": 0.184883,
       "pair": "taue",
-      "width": 5.430650252886079e-37,
-      "br": 1.3245488421673361e-34
+      "width": 2.9156761952899823e-05,
+      "br": 0.00711140535436581
     },
     {
-      "point": 663,
+      "point": 704,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.303472,
+      "delta": 0.078022,
       "pair": "taumu",
-      "width": 5.12835837525223e-07,
-      "br": 0.0001250819115915178
+      "width": 3.609282824788565e-08,
+      "br": 8.803128840947719e-06
     },
     {
-      "point": 672,
+      "point": 713,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.207688,
-      "pair": "taue",
-      "width": 2.0192338350980695e-37,
-      "br": 4.924960573409925e-35
+      "delta": 0.07055,
+      "pair": "emu",
+      "width": 3.6643814542520714e-36,
+      "br": 8.937515742078223e-34
     },
     {
-      "point": 682,
+      "point": 723,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.018372,
-      "pair": "taumu",
-      "width": 3.198394825941115e-05,
-      "br": 0.007800962990100279
-    },
-    {
-      "point": 692,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.067079,
+      "delta": -0.116571,
       "pair": "taue",
-      "width": 4.530216381021281e-37,
-      "br": 1.1049308246393369e-34
+      "width": 1.4578350739240282e-05,
+      "br": 0.003555695302253727
     },
     {
-      "point": 702,
+      "point": 733,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.057611,
+      "pair": "taumu",
+      "width": 9.927067377488446e-08,
+      "br": 2.421235945728889e-05
+    },
+    {
+      "point": 743,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.166848,
-      "pair": "taumu",
-      "width": 1.2775300024689824e-07,
-      "br": 3.1159268352902004e-05
+      "delta": -0.015223,
+      "pair": "emu",
+      "width": 3.2357618028770324e-36,
+      "br": 7.892101958236664e-34
     },
     {
-      "point": 711,
+      "point": 752,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.25658,
+      "pair": "taue",
+      "width": 4.308592801456961e-05,
+      "br": 0.01050876293038283
+    },
+    {
+      "point": 762,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.108353,
-      "pair": "taue",
-      "width": 4.8089670781366906e-37,
-      "br": 1.1729187995455342e-34
-    },
-    {
-      "point": 721,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.130735,
+      "delta": -0.26783,
       "pair": "taumu",
-      "width": 2.10271356815452e-05,
-      "br": 0.005128569678425658
+      "width": 1.151061926077632e-05,
+      "br": 0.002807468112384468
     },
     {
-      "point": 731,
+      "point": 772,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.165591,
+      "pair": "emu",
+      "width": 6.567489587575085e-37,
+      "br": 1.60182672867685e-34
+    },
+    {
+      "point": 782,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.148168,
+      "delta": 0.109069,
       "pair": "taue",
-      "width": 9.090295753226024e-37,
-      "br": 2.2171453056648835e-34
+      "width": 1.3334177196521378e-05,
+      "br": 0.00325223834061497
     },
     {
-      "point": 741,
+      "point": 792,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.022504,
+      "delta": 0.314245,
       "pair": "taumu",
-      "width": 2.2061457247942754e-09,
-      "br": 5.380843231205549e-07
+      "width": 5.333024871683081e-07,
+      "br": 0.00013007377735812392
     },
     {
-      "point": 750,
+      "point": 801,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.272075,
-      "pair": "taue",
-      "width": 1.08309819251246e-38,
-      "br": 2.6417029085669753e-36
+      "delta": -0.221719,
+      "pair": "emu",
+      "width": 8.145674113098785e-36,
+      "br": 1.9867497836826304e-33
     },
     {
-      "point": 760,
+      "point": 811,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.127387,
-      "pair": "taumu",
-      "width": 4.656474528549463e-05,
-      "br": 0.011357254947681616
-    },
-    {
-      "point": 770,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.046874,
+      "delta": -0.27458,
       "pair": "taue",
-      "width": 4.803529562733184e-37,
-      "br": 1.1715925762763863e-34
+      "width": 9.199569835033913e-06,
+      "br": 0.0022437975207399785
     },
     {
-      "point": 780,
+      "point": 821,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.096902,
+      "pair": "taumu",
+      "width": 4.139658160080678e-07,
+      "br": 0.0001009672721970897
+    },
+    {
+      "point": 831,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.181969,
-      "pair": "taumu",
-      "width": 7.951032486433232e-07,
-      "br": 0.0001939276216203227
+      "delta": 0.226606,
+      "pair": "emu",
+      "width": 3.306720499694888e-36,
+      "br": 8.065171950475336e-34
     },
     {
-      "point": 789,
+      "point": 840,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.068225,
+      "pair": "taue",
+      "width": 6.238015199460234e-05,
+      "br": 0.015214671218195691
+    },
+    {
+      "point": 850,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.179317,
-      "pair": "taue",
-      "width": 4.903593693559435e-37,
-      "br": 1.1959984618437644e-34
-    },
-    {
-      "point": 799,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.094953,
+      "delta": 0.157928,
       "pair": "taumu",
-      "width": 2.9184878641440225e-05,
-      "br": 0.007118263083278103
+      "width": 4.346988661324824e-06,
+      "br": 0.0010602411369084936
     },
     {
-      "point": 809,
+      "point": 860,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.154687,
+      "pair": "emu",
+      "width": 1.9683437347749195e-37,
+      "br": 4.800838377499803e-35
+    },
+    {
+      "point": 870,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.294974,
+      "delta": 0.223033,
       "pair": "taue",
-      "width": 3.8722528066762525e-36,
-      "br": 9.444519040673787e-34
+      "width": 1.887824706687565e-05,
+      "br": 0.0046044505041160115
     },
     {
-      "point": 819,
+      "point": 880,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.146666,
+      "delta": -0.116043,
       "pair": "taumu",
-      "width": 1.0037538890964463e-06,
-      "br": 0.00024481802173084054
+      "width": 6.797618469525848e-08,
+      "br": 1.657955724274597e-05
     },
     {
-      "point": 828,
+      "point": 889,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.270668,
-      "pair": "taue",
-      "width": 6.453406130234313e-38,
-      "br": 1.5740014951791007e-35
+      "delta": 0.23725,
+      "pair": "emu",
+      "width": 2.908968522728265e-37,
+      "br": 7.095045177386012e-35
     },
     {
-      "point": 838,
+      "point": 899,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.230717,
-      "pair": "taumu",
-      "width": 2.1767075432346194e-05,
-      "br": 0.0053090427883771205
-    },
-    {
-      "point": 848,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.087341,
+      "delta": -0.127165,
       "pair": "taue",
-      "width": 1.409264754664748e-36,
-      "br": 3.4372311089384095e-34
+      "width": 8.66714806094702e-06,
+      "br": 0.0021139385514504926
     },
     {
-      "point": 858,
+      "point": 909,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.080138,
+      "pair": "taumu",
+      "width": 2.3694117856162796e-07,
+      "br": 5.779053135649462e-05
+    },
+    {
+      "point": 919,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.007913,
-      "pair": "taumu",
-      "width": 2.740661310958414e-10,
-      "br": 6.6845397828254e-08
+      "delta": -0.010153,
+      "pair": "emu",
+      "width": 9.60021797691307e-36,
+      "br": 2.341516579734895e-33
     },
     {
-      "point": 867,
+      "point": 928,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.159545,
+      "pair": "taue",
+      "width": 7.199556433691057e-05,
+      "br": 0.017559893740709893
+    },
+    {
+      "point": 938,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.254479,
-      "pair": "taue",
-      "width": 3.5423093940991553e-38,
-      "br": 8.639779009997938e-36
-    },
-    {
-      "point": 877,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.147719,
+      "delta": -0.128737,
       "pair": "taumu",
-      "width": 2.1186740966674146e-05,
-      "br": 0.005167497796749791
+      "width": 2.56072711074155e-06,
+      "br": 0.0006245675879857439
     },
     {
-      "point": 887,
+      "point": 948,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.198242,
+      "pair": "emu",
+      "width": 1.1523609326285405e-35,
+      "br": 2.8106364210452206e-33
+    },
+    {
+      "point": 958,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.158312,
+      "delta": -0.25769,
       "pair": "taue",
-      "width": 1.520626978857916e-36,
-      "br": 3.708846289897356e-34
+      "width": 1.1604504842091294e-05,
+      "br": 0.002830367034656413
     },
     {
-      "point": 897,
+      "point": 968,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.224584,
+      "delta": 0.139437,
       "pair": "taumu",
-      "width": 4.548751382909888e-07,
-      "br": 0.00011094515568072897
+      "width": 8.481642558316558e-08,
+      "br": 2.0686933069064773e-05
     },
     {
-      "point": 906,
+      "point": 977,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.205753,
-      "pair": "taue",
-      "width": 1.7186803090546174e-37,
-      "br": 4.19190319281614e-35
+      "delta": -0.216647,
+      "pair": "emu",
+      "width": 4.501252041494315e-36,
+      "br": 1.0978663515839791e-33
     },
     {
-      "point": 916,
+      "point": 987,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.285368,
-      "pair": "taumu",
-      "width": 4.9508103648412716e-05,
-      "br": 0.012075147231320174
-    },
-    {
-      "point": 926,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.012944,
+      "delta": -0.09243,
       "pair": "taue",
-      "width": 3.652517599464114e-36,
-      "br": 8.908579510888081e-34
+      "width": 1.2217093842403104e-05,
+      "br": 0.002979778985951976
     },
     {
-      "point": 936,
+      "point": 997,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.205102,
+      "pair": "taumu",
+      "width": 1.1407976180322624e-06,
+      "br": 0.00027824332147128347
+    },
+    {
+      "point": 1007,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.211437,
-      "pair": "taumu",
-      "width": 1.9392837483969618e-07,
-      "br": 4.7299603619438086e-05
+      "delta": -0.214544,
+      "pair": "emu",
+      "width": 6.649650978222013e-37,
+      "br": 1.6218660922492714e-34
     },
     {
-      "point": 945,
+      "point": 1016,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.041503,
+      "pair": "taue",
+      "width": 8.575773115429032e-05,
+      "br": 0.020916519793729344
+    },
+    {
+      "point": 1026,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.151567,
-      "pair": "taue",
-      "width": 5.057949082785559e-38,
-      "br": 1.2336461177525754e-35
-    },
-    {
-      "point": 955,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.097886,
+      "delta": 0.216138,
       "pair": "taumu",
-      "width": 4.571630396913089e-05,
-      "br": 0.011150318041251436
+      "width": 7.412509356269596e-06,
+      "br": 0.001807929111285267
     },
     {
-      "point": 965,
+      "point": 1036,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.013113,
+      "pair": "emu",
+      "width": 1.0576333937605242e-37,
+      "br": 2.5795936433183517e-35
+    },
+    {
+      "point": 1046,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.239559,
+      "delta": 0.316647,
       "pair": "taue",
-      "width": 6.656335623762479e-38,
-      "br": 1.6234964936006043e-35
+      "width": 2.4108985978700602e-05,
+      "br": 0.005880240482609903
     },
     {
-      "point": 975,
+      "point": 1056,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.270517,
+      "delta": -0.188342,
       "pair": "taumu",
-      "width": 3.270683192505088e-07,
-      "br": 7.977276079280702e-05
+      "width": 2.0138742176049876e-07,
+      "br": 4.9118883356219206e-05
     },
     {
-      "point": 984,
+      "point": 1065,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.318141,
-      "pair": "taue",
-      "width": 4.0699127799190175e-38,
-      "br": 9.926616536387846e-36
+      "delta": 0.075936,
+      "pair": "emu",
+      "width": 2.355962393785564e-36,
+      "br": 5.7462497409404e-34
     },
     {
-      "point": 994,
+      "point": 1075,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.052504,
-      "pair": "taumu",
-      "width": 3.6034446230314067e-05,
-      "br": 0.008788889324466845
-    },
-    {
-      "point": 1004,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.111193,
+      "delta": -0.004775,
       "pair": "taue",
-      "width": 2.7403948964572563e-36,
-      "br": 6.683889991359161e-34
+      "width": 1.1701639101629393e-05,
+      "br": 0.0028540583174705833
     },
     {
-      "point": 1014,
+      "point": 1085,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.157974,
+      "pair": "taumu",
+      "width": 6.951514746203604e-07,
+      "br": 0.0001695491401513074
+    },
+    {
+      "point": 1095,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.028459,
-      "pair": "taumu",
-      "width": 5.830944564460287e-09,
-      "br": 1.4221816010878748e-06
+      "delta": 0.085188,
+      "pair": "emu",
+      "width": 4.7041686566893106e-36,
+      "br": 1.1473582089486122e-33
     },
     {
-      "point": 1023,
+      "point": 1104,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.249649,
+      "pair": "taue",
+      "width": 0.0001068341529151621,
+      "br": 0.026057110467112704
+    },
+    {
+      "point": 1114,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.261073,
-      "pair": "taue",
-      "width": 3.7731903230266336e-37,
-      "br": 9.202903226894228e-35
-    },
-    {
-      "point": 1033,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.005457,
+      "delta": 0.004317,
       "pair": "taumu",
-      "width": 2.2455555555433892e-05,
-      "br": 0.005476964769618022
+      "width": 2.8780909128261052e-09,
+      "br": 7.019733933722207e-07
     },
     {
-      "point": 1043,
+      "point": 1124,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.068247,
+      "pair": "emu",
+      "width": 1.4013479796787009e-36,
+      "br": 3.4179219016553676e-34
+    },
+    {
+      "point": 1134,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.152632,
+      "delta": 0.303043,
       "pair": "taue",
-      "width": 1.8528549930088554e-37,
-      "br": 4.5191585195337934e-35
+      "width": 4.9582779127728115e-05,
+      "br": 0.012093360762860515
     },
     {
-      "point": 1053,
+      "point": 1144,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.165805,
+      "delta": -0.191989,
       "pair": "taumu",
-      "width": 1.295138412098697e-07,
-      "br": 3.15887417585048e-05
+      "width": 1.8312712843826685e-07,
+      "br": 4.466515327762606e-05
     },
     {
-      "point": 1062,
+      "point": 1153,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.053115,
-      "pair": "taue",
-      "width": 1.331866885903842e-37,
-      "br": 3.248455819277663e-35
+      "delta": -0.091593,
+      "pair": "emu",
+      "width": 5.2349004626445545e-37,
+      "br": 1.2768049908889156e-34
     },
     {
-      "point": 1072,
+      "point": 1163,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.104622,
-      "pair": "taumu",
-      "width": 3.910299023822971e-05,
-      "br": 0.009537314692251149
-    },
-    {
-      "point": 1082,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.282781,
+      "delta": -0.178001,
       "pair": "taue",
-      "width": 1.7129034323154883e-36,
-      "br": 4.177813249549971e-34
+      "width": 7.482364910694804e-05,
+      "br": 0.018249670513889763
     },
     {
-      "point": 1092,
+      "point": 1173,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.248746,
+      "pair": "taumu",
+      "width": 1.4088815973233662e-05,
+      "br": 0.0034362965788374785
+    },
+    {
+      "point": 1183,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.251288,
-      "pair": "taumu",
-      "width": 1.5695696443773974e-06,
-      "br": 0.000382821864482292
+      "delta": -0.245888,
+      "pair": "emu",
+      "width": 1.542992572863287e-36,
+      "br": 3.763396519178749e-34
     },
     {
-      "point": 1101,
+      "point": 1192,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.268093,
+      "pair": "taue",
+      "width": 8.851607561092828e-05,
+      "br": 0.02158928673437275
+    },
+    {
+      "point": 1202,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.309445,
-      "pair": "taue",
-      "width": 1.6900556618896077e-37,
-      "br": 4.122086980218555e-35
-    },
-    {
-      "point": 1111,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.260656,
+      "delta": -0.267607,
       "pair": "taumu",
-      "width": 9.514932502514156e-05,
-      "br": 0.023207152445156476
+      "width": 1.2015358100750753e-05,
+      "br": 0.0029305751465245737
     },
     {
-      "point": 1121,
+      "point": 1212,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.032845,
+      "pair": "emu",
+      "width": 3.252320776639065e-36,
+      "br": 7.93248969911967e-34
+    },
+    {
+      "point": 1222,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.159603,
+      "delta": -0.277395,
       "pair": "taue",
-      "width": 5.538262004930966e-38,
-      "br": 1.3507956109587722e-35
+      "width": 2.0021823861787677e-05,
+      "br": 0.00488337167360675
     },
     {
-      "point": 1131,
+      "point": 1232,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.191657,
+      "delta": -0.255404,
       "pair": "taumu",
-      "width": 1.5857956252642087e-07,
-      "br": 3.867794207961484e-05
+      "width": 2.8994941779919716e-07,
+      "br": 7.071937019492613e-05
     },
     {
-      "point": 1140,
+      "point": 1241,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.17122,
-      "pair": "taue",
-      "width": 5.2097782143578e-38,
-      "br": 1.2706776132579999e-35
+      "delta": 0.09252,
+      "pair": "emu",
+      "width": 3.71439697742608e-37,
+      "br": 9.059504822990438e-35
     },
     {
-      "point": 1150,
+      "point": 1251,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.223597,
-      "pair": "taumu",
-      "width": 5.318787879651134e-05,
-      "br": 0.012972653365002765
-    },
-    {
-      "point": 1160,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.304948,
+      "delta": 0.005004,
       "pair": "taue",
-      "width": 1.6406626537032525e-36,
-      "br": 4.001616228544518e-34
+      "width": 1.3553460641674014e-05,
+      "br": 0.003305722107725369
     },
     {
-      "point": 1170,
+      "point": 1261,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.045184,
+      "pair": "taumu",
+      "width": 5.6597865218068846e-08,
+      "br": 1.3804357370260694e-05
+    },
+    {
+      "point": 1271,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.311519,
-      "pair": "taumu",
-      "width": 4.1856393420017383e-07,
-      "br": 0.00010208876443906678
+      "delta": 0.176572,
+      "pair": "emu",
+      "width": 2.3680246132542315e-35,
+      "br": 5.775669788424955e-33
     },
     {
-      "point": 1179,
+      "point": 1280,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.159944,
+      "pair": "taue",
+      "width": 4.2188960793137063e-05,
+      "br": 0.010289990437350502
+    },
+    {
+      "point": 1290,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.065219,
-      "pair": "taue",
-      "width": 5.856567358425186e-37,
-      "br": 1.428431063030533e-34
-    },
-    {
-      "point": 1189,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.222493,
+      "delta": -0.042065,
       "pair": "taumu",
-      "width": 3.2704876341736954e-05,
-      "br": 0.00797679910774072
+      "width": 1.246857918633632e-06,
+      "br": 0.00030411168747161753
     },
     {
-      "point": 1199,
+      "point": 1300,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.215848,
+      "pair": "emu",
+      "width": 9.564222300732726e-37,
+      "br": 2.332737146520177e-34
+    },
+    {
+      "point": 1310,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.274501,
+      "delta": -0.093621,
       "pair": "taue",
-      "width": 8.352301337272958e-37,
-      "br": 2.0371466676275503e-34
+      "width": 3.796687682870294e-05,
+      "br": 0.009260213860659254
     },
     {
-      "point": 1209,
+      "point": 1320,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.193601,
+      "delta": 0.166421,
       "pair": "taumu",
-      "width": 2.5215243983885087e-07,
-      "br": 6.150059508264655e-05
+      "width": 1.2095293237701548e-07,
+      "br": 2.9500715213906212e-05
     },
     {
-      "point": 1218,
+      "point": 1329,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.158988,
-      "pair": "taue",
-      "width": 1.2337238349975566e-38,
-      "br": 3.0090825243842842e-36
+      "delta": -0.205499,
+      "pair": "emu",
+      "width": 9.964282600277063e-36,
+      "br": 2.4303128293358688e-33
     },
     {
-      "point": 1228,
+      "point": 1339,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.227809,
-      "pair": "taumu",
-      "width": 4.801269453668843e-05,
-      "br": 0.011710413301631323
-    },
-    {
-      "point": 1238,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.040333,
+      "delta": 0.189774,
       "pair": "taue",
-      "width": 9.671115907731274e-38,
-      "br": 2.3588087579832374e-35
+      "width": 0.0004327999904614297,
+      "br": 0.10556097328327553
     },
     {
-      "point": 1248,
+      "point": 1349,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.294652,
+      "pair": "taumu",
+      "width": 3.075155014528329e-06,
+      "br": 0.0007500378084215436
+    },
+    {
+      "point": 1359,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.308098,
-      "pair": "taumu",
-      "width": 8.44548087884286e-07,
-      "br": 0.0002059873385083624
+      "delta": 0.005352,
+      "pair": "emu",
+      "width": 5.591772235845058e-37,
+      "br": 1.3638468867914774e-34
     },
     {
-      "point": 1257,
+      "point": 1368,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.294106,
+      "pair": "taue",
+      "width": 4.975797460211468e-05,
+      "br": 0.012136091366369433
+    },
+    {
+      "point": 1378,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.265491,
-      "pair": "taue",
-      "width": 5.982781015973407e-37,
-      "br": 1.4592148819447332e-34
-    },
-    {
-      "point": 1267,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.095101,
+      "delta": 0.111122,
       "pair": "taumu",
-      "width": 5.9621341476144904e-05,
-      "br": 0.01454179060393778
+      "width": 1.9801544460282132e-06,
+      "br": 0.0004829644990312715
     },
     {
-      "point": 1277,
+      "point": 1388,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.0083,
+      "pair": "emu",
+      "width": 1.3860230283063646e-35,
+      "br": 3.380543971478938e-33
+    },
+    {
+      "point": 1398,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.152263,
+      "delta": -0.243329,
       "pair": "taue",
-      "width": 1.086043164741941e-36,
-      "br": 2.6488857676632706e-34
+      "width": 1.3265215091163377e-05,
+      "br": 0.0032354183149178963
     },
     {
-      "point": 1287,
+      "point": 1408,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.140897,
+      "delta": -0.032406,
       "pair": "taumu",
-      "width": 1.0096697489206841e-07,
-      "br": 2.4626091437089855e-05
+      "width": 4.771915518657136e-09,
+      "br": 1.1638818338188135e-06
     },
     {
-      "point": 1296,
+      "point": 1417,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.092843,
-      "pair": "taue",
-      "width": 3.973059786179282e-38,
-      "br": 9.690389722388491e-36
+      "delta": 0.025694,
+      "pair": "emu",
+      "width": 5.521133414945436e-37,
+      "br": 1.3466179060842526e-34
     },
     {
-      "point": 1306,
+      "point": 1427,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.051908,
-      "pair": "taumu",
-      "width": 2.8740546714599305e-05,
-      "br": 0.007009889442585196
-    },
-    {
-      "point": 1316,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.279125,
+      "delta": -0.195752,
       "pair": "taue",
-      "width": 3.435764542170655e-36,
-      "br": 8.3799135174894e-34
+      "width": 8.558997431424115e-06,
+      "br": 0.0020875603491278326
     },
     {
-      "point": 1326,
+      "point": 1437,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.06478,
+      "pair": "taumu",
+      "width": 1.2339528933129533e-07,
+      "br": 3.0096412032023248e-05
+    },
+    {
+      "point": 1447,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.120082,
-      "pair": "taumu",
-      "width": 7.863525840786137e-08,
-      "br": 1.9179331318990578e-05
+      "delta": 0.068644,
+      "pair": "emu",
+      "width": 1.1752672173917426e-35,
+      "br": 2.8665054082725427e-33
     },
     {
-      "point": 1335,
+      "point": 1456,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.021137,
+      "pair": "taue",
+      "width": 8.428242090773635e-05,
+      "br": 0.020556688026277158
+    },
+    {
+      "point": 1466,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.259912,
-      "pair": "taue",
-      "width": 4.933315348065197e-38,
-      "br": 1.2032476458695601e-35
-    },
-    {
-      "point": 1345,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.095233,
+      "delta": -0.042442,
       "pair": "taumu",
-      "width": 3.710490213597369e-05,
-      "br": 0.00904997613072529
+      "width": 2.780206253748934e-07,
+      "br": 6.780990862802277e-05
     },
     {
-      "point": 1355,
+      "point": 1476,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.073107,
+      "pair": "emu",
+      "width": 7.214317740381807e-36,
+      "br": 1.7595896927760503e-33
+    },
+    {
+      "point": 1486,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.314035,
+      "delta": 0.192618,
       "pair": "taue",
-      "width": 8.329259729887076e-37,
-      "br": 2.0315267633870917e-34
+      "width": 2.9886343422654932e-05,
+      "br": 0.00728935205430608
     },
     {
-      "point": 1365,
+      "point": 1496,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.010173,
+      "delta": -0.138724,
       "pair": "taumu",
-      "width": 6.417035011832221e-10,
-      "br": 1.5651304906907857e-07
+      "width": 9.420919085448683e-08,
+      "br": 2.2977851427923615e-05
     },
     {
-      "point": 1374,
+      "point": 1505,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.320255,
-      "pair": "taue",
-      "width": 1.1574292198802233e-38,
-      "br": 2.822998097268837e-36
+      "delta": -0.271984,
+      "pair": "emu",
+      "width": 1.1643511581529134e-36,
+      "br": 2.839880873543691e-34
     },
     {
-      "point": 1384,
+      "point": 1515,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.173749,
-      "pair": "taumu",
-      "width": 3.1408696920009896e-05,
-      "br": 0.0076606577853682665
-    },
-    {
-      "point": 1394,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.31937,
+      "delta": -0.269222,
       "pair": "taue",
-      "width": 8.29288296678412e-37,
-      "br": 2.0226543821424682e-34
+      "width": 1.1558474556316003e-05,
+      "br": 0.0028191401356868298
     },
     {
-      "point": 1404,
+      "point": 1525,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.082222,
+      "pair": "taumu",
+      "width": 1.925675226497143e-07,
+      "br": 4.696768845114982e-05
+    },
+    {
+      "point": 1535,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.321619,
-      "pair": "taumu",
-      "width": 6.175650926265789e-07,
-      "br": 0.00015062563234794605
+      "delta": 0.288556,
+      "pair": "emu",
+      "width": 5.529732148760217e-37,
+      "br": 1.3487151582341992e-34
     },
     {
-      "point": 1413,
+      "point": 1544,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.030786,
+      "pair": "taue",
+      "width": 9.084558706399224e-05,
+      "br": 0.022157460259510302
+    },
+    {
+      "point": 1554,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.063025,
-      "pair": "taue",
-      "width": 2.003438982143461e-38,
-      "br": 4.886436541813319e-36
-    },
-    {
-      "point": 1423,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.184737,
+      "delta": 0.216121,
       "pair": "taumu",
-      "width": 4.687624182575486e-05,
-      "br": 0.011433229713598746
+      "width": 8.364818540393567e-06,
+      "br": 0.002040199643998431
     },
     {
-      "point": 1433,
+      "point": 1564,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.115204,
+      "pair": "emu",
+      "width": 2.26818942786922e-36,
+      "br": 5.532169336266389e-34
+    },
+    {
+      "point": 1574,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.26977,
+      "delta": -0.264378,
       "pair": "taue",
-      "width": 5.30424772988984e-37,
-      "br": 1.293718958509717e-34
+      "width": 1.699316201936901e-05,
+      "br": 0.004144673663260733
     },
     {
-      "point": 1443,
+      "point": 1584,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.10244,
+      "delta": 0.299103,
       "pair": "taumu",
-      "width": 4.6127146220515605e-08,
-      "br": 1.1250523468418439e-05
+      "width": 3.979209616246494e-07,
+      "br": 9.705389307918277e-05
     },
     {
-      "point": 1452,
+      "point": 1593,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.139719,
-      "pair": "taue",
-      "width": 4.858380366739347e-38,
-      "br": 1.1849708211559381e-35
+      "delta": 0.194898,
+      "pair": "emu",
+      "width": 1.6467853175025584e-37,
+      "br": 4.0165495548842884e-35
     },
     {
-      "point": 1462,
+      "point": 1603,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.180782,
-      "pair": "taumu",
-      "width": 2.3102205698338625e-05,
-      "br": 0.005634684316667957
-    },
-    {
-      "point": 1472,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.083762,
+      "delta": -0.201361,
       "pair": "taue",
-      "width": 2.1276510477573818e-36,
-      "br": 5.189392799408248e-34
+      "width": 1.3618141089767686e-05,
+      "br": 0.003321497826772606
     },
     {
-      "point": 1482,
+      "point": 1613,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.16681,
+      "pair": "taumu",
+      "width": 8.006160195976405e-07,
+      "br": 0.00019527219990186353
+    },
+    {
+      "point": 1623,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.268452,
-      "pair": "taumu",
-      "width": 3.0859287069820864e-07,
-      "br": 7.526655382883137e-05
+      "delta": 0.198816,
+      "pair": "emu",
+      "width": 1.0571916725419142e-35,
+      "br": 2.5785162744924732e-33
     },
     {
-      "point": 1491,
+      "point": 1632,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.134637,
+      "pair": "taue",
+      "width": 7.915660133515906e-05,
+      "br": 0.0193064881305266
+    },
+    {
+      "point": 1642,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.171605,
-      "pair": "taue",
-      "width": 5.293927050276701e-38,
-      "br": 1.291201719579683e-35
-    },
-    {
-      "point": 1501,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.291828,
+      "delta": -0.23572,
       "pair": "taumu",
-      "width": 2.2677750739479243e-05,
-      "br": 0.0055311587169461565
+      "width": 0.00012275975896903924,
+      "br": 0.029941404626594934
     },
     {
-      "point": 1511,
+      "point": 1652,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.272564,
+      "pair": "emu",
+      "width": 4.54451990003264e-37,
+      "br": 1.108419487812839e-34
+    },
+    {
+      "point": 1662,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.263237,
+      "delta": -0.171441,
       "pair": "taue",
-      "width": 4.158374876389618e-37,
-      "br": 1.014237774729175e-34
+      "width": 1.6171928944601273e-05,
+      "br": 0.003944372913317383
     },
     {
-      "point": 1521,
+      "point": 1672,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.281808,
+      "delta": -0.024546,
       "pair": "taumu",
-      "width": 3.5012733734691817e-07,
-      "br": 8.539691154802881e-05
+      "width": 2.6596751497559054e-09,
+      "br": 6.487012560380257e-07
     },
     {
-      "point": 1530,
+      "point": 1681,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.212712,
-      "pair": "taue",
-      "width": 4.863230335042423e-38,
-      "br": 1.1861537402542494e-35
+      "delta": 0.142048,
+      "pair": "emu",
+      "width": 3.6732478657313947e-37,
+      "br": 8.95914113593023e-35
     },
     {
-      "point": 1540,
+      "point": 1691,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.275513,
-      "pair": "taumu",
-      "width": 5.045330957313567e-05,
-      "br": 0.012305685261740406
-    },
-    {
-      "point": 1550,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.021478,
+      "delta": 0.239087,
       "pair": "taue",
-      "width": 5.663831346196811e-37,
-      "br": 1.3814222795601977e-34
+      "width": 2.6499599239910678e-05,
+      "br": 0.006463316887783092
     },
     {
-      "point": 1560,
+      "point": 1701,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.087122,
+      "pair": "taumu",
+      "width": 2.0884061209222752e-07,
+      "br": 5.0936734656640855e-05
+    },
+    {
+      "point": 1711,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": 0.132796,
-      "pair": "taumu",
-      "width": 9.883552926021712e-08,
-      "br": 2.4106226648833442e-05
+      "delta": -0.255566,
+      "pair": "emu",
+      "width": 1.1421640211415828e-36,
+      "br": 2.7857659052233724e-34
     },
     {
-      "point": 1569,
+      "point": 1720,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.165573,
+      "pair": "taue",
+      "width": 6.638032717849927e-05,
+      "br": 0.016190323702072993
+    },
+    {
+      "point": 1730,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.31375,
-      "pair": "taue",
-      "width": 9.086544638271832e-39,
-      "br": 2.2162303995784954e-36
-    },
-    {
-      "point": 1579,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.014266,
+      "delta": -0.251652,
       "pair": "taumu",
-      "width": 4.157178622045767e-05,
-      "br": 0.010139460053770161
+      "width": 1.187214623671842e-05,
+      "br": 0.002895645423589858
     },
     {
-      "point": 1589,
+      "point": 1740,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.240536,
+      "pair": "emu",
+      "width": 1.4707988633568264e-37,
+      "br": 3.587314300870308e-35
+    },
+    {
+      "point": 1750,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.15897,
+      "delta": -0.15793,
       "pair": "taue",
-      "width": 9.832194466935629e-37,
-      "br": 2.398096211447714e-34
+      "width": 1.4294015459680769e-05,
+      "br": 0.00348634523406848
     },
     {
-      "point": 1599,
+      "point": 1760,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.067015,
+      "delta": -0.074967,
       "pair": "taumu",
-      "width": 1.9576516521122653e-08,
-      "br": 4.774760127103086e-06
+      "width": 2.6013368393466005e-08,
+      "br": 6.3447239984063425e-06
     },
     {
-      "point": 1608,
+      "point": 1769,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.155525,
-      "pair": "taue",
-      "width": 2.695831093041151e-37,
-      "br": 6.575197787905245e-35
+      "delta": 0.125556,
+      "pair": "emu",
+      "width": 6.483512750145673e-38,
+      "br": 1.5813445732062615e-35
     },
     {
-      "point": 1618,
+      "point": 1779,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": 0.278246,
-      "pair": "taumu",
-      "width": 5.201400035741798e-05,
-      "br": 0.01268634155058975
-    },
-    {
-      "point": 1628,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.17529,
+      "delta": -0.140784,
       "pair": "taue",
-      "width": 3.5526123444014833e-37,
-      "br": 8.664908157076788e-35
+      "width": 8.649225558818955e-06,
+      "br": 0.0021095672094680377
     },
     {
-      "point": 1638,
+      "point": 1789,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": -0.134486,
+      "pair": "taumu",
+      "width": 5.398376283215451e-07,
+      "br": 0.00013166771422476708
+    },
+    {
+      "point": 1799,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.169912,
-      "pair": "taumu",
-      "width": 1.2897525735767317e-07,
-      "br": 3.1457379843334914e-05
+      "delta": 0.003772,
+      "pair": "emu",
+      "width": 1.975086142454021e-37,
+      "br": 4.8172832742781e-35
     },
     {
-      "point": 1647,
+      "point": 1808,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": -0.079916,
+      "pair": "taue",
+      "width": 6.711098628421219e-05,
+      "br": 0.016368533240051754
+    },
+    {
+      "point": 1818,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.251116,
-      "pair": "taue",
-      "width": 5.181534847259892e-38,
-      "br": 1.2637889871365588e-35
-    },
-    {
-      "point": 1657,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.049807,
+      "delta": -0.085909,
       "pair": "taumu",
-      "width": 4.448785039117448e-05,
-      "br": 0.010850695217359629
+      "width": 1.198438086530366e-06,
+      "br": 0.00029230197232447947
     },
     {
-      "point": 1667,
+      "point": 1828,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.138642,
+      "pair": "emu",
+      "width": 5.85664069321826e-37,
+      "br": 1.4284489495654292e-34
+    },
+    {
+      "point": 1838,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.301007,
+      "delta": -0.318365,
       "pair": "taue",
-      "width": 4.314871974712923e-37,
-      "br": 1.0524077987104689e-34
+      "width": 1.994587456567031e-05,
+      "br": 0.004864847455041539
     },
     {
-      "point": 1677,
+      "point": 1848,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.129378,
+      "delta": -0.024669,
       "pair": "taumu",
-      "width": 1.4280295289286902e-07,
-      "br": 3.482998851045586e-05
+      "width": 4.590406255262438e-08,
+      "br": 1.1196112817713262e-05
     },
     {
-      "point": 1686,
+      "point": 1857,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": 0.225594,
-      "pair": "taue",
-      "width": 1.0446727492431044e-37,
-      "br": 2.547982315227084e-35
+      "delta": -0.110949,
+      "pair": "emu",
+      "width": 3.561397437779742e-36,
+      "br": 8.686335214096932e-34
     },
     {
-      "point": 1696,
+      "point": 1867,
       "mu3": 0.9,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.158221,
-      "pair": "taumu",
-      "width": 3.1949523896617835e-05,
-      "br": 0.0077925668040531295
-    },
-    {
-      "point": 1706,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.251879,
+      "delta": -0.031622,
       "pair": "taue",
-      "width": 3.349702071064625e-36,
-      "br": 8.170005051377133e-34
+      "width": 1.607125169822273e-05,
+      "br": 0.003919817487371397
     },
     {
-      "point": 1716,
+      "point": 1877,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.183011,
+      "pair": "taumu",
+      "width": 9.088783843791893e-07,
+      "br": 0.0002216776547266315
+    },
+    {
+      "point": 1887,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.225291,
-      "pair": "taumu",
-      "width": 1.0188529206866066e-06,
-      "br": 0.00024850071236258696
+      "delta": -0.108643,
+      "pair": "emu",
+      "width": 7.777681104126077e-37,
+      "br": 1.8969953912502624e-34
     },
     {
-      "point": 1725,
+      "point": 1896,
+      "mu3": 1.4,
+      "state": "h_0 (gauge-phobic)",
+      "delta": 0.122801,
+      "pair": "taue",
+      "width": 8.596328362616463e-05,
+      "br": 0.02096665454296698
+    },
+    {
+      "point": 1906,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.015626,
-      "pair": "taue",
-      "width": 9.592723776986202e-38,
-      "br": 2.3396887260941955e-35
-    },
-    {
-      "point": 1735,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.193212,
+      "delta": 0.168627,
       "pair": "taumu",
-      "width": 3.919351107835419e-05,
-      "br": 0.009559392945940045
+      "width": 4.923812907032602e-06,
+      "br": 0.0012009299773250248
     },
     {
-      "point": 1745,
+      "point": 1916,
+      "mu3": 0.9,
+      "state": "SM-like",
+      "delta": 0.263504,
+      "pair": "emu",
+      "width": 2.3685644554767964e-37,
+      "br": 5.776986476772674e-35
+    },
+    {
+      "point": 1926,
       "mu3": 0.5,
       "state": "h_0 (gauge-phobic)",
-      "delta": -0.18368,
+      "delta": -0.210188,
       "pair": "taue",
-      "width": 3.119726382597705e-36,
-      "br": 7.6090887380431825e-34
+      "width": 1.618369248590697e-05,
+      "br": 0.003947242069733407
     },
     {
-      "point": 1755,
+      "point": 1936,
       "mu3": 0.5,
       "state": "SM-like",
-      "delta": -0.033773,
+      "delta": 0.062437,
       "pair": "taumu",
-      "width": 5.621904706483942e-09,
-      "br": 1.371196269874132e-06
+      "width": 1.7084074343692608e-08,
+      "br": 4.166847400900635e-06
     },
     {
-      "point": 1764,
+      "point": 1945,
       "mu3": 1.4,
       "state": "SM-like",
-      "delta": -0.14311,
-      "pair": "taue",
-      "width": 2.1648495969753502e-38,
-      "br": 5.280120968232561e-36
-    },
-    {
-      "point": 1774,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.078535,
-      "pair": "taumu",
-      "width": 4.703530397322916e-05,
-      "br": 0.011472025359324185
-    },
-    {
-      "point": 1784,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.292863,
-      "pair": "taue",
-      "width": 2.0687714588488592e-36,
-      "br": 5.0457840459728264e-34
-    },
-    {
-      "point": 1794,
-      "mu3": 0.5,
-      "state": "SM-like",
-      "delta": -0.230077,
-      "pair": "taumu",
-      "width": 2.731864822344668e-07,
-      "br": 6.66308493254797e-05
-    },
-    {
-      "point": 1803,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": -0.228554,
-      "pair": "taue",
-      "width": 4.909695919342639e-38,
-      "br": 1.1974868095957655e-35
-    },
-    {
-      "point": 1813,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.097191,
-      "pair": "taumu",
-      "width": 4.7410119217868916e-05,
-      "br": 0.011563443711675345
-    },
-    {
-      "point": 1823,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.220656,
-      "pair": "taue",
-      "width": 2.8460465911067676e-36,
-      "br": 6.94157705147992e-34
-    },
-    {
-      "point": 1833,
-      "mu3": 0.5,
-      "state": "SM-like",
-      "delta": -0.173814,
-      "pair": "taumu",
-      "width": 1.348279885970073e-07,
-      "br": 3.288487526756275e-05
-    },
-    {
-      "point": 1842,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": -0.114288,
-      "pair": "taue",
-      "width": 2.0048650598706603e-37,
-      "br": 4.889914780172342e-35
-    },
-    {
-      "point": 1852,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.082551,
-      "pair": "taumu",
-      "width": 4.637157274115531e-05,
-      "br": 0.011310139692964708
-    },
-    {
-      "point": 1862,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.076895,
-      "pair": "taue",
-      "width": 6.775817348964855e-38,
-      "br": 1.6526383777963058e-35
-    },
-    {
-      "point": 1872,
-      "mu3": 0.5,
-      "state": "SM-like",
-      "delta": 0.084338,
-      "pair": "taumu",
-      "width": 4.913916238535751e-08,
-      "br": 1.1985161557404271e-05
-    },
-    {
-      "point": 1881,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": 0.190317,
-      "pair": "taue",
-      "width": 1.4654749555194828e-37,
-      "br": 3.5743291598036163e-35
-    },
-    {
-      "point": 1891,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.230246,
-      "pair": "taumu",
-      "width": 2.881809379373238e-05,
-      "br": 0.0070288033643249705
-    },
-    {
-      "point": 1901,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.189477,
-      "pair": "taue",
-      "width": 1.2402557414670777e-35,
-      "br": 3.0250140035782382e-33
-    },
-    {
-      "point": 1911,
-      "mu3": 0.5,
-      "state": "SM-like",
-      "delta": -0.075863,
-      "pair": "taumu",
-      "width": 2.5358647622662485e-08,
-      "br": 6.185036005527435e-06
-    },
-    {
-      "point": 1920,
-      "mu3": 1.4,
-      "state": "SM-like",
-      "delta": -0.080734,
-      "pair": "taue",
-      "width": 1.3718653728106625e-37,
-      "br": 3.3460131044162496e-35
-    },
-    {
-      "point": 1930,
-      "mu3": 0.9,
-      "state": "h_0 (gauge-phobic)",
-      "delta": 0.23026,
-      "pair": "taumu",
-      "width": 4.4816435748183e-05,
-      "br": 0.010930837987361707
-    },
-    {
-      "point": 1940,
-      "mu3": 0.5,
-      "state": "h_0 (gauge-phobic)",
-      "delta": -0.307697,
-      "pair": "taue",
-      "width": 2.653628611610596e-37,
-      "br": 6.472264906367306e-35
+      "delta": -0.22637,
+      "pair": "emu",
+      "width": 1.0038946706219233e-37,
+      "br": 2.4485235868827397e-35
     }
   ]
 }
