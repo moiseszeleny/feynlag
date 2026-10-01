@@ -25,17 +25,23 @@ pedagogical walk-through). This directory is where the open questions go.
 | `scan_soft.py` | the parameter sweep in the **soft-broken** vacuum — notebook 01's cuts over λ, (θ, φ) and the three free soft quadratics; sole writer of `results/viable_points_soft.json`. |
 | `05_soft_scalar_scan.ipynb` | the soft-broken vacuum: released tadpoles, the φ fundamental domain, the general-vacuum spectrum, and the scan against notebook 01. **Done.** |
 | `derivations_05.tex` | printable appendix emitted by notebook 05 §7. |
+| `lfv.py` | charged-lepton LFV couplings at any vacuum: per-doublet $G_k$ read off the Lagrangian (`lepton_g_function`), the draft's analytic inversion at the alignment, and the exact arrowhead-cubic enumeration of every lepton-fit branch off it (`lepton_branches`, `branch_kind`). Shared by notebooks 03 and 06. |
+| `soft_decays.py` | per-point numeric decay machinery for the soft-broken vacuum: rotations rebuilt from the stored inputs, the $hH^+H^-$ cubic tensor, VSS overlaps and widths, $R_{\gamma\gamma}$, LFV over every lepton branch, the S₃-image map. |
+| `06_soft_decays.ipynb` | decays and LFV on the 2021 soft points, validated against the extractor, the exact-S₃ limit and the S₃ image. **Done.** |
+| `derivations_06.tex` | printable appendix emitted by notebook 06. |
 | `report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
 | `report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
 | `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
 | `report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
-| `build_reports.sh` | rebuilds the four `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
+| `report_soft_decays.tex` | report on notebook 06: the arrowhead lepton fit, SM-like LFV from the non-vacuum admixture, $R_{\gamma\gamma}$ and VSS in the soft vacuum. |
+| `build_reports.sh` | rebuilds the five `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
 | `README.md` | the folder's GitHub landing page: the report index. |
 | `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
 | `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
 | `results/viable_points_soft.json` | 2021 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
 | `results/decay_benchmarks.json` | per-point δ and VV couplings, plus the LFV branching-ratio distribution per (state, channel, $\mu_3$) and a 200-entry sample. |
+| `results/soft_decay_benchmarks.json` | per soft point: SM-like index and $\kappa_V$, $R_{\gamma\gamma}$, $hH^+H^-$ couplings, VSS widths, the least-constrained lepton configuration; plus LFV summaries by branch kind and misalignment. Written by notebook 06. |
 
 Notebooks import `model.py` from their own directory; from the repo root use
 `sys.path.insert(0, "research/thdm_s3")`.
@@ -505,6 +511,53 @@ reproduces notebook 01 to 1e-10.
 Notebook 03's decays/LFV are not redone, because its δ assumes the aligned 2×2
 block. All three are open items.
 
+### 12. Decays and LFV in the soft-broken vacuum (notebook 06)
+
+**Validated against the library, not assumed.** `soft_decays.py` rebuilds each point's
+rotations from the stored inputs and computes its couplings numerically:
+- the $hH^+H^-$ trilinears come from a lambdified cubic tensor of the quartics (soft terms
+  are quadratic and never enter a cubic);
+- the VSS couplings are $g/(2c_W)R_{\rm odd}^{\mathsf T}R_{\rm even}$ and
+  $(g/2)R_C^{\mathsf T}R_{\rm even}$.
+
+At a non-aligned point all 27 trilinears match feynlag's extractor to $2\times10^{-13}$ GeV,
+the 18 VSS couplings match to $10^{-17}$, and the closed-form VSS width equals the engine's.
+The φ = π/3, zero-soft slice reproduces corrected notebook 03. The S₃ image vacuum gives
+identical observables to $10^{-12}$, once its $m_{D1}^2$ is re-solved rather than read
+rounded from the JSON.
+
+**The lepton fit is an arrowhead cubic, and the vacuum restricts it.** In feynlag's basis
+the doublet block of $M_\ell$ is a reflection with φ-only eigenvectors, and the third
+generation couples to them as $D(\cos\tfrac{3\varphi}2,\sin\tfrac{3\varphi}2)$. Matching the
+characteristic polynomial leaves one cubic per eigenvalue-sign pattern, so every branch is
+found (random-start least squares never finds another; pinned in
+`tests/test_thdm_s3.py::test_soft_lepton_mass_matrix_is_an_arrowhead_in_cos_3phi`).
+- Existence depends on $\cos3\varphi$ only, not θ.
+- At φ = π/3 every $\mu_3\in(-m_\tau,m_\tau)$ works. Away from it the draft-type branch
+  (decoupled entry → electron) survives on ~5% of the $\mu_3$ axis, near $|\mu_3|\approx
+  m_\tau$. Soft breaking turns the exact model's free dial into a near-prediction: the
+  third generation is essentially the singlet.
+
+**SM-like LFV is pure admixture.** The vacuum direction couples through
+$\sum_kv_kG_k/v=M_\ell/v$, which is diagonal in the mass basis at *any* vacuum. So all of the
+SM-like state's flavour violation sits in its $1-\kappa_V^2$ admixture of the other two
+directions (median $2.4\times10^{-3}$). The total LFV rate correlates with it at 0.88 in log.
+This is the alignment limit, and it holds however large the soft breaking is.
+
+**Rates.** All three channels are on in the soft vacuum. Over every (point, $\mu_3$, branch)
+the SM-like medians are about $10^{-5}$ (τμ, τe) and $3\times10^{-6}$ (eμ). The fractions
+over the limits are 2.9%, 1.9% and **18.3%**: $e\mu$ against [CMS23] is the binding channel.
+Only **5 of 2021** scalar points have no lepton configuration under all three limits, so
+LFV again bounds the lepton dial, not the scalar sector.
+
+**γγ and VSS.**
+- $R_{\gamma\gamma}$ has median 0.97 (90% of points in [0.85, 1.00]). The 48 points below
+  0.8 all have a light $H^\pm$ (< 310 GeV) interfering destructively with the $W$, and the
+  charged loop decouples to $\kappa_V^2$ above 1.5 TeV. The top coupling is assumed equal to
+  $\kappa_V$.
+- $A_{1,2}\to Zh$ and $H^\pm_{1,2}\to W^\pm h$ are open almost everywhere (median 20–80 MeV).
+  Their couplings to the SM-like state obey $\sum_a|O_{ak}|^2=1-\kappa_V^2$ exactly.
+
 ## Open questions / next
 
 - ~~Get the [DasDey14] erratum.~~ **Closed** — see finding 4. It corrects only the
@@ -541,10 +594,17 @@ block. All three are open items.
   local minimum (no tachyons). With soft terms the potential can have several
   minima, so a multi-start minimization of the full potential on the survivors is
   the missing vacuum-stability cut.
-- **Decays and LFV on the soft-broken points.** Notebook 03 parametrizes the
-  CP-even sector by one angle δ, which assumes the aligned 2×2 block. The soft
-  points carry a full 3×3 `cp_even_mixing` and no gauge-phobic state, so its
-  couplings and rates have to be regenerated from that matrix.
+- ~~Decays and LFV on the soft-broken points.~~ **Done** — finding 12,
+  `06_soft_decays.ipynb`, `soft_decays.py`, `lfv.py`. (Doing it surfaced the
+  notebook-03 $G_2=0$ split, corrected in finding 10.)
+- **Quark sector per soft point.** Heavy-state total widths and the top coupling
+  in $R_{\gamma\gamma}$ (set to $\kappa_V$ in notebook 06) both need it.
+- **$R_{\gamma\gamma}$ as a cut.** 48 soft points have $R_{\gamma\gamma}<0.8$, all with a
+  light $H^\pm$. Turning that into an exclusion needs the production side and a
+  cited $\mu_{\gamma\gamma}$.
+- **$\mu\to e\gamma$.** Off the exact vacuum the $e\mu$ and $e\tau$ couplings are
+  switched on, so the radiative decays will likely constrain more than $h\to e\mu$.
+  They need a loop calculation.
 - **The neutrino sector** (finding 7) is enumerated but not built: Dirac Yukawas
   on $\tilde H$ plus S₃-allowed Majorana $\nu_R$ masses. feynlag has the pieces
   (`seesaw_mass_matrix`, `MajoranaRotation`, Takagi) — see `examples/sm_seesaw.py`.

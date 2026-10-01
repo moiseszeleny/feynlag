@@ -13,6 +13,7 @@ is [`NOTES.md`](NOTES.md).
 | [Fermion sector](report_fermion_sector.pdf) | [02](02_s3_fermion_sector.ipynb) | Three defects in the LFVHD draft, corrected; exact S₃ forces V_us = 0, and soft breaking turns the Cabibbo angle on. |
 | [Scalar decays and LFV](report_scalar_decays.pdf) | [03](03_scalar_decays.ipynb) | h₀ is gauge-phobic for every δ; LFV data bound the lepton parameter μ₃, not the scalar sector; at the exact vacuum the SM-like state gives τμ only and h₀ only eτ and eμ. |
 | [Soft-broken vacuum](report_soft_vacuum.pdf) | [05](05_soft_scalar_scan.ipynb) | The soft-broken spectrum is decoupling-like; the exact scan's light gauge-phobic scalars do not survive generic soft breaking. |
+| [Soft-vacuum decays and LFV](report_soft_decays.pdf) | [06](06_soft_decays.ipynb) | The lepton fit is an exact arrowhead cubic and soft breaking pins μ₃ near ±m_τ; SM-like LFV is pure non-vacuum admixture; h→eμ binds hardest; only 5 of 2021 scalar points are LFV-excluded. |
 
 Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness method) has no
 report yet. Each notebook also emits a printable derivation ledger, `derivations_0N.tex`.

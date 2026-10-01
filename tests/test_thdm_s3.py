@@ -880,3 +880,33 @@ def test_exact_s3_lfv_channels_split_by_state(mu3):
     assert np.allclose(np.abs(o_vac), np.abs(q_vac), atol=1e-15)
     assert np.abs(np.abs(o_perp) - np.abs(q_perp)).max() > 1e-4
 
+
+def test_soft_lepton_mass_matrix_is_an_arrowhead_in_cos_3phi():
+    """Off the alignment the charged-lepton fit reduces to an arrowhead matrix.
+
+    feynlag's-basis M_ℓ (μ₅ = μ₄) at a general vacuum (v₁, v₂) = v₁₂(cos φ, sin φ):
+    its doublet block a·1 + b·v₁₂·refl(φ) has φ-only eigenvectors e₊, e₋, and
+    the third column projects on them as D(cos 3φ/2, sin 3φ/2).  This is what
+    makes research/thdm_s3/lfv.py's branch enumeration a single cubic, and why
+    existence depends on φ only through cos 3φ.  At φ = π/3 the e₊ coupling
+    vanishes — the electron decoupling of the exact-S₃ vacuum.
+    """
+    a, b, c, d, w, phi = sp.symbols("a b c d w varphi", real=True)
+    v1, v2 = w * sp.cos(phi), w * sp.sin(phi)
+    M = sp.Matrix([[a + b * v1, -b * v2, d * v1],
+                   [-b * v2, a - b * v1, d * v2],
+                   [d * v1, d * v2, c]])
+    e_plus = sp.Matrix([sp.cos(phi / 2), -sp.sin(phi / 2), 0])
+    e_minus = sp.Matrix([sp.sin(phi / 2), sp.cos(phi / 2), 0])
+    U = sp.Matrix.hstack(e_plus, e_minus, sp.Matrix([0, 0, 1]))
+    assert sp.simplify(U.T * U - sp.eye(3)) == sp.zeros(3, 3)
+
+    arrow = (U.T * M * U).applyfunc(lambda e: sp.simplify(sp.expand_trig(e)))
+    expected = sp.Matrix([[a + b * w, 0, d * w * sp.cos(3 * phi / 2)],
+                          [0, a - b * w, d * w * sp.sin(3 * phi / 2)],
+                          [d * w * sp.cos(3 * phi / 2), d * w * sp.sin(3 * phi / 2), c]])
+    assert (arrow - expected).applyfunc(
+        lambda e: sp.simplify(sp.expand_trig(sp.expand(e)))) == sp.zeros(3, 3)
+    # the electron decouples exactly at the S₃ vacuum (3φ/2 = π/2), not elsewhere
+    assert sp.simplify(expected[0, 2].subs(phi, sp.pi / 3)) == 0
+    assert sp.simplify(expected[0, 2].subs(phi, sp.pi / 4)) != 0

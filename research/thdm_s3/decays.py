@@ -98,21 +98,36 @@ class DecayModel:
         return sp.expand(expr).subs(self.scalar.align)
 
 
-def build_decay_model(delta=None, name="3HDM-S3-decays") -> DecayModel:
+def build_decay_model(delta=None, name="3HDM-S3-decays", scalar=None,
+                      rotations=None) -> DecayModel:
     """Scalars + electroweak kinetic terms + charged-lepton Yukawas, rotated.
 
     Args:
         delta: the CP-even Higgs-basis angle.  ``None`` (default) keeps it a
             free symbol ``δ`` — the general Scenario C.  Pass ``0`` for the
             draft's Scenario A or ``sp.pi/2`` for Scenario B.
+        scalar: an `S3Model` to build on instead of the exact-S₃ default —
+            e.g. ``build_model(soft=True, soft_solve_for="mD1sq")``.
+        rotations: ``(R_even, R_odd, R_C)``, numeric 3×3 matrices whose columns
+            are the physical states (`soft_decays.point_rotations`).  Overrides
+            the geometric ``R_A·R_H(δ)`` construction — required in the
+            soft-broken vacuum, where the CP-even mixing is a full 3×3 and the
+            CP-odd/charged 2×2 blocks are not diagonal.  ``delta`` is then
+            ignored.  The couplings are only meaningful at the VEVs the
+            matrices were computed for.
     """
-    m = build_model()
+    m = scalar if scalar is not None else build_model()
     H1, H2, HS = m.doublets
     SU2L, U1Y, s3 = m.SU2L, m.U1Y, m.s3
 
     d = sp.Symbol("delta", real=True) if delta is None else sp.sympify(delta)
-    R = rotation(m)
-    RS = sp.simplify(R * F.R_H(d))
+    if rotations is None:
+        R = rotation(m)
+        RS = sp.simplify(R * F.R_H(d))
+        R_odd = R_C = R
+    else:
+        RS, R_odd, R_C = (sp.Matrix(x).applyfunc(sp.Float) for x in rotations)
+        R = R_odd
 
     lep = F.build_lepton_sector(s3, SU2L, U1Y, m.doublets)
 
@@ -142,9 +157,9 @@ def build_decay_model(delta=None, name="3HDM-S3-decays") -> DecayModel:
 
     # new = Rᵀ old, i.e. the columns of R are the physical directions
     model.rotate(Rotation(flucts("r"), list(cp_even), RS.T))
-    model.rotate(Rotation(flucts("i"), list(cp_odd), R.T))
+    model.rotate(Rotation(flucts("i"), list(cp_odd), R_odd.T))
     model.rotate(Rotation([H.components[0] for H in m.doublets],
-                          list(charged), R.T))
+                          list(charged), R_C.T))
     Z, A = weinberg_rotation(model, SU2L, U1Y)
     Wp, Wm = charged_current_rotation(model, SU2L)
 

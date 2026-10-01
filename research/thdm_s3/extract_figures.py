@@ -24,6 +24,7 @@ NB01 = "01_scalar_parameter_space.ipynb"     # report_scalar_sector.tex
 NB02 = "02_s3_fermion_sector.ipynb"          # report_fermion_sector.tex
 NB03 = "03_scalar_decays.ipynb"              # report_scalar_decays.tex
 NB05 = "05_soft_scalar_scan.ipynb"           # report_soft_vacuum.tex
+NB06 = "06_soft_decays.ipynb"                # report_soft_decays.tex
 
 #: name -> (notebook, cell index, marker that must occur in that cell's source)
 FIGURES = {
@@ -40,6 +41,9 @@ FIGURES = {
     "soft_hvv": (NB05, 26, "VV coupling of the non-SM-like CP-even states"),
     "soft_breaking": (NB05, 28, "free-soft prior edge"),
     "soft_mD1_edge": (NB05, 30, "The tadpole-fixed $m_{D1}^2$ across the domain"),
+    "softdec_mu3_existence": (NB06, 14, "Where a charged-lepton fit exists"),
+    "softdec_lfv": (NB06, 18, "LFV needs a non-vacuum admixture"),
+    "softdec_gammagamma": (NB06, 20, "in the soft-broken vacuum"),
 }
 
 
