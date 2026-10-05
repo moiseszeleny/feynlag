@@ -15,9 +15,10 @@ import sympy as sp
 from .fields import Scalar
 from .groups.base import GaugeGroup
 from .groups.discrete import DiscreteSymmetry
+from .groups.global_symmetry import GlobalU1
 from .invariance import (
-    check_discrete_invariance, check_gauge_invariance, check_hermiticity,
-    check_mass_dimension,
+    check_discrete_invariance, check_gauge_invariance, check_global_invariance,
+    check_hermiticity, check_mass_dimension,
 )
 from .operators import PartialMu, to_momentum_space
 from .parameters import ParameterSet
@@ -151,7 +152,9 @@ class Model:
 
     Pipeline surface:
 
-    - :meth:`check_invariance` — gauge/discrete invariance of every term,
+    - :meth:`check_invariance` — gauge/discrete/global invariance of every
+      term (``global_groups``: :class:`~feynlag.groups.GlobalU1`\ s, e.g. a
+      Froggatt–Nielsen U(1) with per-flavour charges),
       hermiticity per sector, mass-dimension power counting;
     - :attr:`potential`, :attr:`vacuum` — EWSB setup (``L ⊃ −V``);
     - :meth:`tadpoles`, :meth:`solve_tadpoles` — vacuum conditions;
@@ -162,10 +165,13 @@ class Model:
     """
 
     def __init__(self, name, gauge_groups=(), discrete_groups=(), fields=(),
-                 parameters=None, lagrangian=None):
+                 parameters=None, lagrangian=None, global_groups=()):
         self.name = name
         self.gauge_groups = list(gauge_groups)
         self.discrete_groups = list(discrete_groups)
+        #: global continuous symmetries (:class:`GlobalU1`): checked by
+        #: :meth:`check_invariance`, never gauged, no anomaly constraint
+        self.global_groups = list(global_groups)
         self.fields = list(fields)
         if parameters is None:
             parameters = ParameterSet()
@@ -180,6 +186,9 @@ class Model:
         for g in self.discrete_groups:
             if not isinstance(g, DiscreteSymmetry):
                 raise TypeError(f"{g!r} is not a DiscreteSymmetry")
+        for g in self.global_groups:
+            if not isinstance(g, GlobalU1):
+                raise TypeError(f"{g!r} is not a GlobalU1")
 
         #: registered weak → physical Rotations, in application order
         self.rotations = []
@@ -432,6 +441,12 @@ class Model:
                 if not ok:
                     report.failures.append(
                         (term, f"discrete:{group.name}", violations))
+            for group in self.global_groups:
+                ok, violations = check_global_invariance(term.expr, group)
+                report.checked += 1
+                if not ok:
+                    report.failures.append(
+                        (term, f"global:{group.name}", violations))
             if dimension:
                 ok, worst = check_mass_dimension(
                     term.expr, self.fields, self.parameters, max_dim=max_dim)
