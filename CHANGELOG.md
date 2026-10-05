@@ -6,6 +6,21 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `diagonalize_svd(method="auto"|"symbolic"|"numeric", dps=50)`: a numeric
+  matrix that is complex, floating-point or larger than 2×2 is decomposed with
+  mpmath's complex SVD, returning unitary rotations with
+  `R_L M R_R† = diag(m ≥ 0)` (rows by increasing mass, a round-off singular
+  value as an exact zero). Generic complex 3×3 Yukawas now give their masses
+  and `V_CKM = R_uL·R_dL†` inside feynlag (FG-6). Exact 2×2 calls are unchanged.
+- `Rotation.bar(old_bar, new_bar)`: the bar-leg partner of a fermion rotation,
+  with the conjugate matrix `R*` (identical to `R` for a real rotation).
+
+### Fixed
+- `diagonalize_svd` no longer returns a silently wrong answer on a complex
+  matrix: the symbolic route raises on an explicit `I`. It also no longer
+  crashes with `TypeError` on a real floating-point input.
+
 ## [0.2.0] — 2026-09-26
 
 ### Added
