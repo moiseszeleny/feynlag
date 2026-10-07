@@ -160,8 +160,14 @@ class GlobalU1(SymmetryGroup):
         k1, k2 = (leg.indices[0] for leg in legs)
         if k1 == k2 and not k1.is_Integer:
             per_flavour = [self.fermion_charges.get(leg.base) for leg in legs]
-            n = max((len(qs) for qs in per_flavour if qs is not None),
-                    default=0)
+            lengths = {len(qs) for qs in per_flavour if qs is not None}
+            if len(lengths) > 1:
+                raise ValueError(
+                    f"{bilinear}: the legs share the symbolic flavour index "
+                    f"{k1} but {legs[0].base} and {legs[1].base} have "
+                    f"different numbers of flavours ({sorted(lengths)}), so "
+                    f"{k1} cannot run over both")
+            n = lengths.pop() if lengths else 0
             totals = {sum((qs[f] if qs is not None else 0
                            for qs in per_flavour), sp.S.Zero)
                       for f in range(n)}

@@ -278,6 +278,19 @@ class TestReviewFollowUps:
             check_global_invariance(Bilinear(uLbar[0], diracPR, uR[k]),
                                     fn["FN"])
 
+    def test_shared_index_with_mismatched_flavour_counts(self):
+        """Legs sharing a symbolic index but with 3 and 2 flavours: a clear
+        ValueError, not an IndexError from the shorter charge tuple."""
+        i = sp.Symbol("i_mm", integer=True)
+        A = WeylFermion("Amm", reps={}, chirality="L", nflavors=3,
+                        component_names=["Amm"])
+        B = WeylFermion("Bmm", reps={}, chirality="R", nflavors=2,
+                        component_names=["Bmm"])
+        G = GlobalU1("U1_mm").assign((1, 1, 1), A).assign((1, 1), B)
+        term = Bilinear(A.bar_components[0][i], diracPR, B.components[0][i])
+        with pytest.raises(ValueError, match="different numbers of flavours"):
+            check_global_invariance(term, G)
+
     def test_validate_reports_global_failure(self, fn):
         phi = fn["phiF"].components[0]
         G = GlobalU1("U1_val").assign(1, fn["phiF"])
