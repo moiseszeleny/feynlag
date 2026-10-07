@@ -15,6 +15,15 @@ All notable changes to feynlag are documented here. The format follows
   and `V_CKM = R_uL·R_dL†` inside feynlag (FG-6). Exact 2×2 calls are unchanged.
 - `Rotation.bar(old_bar, new_bar)`: the bar-leg partner of a fermion rotation,
   with the conjugate matrix `R*` (identical to `R` for a real rotation).
+- `GlobalU1`: a global (ungauged) U(1) whose `assign` takes one charge per
+  flavour for a fermion (e.g. Froggatt–Nielsen `Q_L: (3, 2, 0)`), checked by
+  the new `check_global_invariance` and declared on a model with
+  `Model(global_groups=[...])` (`check_invariance`/`validate` report
+  `global:<name>`). Not part of the anomaly check (FG-7). Legs sharing a
+  symbolic flavour index are charged flavour by flavour, so a flavour-diagonal
+  current `ψ̄_i Γ ψ_i` (a kinetic term, `fermion_gauge_current`) is neutral even
+  with flavour-dependent charges; an out-of-range integer flavour index raises
+  a `ValueError`.
 
 ### Fixed
 - `diagonalize_svd` no longer returns a silently wrong answer on a complex

@@ -13,6 +13,8 @@ Strategy (see plan): **explicit component transformation**.
   as bosons, index-preserved via ``.replace()`` (no linearization needed —
   discrete transforms are finite, not infinitesimal) — see
   :func:`_fermion_transform_discrete`.
+- Global U(1)s: infinitesimal phase ``φ → (1 + iqα)φ`` with per-flavour
+  fermion charges — see :func:`check_global_invariance`.
 - Hermiticity: ``expand(L − L*) = 0`` (valid for bosonic sectors; fermion
   bilinears need Dirac-conjugation identities not yet implemented — see
   ``Model.check_invariance``, which skips sectors containing ``Bilinear``).
@@ -27,7 +29,8 @@ from .operators import D_linear, PartialMu
 from .vertices.bilinear import Bilinear, MajoranaBilinear, expand_bilinear
 
 __all__ = ["gauge_variation", "check_gauge_invariance",
-           "check_discrete_invariance", "check_hermiticity",
+           "check_discrete_invariance", "check_global_invariance",
+           "check_hermiticity",
            "check_mass_dimension"]
 
 
@@ -277,6 +280,48 @@ def check_discrete_invariance(term, group):
         if residual != 0:
             violations.append((gen_index, residual))
     return (not violations, violations)
+
+
+def check_global_invariance(term, group):
+    """Whether ``term`` is invariant under the global U(1) ``group``.
+
+    Every charged scalar component transforms as ``φ → (1 + iqα)φ`` (and,
+    through the conjugate, ``φ* → (1 − iqα)φ*``; ``PartialMu`` heads alike),
+    every fermion leg ``ψ_k → (1 + iq_kα)ψ_k`` with its own flavour's charge
+    and every bar leg ``ψ̄_k → (1 − iq_kα)ψ̄_k`` — applied per sandwich via
+    :meth:`~feynlag.groups.GlobalU1.bilinear_charge`, so a flavour-diagonal
+    ``ψ̄_i Γ ψ_i`` with symbolic ``i`` is neutral.  The O(α) coefficient is
+    ``i Σ_m Q_m·m`` over the monomials ``m`` of ``term`` with total charge
+    ``Q_m``, so its vanishing is exact (finite) U(1) invariance, not just a
+    first-order statement.
+
+    Returns:
+        ``(ok: bool, violations: list[(0, coefficient)])`` — the shape of
+        :func:`check_discrete_invariance` (a U(1) has one generator).
+    """
+    alpha = sp.Dummy(f"alpha_{group.name}", real=True)
+    components = group.components()
+    has_fermion_content = term.has(Bilinear) or term.has(MajoranaBilinear)
+    base = _normalize_derivatives(term, components)
+    if has_fermion_content:
+        base = sp.expand(expand_bilinear(base))   # atomic Indexed legs
+    sub = {}
+    for comp, q in group.scalar_charges.items():
+        if q != 0:
+            sub[comp] = comp * (1 + sp.I * q * alpha)
+            sub[PartialMu(comp)] = PartialMu(comp) * (1 + sp.I * q * alpha)
+    transformed = (base.xreplace(_with_conjugate_derivatives(sub))
+                   if sub else base)
+    if has_fermion_content and group.fermion_charges:
+        # phase each sandwich as a whole: a flavour-diagonal ψ̄_i Γ ψ_i is
+        # neutral even when i is symbolic and the charges flavour-dependent
+        transformed = transformed.replace(
+            lambda x: isinstance(x, (Bilinear, MajoranaBilinear)),
+            lambda x: x * (1 + sp.I * group.bilinear_charge(x) * alpha))
+    coeff = sp.expand(sp.diff(transformed - base, alpha).subs({alpha: 0}))
+    if coeff != 0:
+        coeff = sp.simplify(coeff)
+    return (coeff == 0, [] if coeff == 0 else [(0, coeff)])
 
 
 def check_hermiticity(expr):
