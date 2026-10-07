@@ -17,6 +17,14 @@ parameter `tex=`, a name-keyed `tex=` map on the SM builders), numeric Takagi
 factorisation for large numeric matrices, and a UFO `texname` escaping fix —
 512 tests green. See `CHANGELOG.md`.
 
+**v0.3.0** adds a numeric complex SVD for Dirac mass matrices
+(`diagonalize_svd(method="numeric")`, `Rotation.bar`), so that generic complex
+3×3 Yukawas give their masses and `V_CKM` inside feynlag, and a global U(1)
+with per-flavour charges (`GlobalU1`, `Model(global_groups=...)`) for
+Froggatt–Nielsen-type horizontal symmetries. These close feynlag-models gaps
+FG-6 and FG-7. The SU(N) and Particle Decays tutorials are rebuilt in the
+derive-then-check style. 549 tests green. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
