@@ -25,21 +25,27 @@ THDM_S3_Tutorial
 
 How to get from a Lagrangian to a measured lifetime, for a student who has
 met Feynman rules and Dirac spinors but never carried a decay calculation
-through to a number. Derives everything by hand first — two-body phase space
-and the Källén function, the spin sums that turn $|\mathcal{M}|^2$ into a
-Dirac trace, the trace theorems, polarisation sums — and only then reveals
-`DecayCalculator` as the automation of exactly those steps. Lands on
-$\Gamma(h\to f\bar f) = N_c m_h m_f^2\beta^3/8\pi v^2$ (with the $\beta^3$
-explained as the P-wave signature of a CP-even scalar), $\Gamma(Z\to\nu\bar\nu)$
-and $\Gamma(W\to\ell\nu)$ within ~1% of the PDG, and the familiar Higgs
-branching-ratio-versus-mass plot. Then completes the picture: the
-`DiracParticle` fermion sector, and the **off-shell $1\to3$** $h\to WW^*/ZZ^*$
-(a $W^*$ line-shape figure showing the virtual $W$ never reaches its mass shell,
-and the canonical Higgs BR chart — $b\bar b$ 61%, $WW^*$ 25%). Closes with the
-two mistakes that fail *silently* — forgetting that a Dirac fermion is two Weyl
-fields (an error that vanishes in the massless limit), and closed channels
-turning $\sqrt\lambda$ imaginary — and then builds a $Z'$ from scratch to show
-the same machinery on a new model.
+through to a number — in the same *derive, then check* style as the group
+tutorials: every section predicts a result before a cell settles it, and every
+claim is an assertion (46 of them). Derives everything by hand first — two-body
+phase space from energy conservation, the spin sums that turn
+$|\mathcal{M}|^2$ into a Dirac trace, the trace theorems (the covariant engine
+refereed by explicit $4\times4$ Dirac matrices), polarisation sums — and only
+then reveals `DecayCalculator` as the automation of exactly those steps,
+checking that it reproduces the hand results symbolically. Lands on
+$\Gamma(h\to f\bar f) = N_c m_h m_f^2\beta^3/8\pi v^2$ (the $\beta^3$ as the
+P-wave signature of a CP-even scalar), $\Gamma(Z\to\nu\bar\nu)$ and
+$\Gamma(W\to\ell\nu)$ within ~1% of the PDG, and the Higgs
+branching-ratio-versus-mass plot. Then completes the canonical Higgs picture:
+the `DiracParticle` fermion sector, the **off-shell $1\to3$** $h\to WW^*/ZZ^*$
+(reproducing Keung–Marciano, with a $W^*$ line-shape showing the virtual $W$
+never reaches its mass shell), and the loop-induced $gg$/$\gamma\gamma$/$Z\gamma$
+from imported one-loop form factors — $b\bar b$, $WW^*$, $gg$, $\tau\tau$,
+$c\bar c$, $ZZ^*$ in the measured order. Closes with the two mistakes that fail
+*silently* — forgetting that a Dirac fermion is two Weyl fields (an error that
+vanishes in the massless limit) and closed channels turning $\sqrt\lambda$
+imaginary — builds a $Z'$ from scratch to show the same machinery on a new
+model, and ends with a recap of tools and traps and web-verified references.
 
 ## Scattering Tutorial
 

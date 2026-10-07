@@ -394,3 +394,166 @@ class TestExplicitFlavourIndices:
         M = fermion_mass_matrix(-k * Bilinear(eLbar[i], diracPR, eRc[i]),
                                 eLbar, eRc, vac, 3, (i, j), gamma=diracPR)
         assert sp.simplify(M - k * sp.eye(3)) == sp.zeros(3, 3)
+
+
+class TestNumericSVD:
+    """FG-6: ``diagonalize_svd`` on a complex / >2×2 numeric matrix goes
+    through mpmath's complex SVD and returns unitary rotations with
+    ``R_L M R_R† = diag(m ≥ 0)``, masses ascending (the symbolic route built
+    ``M Mᵀ`` and returned a non-unitary ``U_L`` with complex "masses")."""
+
+    M = sp.Matrix([[3 + sp.I, 1, sp.I / 2], [sp.Rational(1, 2), 2 - sp.I, 1],
+                   [0, 3 * sp.I / 10, 5]])
+
+    @staticmethod
+    def _syms(tag, n=3):
+        return [list(sp.symbols(f"{tag}_{s}0:{n}"))
+                for s in ("l", "r", "L", "R")]
+
+    @staticmethod
+    def _numpy_svals(M):
+        import numpy as np
+        A = np.array(sp.N(M).tolist(), dtype=complex)
+        return sorted(np.linalg.svd(A, compute_uv=False))
+
+    def _check_biunitary(self, M, rotL, rotR, tol=sp.Float("1e-40")):
+        n = M.rows
+        for rot in (rotL, rotR):
+            assert rot.kind == "unitary"
+            dev = rot.matrix * rot.matrix.H - sp.eye(n)
+            assert max(abs(sp.N(x)) for x in dev) < tol
+        D = rotL.matrix * M * rotR.matrix.H
+        for a in range(n):
+            for b in range(n):
+                if a != b:
+                    assert abs(sp.N(D[a, b])) < tol
+        masses = [sp.re(D[a, a]) for a in range(n)]
+        assert all(abs(sp.im(D[a, a])) < tol for a in range(n))
+        assert masses == sorted(masses) and all(m >= 0 for m in masses)
+        return masses
+
+    def test_complex_3x3_matches_numpy(self):
+        rotL, rotR = diagonalize_svd(self.M, *self._syms("c"))
+        masses = self._check_biunitary(self.M, rotL, rotR)
+        for m, s in zip(masses, self._numpy_svals(self.M)):
+            assert abs(float(m) - s) < 1e-12
+
+    def test_float_complex_input_is_numeric(self):
+        """The literal FG-6 reproducer (Python complex floats)."""
+        M = sp.Matrix([[3.0 + 1.0j, 1.0, 0.5j], [0.5, 2.0 - 1.0j, 1.0],
+                       [0.0, 0.3j, 5.0]])
+        rotL, rotR = diagonalize_svd(M, *self._syms("f"))
+        # the entries carry double precision only
+        self._check_biunitary(M, rotL, rotR, tol=sp.Float("1e-14"))
+
+    def test_exact_gaussian_rational_finishes(self):
+        import time
+        t0 = time.time()
+        diagonalize_svd(self.M, *self._syms("g"))
+        assert time.time() - t0 < 10
+
+    def test_real_float_symbolic_route_no_crash(self):
+        """The symbolic route used to raise ``TypeError`` on the right-row
+        sign fix (immutable matrix) for a float input."""
+        M = sp.Matrix([[3.0, -1.0], [1.0, -1.5]])
+        rotL, rotR = diagonalize_svd(M, *self._syms("s", 2),
+                                     method="symbolic")
+        D = rotL.matrix * M * rotR.matrix.T
+        assert abs(D[0, 1]) < 1e-12 and abs(D[1, 0]) < 1e-12
+        assert D[0, 0] >= 0 and D[1, 1] >= 0
+
+    def test_symbolic_route_rejects_complex(self):
+        with pytest.raises(ValueError, match="real matrices"):
+            diagonalize_svd(self.M, *self._syms("x"), method="symbolic")
+
+    def test_unknown_method(self):
+        with pytest.raises(ValueError, match="unknown SVD method"):
+            diagonalize_svd(self.M, *self._syms("u"), method="lapack")
+
+    def test_exact_2x2_stays_symbolic(self):
+        M = sp.Matrix([[3, 1], [1, sp.Rational(3, 2)]])
+        rotL, _ = diagonalize_svd(M, *self._syms("e", 2))
+        assert rotL.kind == "orthogonal" and not rotL.matrix.has(sp.Float)
+
+    def test_zero_singular_value_is_exact(self):
+        M = sp.Matrix([[1, 2, sp.I], [2, 4, 2 * sp.I], [0, 1, 3]])  # rank 2
+        rotL, rotR = diagonalize_svd(M, *self._syms("z"))
+        masses = self._check_biunitary(M, rotL, rotR)
+        assert abs(masses[0]) < 1e-40
+        from feynlag.vacuum.diagonalize import _numeric_svd
+        assert _numeric_svd(M, 50)[2][0] == 0      # an exact zero, not noise
+
+    def test_rotated_mass_term_is_diagonal(self):
+        """End to end: rotate a complex 3×3 Dirac mass term with ``rot`` on
+        the field legs and ``rot.bar`` on the bar legs; ``fermion_mass_matrix``
+        of the result is ``diag(m)`` (and its h.c. half ``diag(m)`` too)."""
+        qL = WeylFermion("nsvL", reps={}, chirality="L", nflavors=3,
+                         component_names=["nsvL"])
+        qR = WeylFermion("nsvR", reps={}, chirality="R", nflavors=3,
+                         component_names=["nsvR"])
+        L_, R_ = qL.components[0], qR.components[0]
+        Lb, Rb = qL.bar_components[0], qR.bar_components[0]
+        M = self.M
+        lag = -sum(M[a, b] * Bilinear(Lb[a], diracPR, R_[b])
+                   + sp.conjugate(M[a, b]) * Bilinear(Rb[b], diracPL, L_[a])
+                   for a in range(3) for b in range(3))
+
+        nL, nR = sp.IndexedBase("nsv_chiL"), sp.IndexedBase("nsv_chiR")
+        nLb, nRb = sp.IndexedBase("nsv_chiLbar"), sp.IndexedBase("nsv_chiRbar")
+        rotL, rotR = diagonalize_svd(M, [L_[k] for k in range(3)],
+                                     [R_[k] for k in range(3)],
+                                     [nL[k] for k in range(3)],
+                                     [nR[k] for k in range(3)])
+        sub = {}
+        for rot in (rotL, rotR,
+                    rotL.bar([Lb[k] for k in range(3)],
+                             [nLb[k] for k in range(3)]),
+                    rotR.bar([Rb[k] for k in range(3)],
+                             [nRb[k] for k in range(3)])):
+            sub.update(rot.substitution())
+        lag_rot = lag.xreplace(sub)
+
+        masses = self._numpy_svals(M)
+        # a spectator VEV: Vacuum needs one, the bare mass term ignores it
+        S = Scalar("nsvS", reps={}, component_names=["nsvS"], real=True)
+        S.expand_vev({S.components[0]: sp.Symbol("w_nsv", positive=True)})
+        vac = Vacuum([S])
+        for bar, field, gamma in ((nLb, nR, diracPR), (nRb, nL, diracPL)):
+            D = fermion_mass_matrix(lag_rot, bar, field, vac, 3, None,
+                                    gamma=gamma)
+            for a in range(3):
+                for b in range(3):
+                    want = masses[a] if a == b else 0
+                    assert abs(complex(sp.N(D[a, b])) - want) < 1e-12
+
+    def test_ckm_unitary_and_matches_numpy(self):
+        """``V = R_uL · R_dL†`` (the left rotations of ``−Q̄ Y H f_R``) is
+        unitary, and ``|V|`` agrees with an independent numpy SVD."""
+        import numpy as np
+        Yu = sp.Matrix([[sp.Rational(1, 100), sp.I / 50, 0],
+                        [sp.Rational(1, 30), sp.Rational(1, 4), sp.I / 10],
+                        [0, sp.Rational(1, 20), 1]])
+        Yd = sp.Matrix([[sp.Rational(1, 500) + sp.I / 1000, sp.Rational(1, 200), 0],
+                        [0, sp.Rational(1, 50), sp.Rational(1, 25)],
+                        [sp.I / 100, 0, sp.Rational(1, 40)]])
+        rl_u, _ = diagonalize_svd(Yu, *self._syms("cu"))
+        rl_d, _ = diagonalize_svd(Yd, *self._syms("cd"))
+        V = rl_u.matrix * rl_d.matrix.H
+        assert max(abs(sp.N(x)) for x in V * V.H - sp.eye(3)) < 1e-40
+
+        def left(Y):
+            U, S, _ = np.linalg.svd(np.array(sp.N(Y).tolist(), dtype=complex))
+            return U[:, np.argsort(S)]
+        V_np = left(Yu).conj().T @ left(Yd)
+        V_abs = np.array([[abs(complex(V[a, b])) for b in range(3)]
+                          for a in range(3)])
+        assert np.allclose(V_abs, abs(V_np), atol=1e-12)
+
+    def test_bar_rotation_is_conjugate(self):
+        U = sp.Matrix([[1, sp.I], [sp.I, 1]]) / sp.sqrt(2)
+        a, b, c, d = sp.symbols("bra brb brc brd")
+        rot = Rotation([a, b], [c, d], U, kind="unitary")
+        rb = rot.bar([a, b], [c, d])
+        assert rb.kind == "unitary" and rb.matrix == U.conjugate()
+        real = Rotation([a, b], [c, d], rotation_2x2(sp.Symbol("t", real=True)))
+        assert real.bar([a, b], [c, d]).matrix == real.matrix

@@ -10,7 +10,9 @@
   ``solve_mixing_angle_2x2`` per block, or numeric diagonalization at export
   time — never rely on symbolic ``eigenvects`` for >2×2 (see plan risks).
   :func:`diagonalize_takagi` follows this rule itself: a numeric matrix
-  larger than 2×2 goes through a high-precision numeric eigensolver.
+  larger than 2×2 goes through a high-precision numeric eigensolver, and
+  :func:`diagonalize_svd` sends a numeric complex or >2×2 Dirac matrix to a
+  high-precision numeric SVD.
 
 SVD (Dirac) and Takagi (Majorana) arrive with the fermion sector (Phase 4).
 """
@@ -61,6 +63,18 @@ class Rotation:
         old_expr = Rinv * new_vec
         return {old: sp.expand(old_expr[i])
                 for i, old in enumerate(self.old_fields)}
+
+    def bar(self, old_bar_fields, new_bar_fields):
+        """The matching rotation of the Dirac-adjoint (bar) legs.
+
+        ``ψ̄ = ψ†γ⁰`` rotates with the complex conjugate matrix:
+        ``new_bar = R*·old_bar``.  For a real rotation this is ``R`` itself
+        (the usual "same matrix on both legs"); for a complex unitary — the
+        numeric :func:`diagonalize_svd` of a complex Yukawa — reusing ``R``
+        would silently mis-rotate the bar legs.
+        """
+        return Rotation(old_bar_fields, new_bar_fields,
+                        self.matrix.conjugate(), kind=self.kind)
 
     def apply(self, M):
         """``R M R⁻¹``-conjugated matrix in the new basis (for symmetric M
@@ -157,21 +171,93 @@ def _orthogonal_diagonalizer(M):
     return P.T, D
 
 
-def diagonalize_svd(M, left_fields, right_fields, new_left, new_right):
+def _numeric_svd(M, dps):
+    """Numeric ``(R_L, R_R)`` with ``R_L M R_R† = diag(m ≥ 0)`` at ``dps`` digits.
+
+    mpmath's complex SVD (mpmath ships with SymPy — no new dependency) on
+    ``M = U·diag(S)·Vh`` gives ``R_L = U†``, ``R_R = Vh``.  Rows are ordered by
+    increasing singular value; a singular value below ``10^-dps`` of the
+    largest is an exact zero.  Each row pair is fixed only up to a phase
+    common to ``R_L`` and ``R_R`` (and a degenerate block up to a unitary), so
+    only the masses and rephasing invariants (``|V_CKM|``) are physical.
+    """
+    import mpmath
+
+    if M.free_symbols:
+        raise ValueError("numeric SVD needs a numeric matrix "
+                         f"(free symbols: {sorted(M.free_symbols, key=str)})")
+    if M.rows != M.cols:
+        raise ValueError("numeric SVD needs a square mass matrix")
+    n = M.rows
+    with mpmath.workdps(dps + 10):
+        A = mpmath.matrix(n, n)
+        for a in range(n):
+            for b in range(n):
+                re, im = sp.N(M[a, b], dps + 10).as_real_imag()
+                A[a, b] = mpmath.mpc(mpmath.mpf(str(sp.N(re, dps + 10))),
+                                     mpmath.mpf(str(sp.N(im, dps + 10))))
+        U, S, Vh = mpmath.svd_c(A)
+        scale = max((s for s in S), default=0)
+        S = [s if s > scale * mpmath.mpf(10) ** -dps else mpmath.mpf(0)
+             for s in S]
+        order = sorted(range(n), key=lambda k: S[k])
+
+        def _c(z):
+            z = mpmath.mpc(z)
+            return sp.Float(str(z.real), dps) + sp.I * sp.Float(str(z.imag),
+                                                                 dps)
+
+        RL = sp.Matrix(n, n, lambda i, a: _c(mpmath.conj(U[a, order[i]])))
+        RR = sp.Matrix(n, n, lambda i, b: _c(Vh[order[i], b]))
+        masses = [sp.Float(str(S[k]), dps) if S[k] != 0 else sp.S.Zero
+                  for k in order]
+    return RL, RR, masses
+
+
+def diagonalize_svd(M, left_fields, right_fields, new_left, new_right,
+                    method="auto", dps=50):
     """Singular-value decomposition for a Dirac mass matrix.
 
-    Finds rotations with ``U_L M U_Rᵀ = diag(m_i ≥ 0)``: ``U_L``
-    diagonalizes ``M Mᵀ`` and ``U_R`` diagonalizes ``Mᵀ M`` (real ``M``;
-    complex Yukawas can be handled numerically at export time).  Right-handed
-    rows are sign-fixed so the masses come out non-negative.
+    Finds rotations ``new = R·old`` with ``R_L M R_R† = diag(m_i ≥ 0)``
+    (rows of ``M`` = left/bar legs, columns = right legs; for real orthogonal
+    ``R_R`` this is ``R_L M R_Rᵀ``).  The bar legs rotate with ``R*`` — use
+    :meth:`Rotation.bar` to build that rotation.
+
+    Args:
+        method: ``"symbolic"`` diagonalizes ``M Mᵀ``/``Mᵀ M`` exactly through
+            SymPy (real ``M`` only; it raises on an explicit ``I``) and returns
+            orthogonal rotations, right-handed rows sign-fixed so the masses
+            are non-negative.  ``"numeric"`` uses mpmath's complex SVD at
+            ``dps`` digits, returns unitary rotations and orders the rows by
+            increasing mass; it needs a square matrix without free symbols.
+            ``"auto"`` (default) is numeric for a numeric matrix that is
+            complex, floating-point or larger than 2×2 and symbolic otherwise — the exact route
+            stalls on a generic ``N > 2`` matrix and cannot represent a complex
+            one.
+        dps: working precision of the numeric route (a quark-mass hierarchy
+            spans ~5 orders of magnitude, so keep it well above double).
 
     Returns:
         ``(rot_left, rot_right)`` :class:`Rotation` objects
-        (``ψ_L → U_L ψ_L``, ``ψ_R → U_R ψ_R``).
+        (``ψ_L → R_L ψ_L``, ``ψ_R → R_R ψ_R``).
     """
     M = sp.Matrix(M)
+    if method not in ("auto", "symbolic", "numeric"):
+        raise ValueError(f"unknown SVD method {method!r}")
+    if method == "auto":
+        method = ("numeric" if not M.free_symbols
+                  and (M.rows > 2 or M.has(sp.I) or M.has(sp.Float))
+                  else "symbolic")
+    if method == "numeric":
+        RL, RR, _ = _numeric_svd(M, dps)
+        return (Rotation(left_fields, new_left, RL, kind="unitary"),
+                Rotation(right_fields, new_right, RR, kind="unitary"))
+    if M.has(sp.I):
+        raise ValueError("the symbolic SVD handles real matrices only; use "
+                         "method='numeric' for a complex numeric matrix")
     UL, _ = _orthogonal_diagonalizer(M * M.T)
     UR, _ = _orthogonal_diagonalizer(M.T * M)
+    UR = sp.Matrix(UR)
 
     # align the eigenvalue ordering of the right rotation with the left one
     D = UL * M * UR.T
