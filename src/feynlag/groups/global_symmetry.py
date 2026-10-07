@@ -121,6 +121,11 @@ class GlobalU1(SymmetryGroup):
             return sp.S.Zero
         k = leg.indices[0]
         if k.is_Integer:
+            if not 0 <= int(k) < len(qs):
+                raise ValueError(
+                    f"{leg}: flavour index {k} is out of range for "
+                    f"{leg.base} ({len(qs)} flavour(s), indices 0…"
+                    f"{len(qs) - 1})")
             return qs[int(k)]
         if len(set(qs)) == 1:
             return qs[0]
@@ -128,3 +133,43 @@ class GlobalU1(SymmetryGroup):
             f"{leg} has a symbolic flavour index but {leg.base} carries "
             f"flavour-dependent {self.name} charges {qs}; write the term "
             "with explicit integer flavour indices")
+
+    def bilinear_charge(self, bilinear):
+        """The total charge of a ``Bilinear``/``MajoranaBilinear`` atom.
+
+        Legs carrying the **same** symbolic flavour index are summed flavour
+        by flavour: the sandwich is well defined when that sum is the same
+        for every flavour.  So a flavour-diagonal ``ψ̄_i Γ ψ_i`` — a kinetic
+        term, or any gauge component pair of
+        :func:`~feynlag.vertices.bilinear.fermion_gauge_current` (every gauge
+        component shares the charge) — is neutral for every ``i``
+        (``−q_i + q_i = 0``) even when the charges depend on the flavour.
+        Legs with different indices go through :meth:`leg_charge` one by one,
+        which raises for a symbolic index with flavour-dependent charges.
+        """
+        from ..vertices.bilinear import Bilinear
+
+        if isinstance(bilinear, Bilinear):
+            legs = (bilinear.bar, bilinear.field)
+        else:
+            legs = (bilinear.field1, bilinear.field2)
+        for leg in legs:
+            if not isinstance(leg, sp.Indexed):
+                raise ValueError(f"cannot assign a {self.name} charge to the "
+                                 f"composite fermion leg {leg}")
+        k1, k2 = (leg.indices[0] for leg in legs)
+        if k1 == k2 and not k1.is_Integer:
+            per_flavour = [self.fermion_charges.get(leg.base) for leg in legs]
+            n = max((len(qs) for qs in per_flavour if qs is not None),
+                    default=0)
+            totals = {sum((qs[f] if qs is not None else 0
+                           for qs in per_flavour), sp.S.Zero)
+                      for f in range(n)}
+            if len(totals) <= 1:
+                return totals.pop() if totals else sp.S.Zero
+            raise ValueError(
+                f"{bilinear}: the legs share the symbolic flavour index {k1} "
+                f"but their {self.name} charge depends on the flavour "
+                f"({sorted(totals, key=str)}); write the term with explicit "
+                "integer flavour indices")
+        return sum((self.leg_charge(leg) for leg in legs), sp.S.Zero)

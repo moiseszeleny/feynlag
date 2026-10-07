@@ -288,7 +288,9 @@ def check_global_invariance(term, group):
     Every charged scalar component transforms as ``φ → (1 + iqα)φ`` (and,
     through the conjugate, ``φ* → (1 − iqα)φ*``; ``PartialMu`` heads alike),
     every fermion leg ``ψ_k → (1 + iq_kα)ψ_k`` with its own flavour's charge
-    and every bar leg ``ψ̄_k → (1 − iq_kα)ψ̄_k``.  The O(α) coefficient is
+    and every bar leg ``ψ̄_k → (1 − iq_kα)ψ̄_k`` — applied per sandwich via
+    :meth:`~feynlag.groups.GlobalU1.bilinear_charge`, so a flavour-diagonal
+    ``ψ̄_i Γ ψ_i`` with symbolic ``i`` is neutral.  The O(α) coefficient is
     ``i Σ_m Q_m·m`` over the monomials ``m`` of ``term`` with total charge
     ``Q_m``, so its vanishing is exact (finite) U(1) invariance, not just a
     first-order statement.
@@ -299,7 +301,10 @@ def check_global_invariance(term, group):
     """
     alpha = sp.Dummy(f"alpha_{group.name}", real=True)
     components = group.components()
+    has_fermion_content = term.has(Bilinear) or term.has(MajoranaBilinear)
     base = _normalize_derivatives(term, components)
+    if has_fermion_content:
+        base = sp.expand(expand_bilinear(base))   # atomic Indexed legs
     sub = {}
     for comp, q in group.scalar_charges.items():
         if q != 0:
@@ -307,12 +312,12 @@ def check_global_invariance(term, group):
             sub[PartialMu(comp)] = PartialMu(comp) * (1 + sp.I * q * alpha)
     transformed = (base.xreplace(_with_conjugate_derivatives(sub))
                    if sub else base)
-    if (term.has(Bilinear) or term.has(MajoranaBilinear)) \
-            and group.fermion_charges:
-        transformed = expand_bilinear(transformed.replace(
-            lambda x: (isinstance(x, sp.Indexed)
-                       and x.base in group.fermion_charges),
-            lambda x: x * (1 + sp.I * group.leg_charge(x) * alpha)))
+    if has_fermion_content and group.fermion_charges:
+        # phase each sandwich as a whole: a flavour-diagonal ψ̄_i Γ ψ_i is
+        # neutral even when i is symbolic and the charges flavour-dependent
+        transformed = transformed.replace(
+            lambda x: isinstance(x, (Bilinear, MajoranaBilinear)),
+            lambda x: x * (1 + sp.I * group.bilinear_charge(x) * alpha))
     coeff = sp.expand(sp.diff(transformed - base, alpha).subs({alpha: 0}))
     if coeff != 0:
         coeff = sp.simplify(coeff)

@@ -11,7 +11,11 @@ All notable changes to feynlag are documented here. The format follows
   flavour for a fermion (e.g. Froggatt–Nielsen `Q_L: (3, 2, 0)`), checked by
   the new `check_global_invariance` and declared on a model with
   `Model(global_groups=[...])` (`check_invariance`/`validate` report
-  `global:<name>`). Not part of the anomaly check (FG-7).
+  `global:<name>`). Not part of the anomaly check (FG-7). Legs sharing a
+  symbolic flavour index are charged flavour by flavour, so a flavour-diagonal
+  current `ψ̄_i Γ ψ_i` (a kinetic term, `fermion_gauge_current`) is neutral even
+  with flavour-dependent charges; an out-of-range integer flavour index raises
+  a `ValueError`.
 
 ## [0.2.0] — 2026-09-26
 

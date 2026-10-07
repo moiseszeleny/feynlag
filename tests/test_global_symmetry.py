@@ -13,7 +13,7 @@ import sympy as sp
 from feynlag import (
     Bilinear, Dmu, GlobalU1, Lagrangian, Model, PartialMu, SU2, Scalar, U1,
     WeylFermion, ZN, check_discrete_invariance, check_global_invariance, dag,
-    diracPL, diracPR,
+    diracPL, diracPR, fermion_gauge_current,
 )
 
 QQ = (3, 2, 0)          # q(Q_L) per generation
@@ -225,3 +225,80 @@ class TestModelWiring:
     def test_rejects_non_global(self, fn):
         with pytest.raises(TypeError, match="GlobalU1"):
             Model("x", global_groups=[fn["U1Y"]])
+
+
+class TestReviewFollowUps:
+    """PR #32 review: flavour-diagonal currents, index range, validate(),
+    and the anomaly check."""
+
+    def _kinetic_model(self, fn, charges_QL=QQ, extra_terms=()):
+        i = sp.Symbol("i_kin", integer=True)
+        G = GlobalU1("U1_kin").assign(charges_QL, fn["QL"]).assign(QU, fn["uR"])
+        L = Lagrangian()
+        L.add(fermion_gauge_current(fn["QL"], i)
+              + fermion_gauge_current(fn["uR"], i), sector="kinetic",
+              name="fermion_currents")
+        for k, t in enumerate(extra_terms):
+            L.add(t, sector="other", name=f"extra{k}")
+        return Model("kin_toy", gauge_groups=[fn["SU2L"], fn["U1Y"]],
+                     global_groups=[G],
+                     fields=[fn["H"], fn["QL"], fn["uR"], fn["SU2L"].bosons(),
+                             fn["U1Y"].bosons()],
+                     lagrangian=L), G
+
+    def test_flavour_diagonal_current_with_symbolic_index(self, fn):
+        """ψ̄_i γ^μ T ψ_i (incl. the off-diagonal ū_L…d_L doublet pieces) is
+        neutral for every i, so it must not raise despite charges (3,2,0)."""
+        model, _ = self._kinetic_model(fn)
+        rep = model.check_invariance(dimension=False)
+        assert not rep.failures, rep.failures
+
+    def test_different_symbolic_indices_still_raise(self, fn):
+        i, j = sp.symbols("i_d j_d", integer=True)
+        uLbar, uL = fn["QL"].bar_components[0], fn["QL"].components[0]
+        with pytest.raises(ValueError, match="flavour-dependent"):
+            check_global_invariance(Bilinear(uLbar[i], diracPL, uL[j]),
+                                    fn["FN"])
+
+    def test_same_index_different_charges_raise(self, fn):
+        """Q̄_i u_i shares an index, but −q(Q_i)+q(u_i) = (0, 1, 0) is not
+        flavour independent."""
+        i = sp.Symbol("i_s", integer=True)
+        uLbar = fn["QL"].bar_components[0]
+        uR = fn["uR"].components[0]
+        with pytest.raises(ValueError, match="depends on the flavour"):
+            check_global_invariance(Bilinear(uLbar[i], diracPR, uR[i]),
+                                    fn["FN"])
+
+    @pytest.mark.parametrize("k", [3, -1])
+    def test_out_of_range_flavour_index(self, fn, k):
+        uLbar = fn["QL"].bar_components[0]
+        uR = fn["uR"].components[0]
+        with pytest.raises(ValueError, match="out of range"):
+            check_global_invariance(Bilinear(uLbar[0], diracPR, uR[k]),
+                                    fn["FN"])
+
+    def test_validate_reports_global_failure(self, fn):
+        phi = fn["phiF"].components[0]
+        G = GlobalU1("U1_val").assign(1, fn["phiF"])
+        L = Lagrangian().add(phi ** 2 + sp.conjugate(phi) ** 2,
+                             sector="potential", name="charged")
+        model = Model("val_toy", global_groups=[G], fields=[fn["phiF"]],
+                      lagrangian=L)
+        report = model.validate(dimension=False)
+        assert not report.ok
+        labels = {label for _, label, _ in
+                  report.checks["invariance"].failures}
+        assert labels == {"global:U1_val"}
+
+    def test_anomaly_check_ignores_global_groups(self, fn):
+        """A global U(1) carries no gauge-anomaly constraint: adding one with
+        non-vanishing Σq³ leaves the anomaly report unchanged."""
+        with_global, G = self._kinetic_model(fn)
+        without = Model("kin_toy_plain",
+                        gauge_groups=with_global.gauge_groups,
+                        fields=with_global.fields,
+                        lagrangian=with_global.lagrangian)
+        a, b = with_global.check_anomalies(), without.check_anomalies()
+        assert a.coefficients == b.coefficients
+        assert not any(G.name in name for name in a.coefficients)

@@ -153,7 +153,7 @@ class Model:
     Pipeline surface:
 
     - :meth:`check_invariance` — gauge/discrete/global invariance of every
-      term (``global_groups``: :class:`~feynlag.groups.GlobalU1`\ s, e.g. a
+      term (``global_groups``: :class:`~feynlag.groups.GlobalU1` groups, e.g. a
       Froggatt–Nielsen U(1) with per-flavour charges),
       hermiticity per sector, mass-dimension power counting;
     - :attr:`potential`, :attr:`vacuum` — EWSB setup (``L ⊃ −V``);
