@@ -6,29 +6,40 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-07
+
 ### Added
 - `diagonalize_svd(method="auto"|"symbolic"|"numeric", dps=50)`: a numeric
   matrix that is complex, floating-point or larger than 2×2 is decomposed with
   mpmath's complex SVD, returning unitary rotations with
   `R_L M R_R† = diag(m ≥ 0)` (rows by increasing mass, a round-off singular
   value as an exact zero). Generic complex 3×3 Yukawas now give their masses
-  and `V_CKM = R_uL·R_dL†` inside feynlag (FG-6). Exact 2×2 calls are unchanged.
+  and `V_CKM = R_uL·R_dL†` inside feynlag (FG-6, #31). Exact 2×2 calls are unchanged.
 - `Rotation.bar(old_bar, new_bar)`: the bar-leg partner of a fermion rotation,
-  with the conjugate matrix `R*` (identical to `R` for a real rotation).
+  with the conjugate matrix `R*` (identical to `R` for a real rotation) (#31).
 - `GlobalU1`: a global (ungauged) U(1) whose `assign` takes one charge per
   flavour for a fermion (e.g. Froggatt–Nielsen `Q_L: (3, 2, 0)`), checked by
   the new `check_global_invariance` and declared on a model with
   `Model(global_groups=[...])` (`check_invariance`/`validate` report
-  `global:<name>`). Not part of the anomaly check (FG-7). Legs sharing a
+  `global:<name>`). Not part of the anomaly check (FG-7, #32). Legs sharing a
   symbolic flavour index are charged flavour by flavour, so a flavour-diagonal
   current `ψ̄_i Γ ψ_i` (a kinetic term, `fermion_gauge_current`) is neutral even
-  with flavour-dependent charges; an out-of-range integer flavour index raises
-  a `ValueError`.
+  with flavour-dependent charges; an out-of-range integer flavour index, or a
+  symbolic index shared by fields with different flavour counts, raises a
+  `ValueError`.
+
+### Changed
+- The SU(N) groups tutorial (#15) and the Particle Decays tutorial (#30) are
+  rebuilt in the derive-then-check style: a prediction before each section,
+  and an assert behind every claim instead of printed booleans. They add
+  basis-independent invariants, real/complex/pseudo-real representations and
+  singlet counting (SU(N)), hand-built Dirac-matrix cross-checks of the
+  covariant traces (decays), and web-verified reference lists.
 
 ### Fixed
 - `diagonalize_svd` no longer returns a silently wrong answer on a complex
   matrix: the symbolic route raises on an explicit `I`. It also no longer
-  crashes with `TypeError` on a real floating-point input.
+  crashes with `TypeError` on a real floating-point input (#31).
 
 ## [0.2.0] — 2026-09-26
 
