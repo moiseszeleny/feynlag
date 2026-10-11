@@ -63,7 +63,17 @@ forward–backward asymmetry $A_{FB}=\tfrac34A_eA_f$ from first principles, with
 a $d\sigma/d\cos\theta$ figure showing the chiral tilt against a symmetric
 vector-coupling baseline, and closes with a total-cross-section sanity check
 showing the ε term is an angular effect only — it integrates away, so Tier 1's
-QED benchmark is untouched.
+QED benchmark is untouched. Section 6 adds **interference** (Tier 3), all from
+the Lagrangian through `ScatteringCalculator`:
+
+- $\gamma$+Z $e^+e^-\to\mu^+\mu^-$ reproduces MadGraph's 2.7878 pb, once its
+  default $|\eta|<2.5$ lepton cut is applied;
+- the γ–Z cross term is predicted and found to be under 1% of the total
+  cross section, yet to drive $A_{FB}$ to 0.57 (axial versus vector
+  couplings);
+- Bhabha scattering, where two diagrams pair the fermions differently,
+  carries a relative minus sign, and fuses into a single trace, matching
+  Peskin & Schroeder's closed form.
 
 ## SU(N) Groups Tutorial
 

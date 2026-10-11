@@ -177,13 +177,15 @@ exception to the tree-level ethos). See {doc}`manual/decays_roadmap`.
 
 `feynlag.pheno` has no cross-section machinery at all before this: no
 Mandelstam invariants, no flux factor, no amplitude object (the 1→2 engine
-only ever produces an already-squared number). Tier 1 (kinematics +
-single-diagram amplitude, small–medium) is delivered — reproducing the
-textbook QED $e^+e^-\to\mu^+\mu^-$ cross section and the QED-only fraction of
-the existing MadGraph benchmark. Remaining: the ε (γ₅) algebra 2→2 genuinely
-needs and 1→2 never did (large), multi-diagram interference reaching the full
-MadGraph benchmark (medium–large), derivative-coupling processes like
-$e^+e^-\to W^+W^-$ (large), and parton-level QCD 2→2 (medium–large, no PDFs).
+only ever produces an already-squared number). Tiers 1–3 are delivered:
+kinematics + single-diagram amplitude (the textbook QED $e^+e^-\to\mu^+\mu^-$),
+the ε (γ₅) algebra 2→2 needs and 1→2 never did (the forward–backward
+asymmetry), and multi-diagram interference with s/t/u topology enumeration
+and a `ScatteringCalculator` — which reproduces the MadGraph
+$e^+e^-\to\mu^+\mu^-$ benchmark from the extracted γ and Z couplings, plus
+the Bhabha and Møller closed forms. Remaining: derivative-coupling processes
+like $e^+e^-\to W^+W^-$ (large), and parton-level QCD 2→2 (medium–large, no
+PDFs).
 See {doc}`manual/scattering_roadmap`.
 
 ## Suggested order

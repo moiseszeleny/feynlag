@@ -36,6 +36,14 @@ Lepton-collider beams: $\sqrt s = 200$ GeV, no PDF (`lpp=0`).
 
 Both agree with the stock model to within Monte-Carlo error.
 
+These are MadGraph cross sections **inside its default run-card cuts**, and
+for $e^+e^-\to\mu^+\mu^-$ the lepton pseudorapidity cut $|\eta_\ell|<2.5$
+matters. feynlag's native 2→2 engine (Tier 3 of
+{doc}`manual/scattering_roadmap`) gives **2.7876 pb** inside $|\cos\theta|<\tanh
+2.5$, 0.1σ from the table, and 2.8443 pb over the full angle, about 20σ above
+it. Compare to the full-angle number only after removing the cut
+(`set etal -1`).
+
 ## What each process validates
 
 - **$e^+e^-\to\mu^+\mu^-$** exercises the photon and $Z$ FFV couplings and the

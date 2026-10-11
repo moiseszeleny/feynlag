@@ -1,4 +1,4 @@
-"""Numerical Dalitz-plot integration for 1→3 decay widths.
+"""Numerical integration: Dalitz plots (1→3 widths) and 1-D angular integrals.
 
 The two-body width is a closed form; a three-body width through a resonance is a
 2-D integral over the Dalitz region with a Breit–Wigner in the integrand, and
@@ -13,7 +13,7 @@ is used) so the rest of the library stays pure-SymPy/numpy.
 
 import numpy as np
 
-__all__ = ["dalitz_integral", "have_scipy"]
+__all__ = ["dalitz_integral", "have_scipy", "quad_1d"]
 
 
 def have_scipy():
@@ -74,5 +74,27 @@ def dalitz_integral(integrand, s23_lo, s23_hi, s12_bounds, backend="auto",
             total += wo_k * half * hh * inner
         return total
 
+    raise ValueError(f"unknown backend {backend!r}; use 'scipy', 'gauss' or "
+                     f"'auto'")
+
+
+def quad_1d(integrand, lo, hi, backend="auto", n=200):
+    """``∫_lo^hi integrand(x) dx`` — e.g. a 2→2 ``dσ/dcosθ`` at fixed ``s``.
+
+    Args:
+        integrand: callable ``x -> float``.
+        backend: as in :func:`dalitz_integral`.
+        n: Gauss–Legendre node count (the ``gauss`` backend).
+    """
+    if backend == "auto":
+        backend = "scipy" if have_scipy() else "gauss"
+    if backend == "scipy":
+        from scipy.integrate import quad
+        val, _ = quad(integrand, lo, hi, limit=200)
+        return val
+    if backend == "gauss":
+        x, w = np.polynomial.legendre.leggauss(n)
+        half, mid = 0.5 * (hi - lo), 0.5 * (hi + lo)
+        return float(sum(wk * integrand(half * xk + mid) for xk, wk in zip(x, w)) * half)
     raise ValueError(f"unknown backend {backend!r}; use 'scipy', 'gauss' or "
                      f"'auto'")

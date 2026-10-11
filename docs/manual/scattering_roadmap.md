@@ -131,10 +131,11 @@ $4\pi\alpha^2/3s$ — and against an independent explicit-4×4-Dirac-matrix
 oracle built in the CM frame (sharing no code with the covariant engine, in
 the same spirit as `tests/test_pheno.py`'s `_oracle_*`). At the exact
 `docs/benchmark.md` parameter point ($\alpha^{-1}=132.50698$, $\sqrt s=200$
-GeV), the QED-only cross section comes out **2.322 pb** — the photon-only
-fraction of MadGraph's full 2.7878 pb, with the $\approx20\%$ gap being
-exactly the $\gamma$/$Z$ interference Tier 3 supplies, so this number cannot
-be accidentally "passed" here. `tests/test_scattering.py` also pins that a
+GeV), the QED-only cross section comes out **2.322 pb** over the full
+angular range. That is a photon-only number, not a fraction of MadGraph's
+2.7878 pb as first written here: the full γ+Z result over the same range is
+2.844 pb, and MadGraph's number sits inside its default lepton acceptance
+$|\eta|<2.5$ (§17.3). `tests/test_scattering.py` also pins that a
 chiral coupling on both vertices genuinely differs from the naive "half the
 vector result" guess that *does* hold for a 1→2 decay
 (`test_ffv_chiral_is_half_the_vector_result` in `test_pheno.py`) — by up to
@@ -248,23 +249,139 @@ mediator's *total* cross section equals a pure-vector coupling's with the
 same $g_L^2+g_R^2$, so Tier 1's 2.322 pb QED benchmark cannot shift from
 Tier 2 landing; $A_{FB}$ is an angular observable only.
 
-## 17.3 Tier 3 — interference and the first cross-section benchmark
+## 17.3 Tier 3 — interference and the first cross-section benchmark ✅ (delivered)
 
-**Channels**: the full $e^+e^-\to f\bar f$ ($\gamma$/$Z$ interference); s-,
-t-, u-channel topology enumeration; a `ScatteringCalculator` mirroring
-{class}`~feynlag.pheno.calculator.DecayCalculator`. **Effort: medium–large.**
+**Channels**: the full $e^+e^-\to f\bar f$ ($\gamma$/$Z$ interference), Bhabha
+$e^+e^-\to e^+e^-$ (s × t), Møller $e^-e^-\to e^-e^-$ (t × u), $\nu_e e^-\to\nu_e
+e^-$ (Z × W); s-, t-, u-channel topology enumeration; a `ScatteringCalculator`
+mirroring {class}`~feynlag.pheno.calculator.DecayCalculator`. **Effort:
+medium–large.**
 
-{class}`~feynlag.pheno.diagrams.Amplitude` drops its `len(diagrams) == 1`
-guard and performs the full $\sum_{d,d'} c_d\bar c_{d'}$ double sum, which
-needs relative fermion-flow signs and identical-particle exchange signs — the
-2→2 analogue of `DecayCalculator.channels`, currently a one-line "vertex
-contains parent" search, becomes a genuine s/t/u topology enumeration over
-pairs of {class}`~feynlag.pheno.vertices.DecayVertex`.
+### What was built
 
-**Oracle**: $\sigma(e^+e^-\to\mu^+\mu^-) = 2.7878\pm0.0027$ pb at the exact
-`docs/benchmark.md` parameter point — 20% above Tier 1's QED-only 2.322 pb,
-so this genuinely tests the interference term and not just a repeat of the
-QED piece.
+- {meth}`~feynlag.pheno.diagrams.Amplitude.squared` drops its
+  `len(diagrams) == 1` guard and performs the full $\sum_{d,d'}M_d\bar M_{d'}$
+  double sum. A diagonal term keeps the exact Tier-1/2 code path, so every
+  single-diagram result is unchanged. An off-diagonal pair is classified by
+  how its two fermion lines pair the external legs:
+  - **same pairing** (γ and Z both in the s channel): still a product of two
+    open traces, one per line, now each with $\Gamma$ from $d$ and $\bar\Gamma$
+    from $d'$ ({meth}`~feynlag.pheno.diagrams.SpinorChain.cross_trace`). The
+    ε·ε piece is assembled exactly as in Tier 2.
+  - **exchanged pairing** (Bhabha's s × t, Møller's t × u, the Z × W of
+    $\nu_ee$): the lines fuse into **one** trace through all four legs,
+    $\mathrm{Tr}[S_{o_1}\Gamma_aS_{i_1}\bar\Gamma'S_{o_2}\Gamma_bS_{i_2}\bar\Gamma']$.
+    Every Lorentz index of it is contracted with one of the two propagator
+    numerators. So its γ₅ part is a sum of ε tensors of the diagram's own
+    momenta, which the Tier-2 Gram-determinant guard
+    ({func}`~feynlag.pheno.epsilon.assert_epsilon_single_vanishes`) **proves**
+    zero before it is dropped.
+- The cross terms need projector algebra the hand-derived Tier-1 trace never
+  did (a $\Gamma_d$ against a different $\bar\Gamma_{d'}$, including a scalar
+  against a vector). `diagrams._chiral_trace` does it mechanically: it splits
+  every spin sum and vertex, pushes each projector to the end of the string
+  ($P\gamma=\gamma\bar P$, $PP'=\delta_{PP'}P$), then uses
+  $\mathrm{Tr}[XP_{L,R}]=\tfrac12\mathrm{Tr}[X]\mp\tfrac12\mathrm{Tr}[X\gamma_5]$.
+  `cross_trace(self)` reproduces the hand-derived `trace()` and
+  `epsilon_structure()`, a pinned identity.
+- **Two SymPy 1.14 defects** surfaced on the exchange trace, and it now
+  avoids SymPy's tracer entirely:
+  - `gamma_trace` returns a **wrong** value when one momentum is slashed
+    twice in a string: $\mathrm{Tr}[\not q\gamma^a\not p\not p\gamma^b\not q]g_{ab}$ comes out
+    $72p^2q^2$, not $16p^2q^2$. This is exactly what a massive propagator's
+    $\not q=\not k_1+\not k_2$ next to the spin sum of $k_1$ produces. It first
+    showed up as a $4\times10^{-5}$ disagreement with the oracle.
+  - `kahane_simplify` raises `Repeated index` on valid interleaved
+    contractions such as $\gamma^a\gamma^b\not k_3\gamma_a\not k_4\gamma_b$.
+
+  The exchange route therefore removes each contracted
+  $\gamma^\rho\cdots\gamma_\rho$ pair with the four-dimensional contraction
+  identities. It then reduces the slash-only string recursively, straight to
+  dot products. That is also about 700× faster: 104 s → 0.14 s for the
+  exchange terms of a massless chiral-Z Bhabha.
+  `diagrams._string_tensor` refuses a repeated momentum rather than hand it
+  to SymPy.
+- {class}`~feynlag.pheno.diagrams.BosonPropagator` gains `phase()`
+  ($+i$ scalar, $-i$ vector) and `denominator()`. Both cancel in a diagonal
+  term. In a cross term they give the relative phase of a scalar- and a
+  vector-mediated diagram, and the complex $1/(D_d\bar D_{d'})$ of two
+  Breit–Wigners.
+- {mod}`~feynlag.pheno.topology` — {func}`~feynlag.pheno.topology.enumerate_diagrams`,
+  the 2→2 analogue of `DecayCalculator.channels`:
+  - Each external fermion takes the bar or field slot of its line, by the
+    standard external-line table.
+  - Both pairings of the two bar and two field slots are tried. A line
+    $(X,Y)$ needs a `DecayVertex` $\bar\psi_X\Gamma\psi_Y$.
+  - The two lines are joined by a boson $B$ on one and $B^\dagger$ on the
+    other. Charged mediators use an explicit `conjugates={Wp: Wm, …}` map,
+    the `check_hermiticity_pairing` convention.
+  - **Fermion sign** = parity of the permutation
+    $(\text{bar}_A,\text{field}_A,\text{bar}_B,\text{field}_B)$ of the
+    external labels (Wick's theorem; each bilinear is bosonic, so the two
+    lines' order is irrelevant).
+- {class}`~feynlag.pheno.scattering_calculator.ScatteringCalculator` /
+  `ScatteringProcess`:
+  - Model + `DiracParticle`s + mediator masses/widths in; diagrams, `Σ|M|²`,
+    `dσ/dcosθ`, `σ` and `A_FB` out.
+  - The identical-final-state ½ and the spin averaging are applied once
+    (`ExternalState`).
+  - `process(..., numeric=True)` substitutes the parameter point into the
+    couplings before the Dirac algebra.
+  - `numeric_cross_section(s, cos_range)` integrates by quadrature
+    (`integrate.quad_1d`). SymPy's symbolic integral of a Bhabha $|M|^2$
+    with complex s- and t-channel Breit–Wigners is slow.
+  - Coloured external states raise (colour flow is Tier 5). An undeclared
+    mediator mass raises rather than defaulting to massless.
+- {func}`~feynlag.pheno.scattering.cross_section` gains `cos_range`, an
+  angular acceptance. This is needed both for a t-channel photon, whose
+  full-angle integral diverges, and for the generator benchmark below.
+
+### Verified
+
+The independent oracle is an **explicit-spinor helicity evaluator**
+(`tests/test_interference.py::_oracle`). It builds $u$/$v$ as the
+eigenvectors of $(\not p\pm m)\gamma^0$ and sandwiches literal 4×4 vertex
+matrices. It then sums *amplitudes* with explicit propagators and squares.
+There are no traces, no projector algebra and no ε identities, so it shares
+no code with the engine. Against it, the engine matches to $10^{-10}$ for:
+
+- γ+Z+h in the s channel with massive final-state fermions, a Z width and
+  independent chiral couplings. This includes the vector × scalar cross
+  terms, which survive only through the masses.
+- Bhabha with γ+Z, massive fermions and chiral couplings: the hardest
+  exchange case.
+- Bhabha built end to end from the Lagrangian by the calculator.
+
+Against the literature and derived identities:
+
+- **Bhabha**, massless QED: exactly the spin-summed form of Peskin &
+  Schroeder Problem 5.2 [PS95],
+  $\Sigma|\mathcal M|^2=8e^4[(s^2+u^2)/t^2+2u^2/(st)+(t^2+u^2)/s^2]$. With the
+  s/t relative sign flipped to $+1$ the result differs by exactly
+  $32e^4u^2/(st)$: the sign is physics, not convention.
+- **Møller** through the photon: the same form crossed $s\leftrightarrow u$,
+  with the calculator's identical-particle ½.
+- **$\nu_ee^-\to\nu_ee^-$** in the contact limit. Fierz-rearranging the
+  u-channel W into the t-channel structure shifts the electron's left-handed
+  Z coupling $(g/c_W)(-\tfrac12+s_W^2)\to(g/c_W)(+\tfrac12+s_W^2)$, the
+  familiar "$g_L+1$". This pins the W–Z relative sign that the permutation
+  parity assigns; the opposite sign would give $-\tfrac32+s_W^2$.
+
+**Oracle**: $\sigma(e^+e^-\to\mu^+\mu^-)$ with the γ and Z couplings extracted
+from the Lagrangian, at the exact `docs/benchmark.md` parameter point:
+
+- Over the full angular range it is **2.8443 pb**, against an independent
+  helicity-amplitude closed form to $10^{-9}$. That is 2% (about 20σ) above
+  MadGraph's $2.7878\pm0.0027$ pb.
+- MadGraph's run-card default applies a lepton pseudorapidity cut
+  $|\eta|<2.5$ ($|\cos\theta|<\tanh2.5$ for massless leptons). Inside that
+  acceptance feynlag gives **2.7876 pb**, 0.1σ from MadGraph.
+
+The QED-only 2.322 pb of Tier 1 is the photon diagram alone over the full
+range. At $\sqrt s=200$ GeV the γ–Z interference also drives $A_{FB}$ to
+**0.565**, against $\tfrac34A_eA_\mu\approx0.016$ for the Z alone on the pole.
+`examples/ee_scattering.py` prints all of this, plus Bhabha (963 pb inside
+$|\eta|<2.5$).
 
 ## 17.4 Tier 4 — derivative couplings and the gauge-cancellation acid test
 
@@ -315,28 +432,30 @@ the library (no proton structure anywhere).
 |---|---|---|---|---|
 | 1 ✅ | $e^+e^-\to\mu^+\mu^-$ (γ only), $f\bar f\to f\bar f$ via a scalar | `TwoToTwoKinematics`; `SpinorChain`/`Diagram`/`Amplitude` (**done**); amplitude-level propagators; `ExternalState` averaging | small–medium | Peskin QED closed form + explicit-matrix oracle |
 | 2 ✅ | $e^+e^-\to\mu^+\mu^-$ (Z only); any single chiral-current diagram | ε (γ₅) algebra (`pheno.epsilon`): $\mathrm{Tr}[\gamma\gamma\gamma\gamma\gamma_5]$, ε·ε → Gram determinant, `forward_backward_asymmetry` | large | $d\sigma/d\cos\theta$ shape + $A_{FB}=\tfrac34A_eA_f$ vs [LEPEWWG06]; γ₅-carrying matrix oracle (massless + massive mediator) |
-| 3 | full $e^+e^-\to f\bar f$ (γ/Z interference) | multi-diagram double sum; s/t/u topology search; relative signs | medium–large | **MadGraph 2.7878 pb** |
+| 3 ✅ | full $e^+e^-\to f\bar f$ (γ/Z interference); Bhabha, Møller, $\nu_ee$ | multi-diagram double sum (same-pairing product of traces; exchanged-pairing single trace); s/t/u topology enumeration; permutation-parity fermion signs; `ScatteringCalculator` | medium–large | **MadGraph 2.7878 pb** (inside $\lvert\eta\rvert<2.5$); Bhabha/Møller closed forms; explicit-spinor oracle |
 | 4 | $e^+e^-\to W^+W^-$; derivative couplings | `VVV`/`VSS` momentum-tag resolution; external vector polarization sums | large | **MadGraph 19.498 pb**; no $s^2$ growth |
 | 5 | $q\bar q\to q\bar q$, $qg\to qg$, $gg\to gg$ | colour-flow algebra; colour averaging; 4-point contact vertices | medium–large | ESW parton-level table (no PDFs) |
 
 The recommended order is the table order: Tier 1 gave the first native cross
 section for the cost of an object layer that reuses the existing covariant
 engine unchanged; Tier 2 was the genuinely new algebra 2→2 requires that 1→2
-never did; Tier 3 is where the two MadGraph benchmarks stop being aspirational
-and start being reproduced; Tier 4 is the hardest single piece (derivative
+never did; Tier 3 is where the first MadGraph benchmark stops being
+aspirational and is reproduced (the second, $e^+e^-\to W^+W^-$, waits on Tier 4); Tier 4 is the hardest single piece (derivative
 couplings); Tier 5 generalizes to QCD but adds no new *kind* of physics beyond
 colour bookkeeping.
 
 See {doc}`decays_roadmap` for the parallel decay-side roadmap and its
-`n_momenta`/ε-drop precedent, and `tests/test_scattering.py` for what Tier 1
-pins.
+`n_momenta`/ε-drop precedent, `tests/test_scattering.py` for what Tiers 1–2
+pin and `tests/test_interference.py` for Tier 3.
 
 ## 17.7 References
 
 - **[PS95]** M. E. Peskin and D. V. Schroeder, *An Introduction to Quantum
   Field Theory*, Addison-Wesley (1995), ISBN 0-201-50397-2 — Chapter 5,
   "Elementary Processes of Quantum Electrodynamics," §5.1, the
-  $e^+e^-\to\mu^+\mu^-$ closed form Tier 1's cross section reproduces.
+  $e^+e^-\to\mu^+\mu^-$ closed form Tier 1's cross section reproduces, and
+  Problem 5.2, Bhabha scattering, whose massless result Tier 3 reproduces
+  (and, crossed $s\leftrightarrow u$, Møller scattering).
 - **[ESW96]** R. K. Ellis, W. J. Stirling and B. R. Webber, *QCD and Collider
   Physics*, Cambridge Monographs on Particle Physics, Nuclear Physics and
   Cosmology 8, Cambridge University Press (1996), ISBN 978-0-521-54589-1 —

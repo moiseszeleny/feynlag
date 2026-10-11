@@ -52,18 +52,22 @@ from .scattering import (
     average_factor, cross_section, differential_cross_section,
     ffs_s_channel_squared, ffv_s_channel_squared, forward_backward_asymmetry,
 )
+from .scattering_calculator import ScatteringCalculator, ScatteringProcess
+from .topology import DiagramInfo, ExternalFermion, enumerate_diagrams
 from .vertices import DecayVertex, classify_gamma, collect_decay_vertices
 
 __all__ = [
     "Amplitude", "BosonPropagator", "ChainVertex", "DecayCalculator",
-    "DecayChannel", "DecayVertex", "Diagram", "DiracParticle",
-    "ExternalState", "Leg", "SpinorChain",
+    "DecayChannel", "DecayVertex", "Diagram", "DiagramInfo", "DiracParticle",
+    "ExternalFermion", "ExternalState", "Leg", "ScatteringCalculator",
+    "ScatteringProcess", "SpinorChain",
     "TwoBodyKinematics", "ThreeBodyKinematics", "TwoToTwoKinematics",
     "amplitude_squared", "assert_epsilon_single_vanishes", "average_factor",
     "breit_wigner", "classify_gamma", "collect_decay_vertices",
     "cross_section", "differential_cross_section",
     "A_half", "A_one", "contract_to_dots", "dalitz_integral", "dirac_trace",
-    "epsilon_pair_tensor", "expand_particles", "ffs_squared",
+    "enumerate_diagrams", "epsilon_pair_tensor", "expand_particles",
+    "ffs_squared",
     "ffs_s_channel_squared", "ffv_squared", "ffv_s_channel_squared",
     "forward_backward_asymmetry", "gamma5_trace_coefficient",
     "higgs_gammagamma_width", "higgs_gg_width", "higgs_zgamma_width",
