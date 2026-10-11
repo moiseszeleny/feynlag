@@ -43,5 +43,10 @@ page lists its public classes and functions with full signatures; cross-refs
    feynlag.pheno.offshell
    feynlag.pheno.loop
    feynlag.pheno.calculator
+   feynlag.pheno.epsilon
+   feynlag.pheno.diagrams
+   feynlag.pheno.scattering
+   feynlag.pheno.topology
+   feynlag.pheno.scattering_calculator
    feynlag.verify.checks
 ```

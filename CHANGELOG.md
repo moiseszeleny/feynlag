@@ -6,6 +6,33 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- 2→2 scattering, Tier 3: multi-diagram **interference**.
+  `Amplitude.squared` sums `Σ_{d,d'} M_d M̄_{d'}`. A pair of diagrams that
+  pair the external fermions the same way (γ/Z s channel) gives a product of
+  two cross traces (`SpinorChain.cross_trace`). An exchanged pair (Bhabha
+  s × t, Møller t × u) gives one trace through all four legs, whose γ₅ part
+  is proven zero by the Gram-determinant guard.
+- `feynlag.pheno.topology.enumerate_diagrams`: s/t/u enumeration of the
+  two-line tree diagrams of a 2→2 four-fermion process, from the extracted
+  vertices. Fermion signs come from permutation parity. Charged mediators
+  join through an explicit `conjugates` map.
+- `ScatteringCalculator` / `ScatteringProcess`: diagrams, `Σ|M|²`, `dσ/dcosθ`,
+  `σ`, `A_FB` and a quadrature `numeric_cross_section` straight from a
+  model and `DiracParticle`s. It reproduces MadGraph's `e+e-→μ+μ-`
+  (2.7876 pb inside `|η|<2.5` vs 2.7878 ± 0.0027 pb). Bhabha/Møller match
+  their closed forms, and `ν_e e` matches the Fierz "g_L+1" shift.
+  `examples/ee_scattering.py`.
+- `cross_section(..., cos_range=)` angular acceptance;
+  `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
+
+### Fixed
+- The scattering docs called Tier 1's QED-only 2.322 pb "the photon-only
+  fraction" of MadGraph's 2.7878 pb. That number includes MadGraph's default
+  `|η_ℓ|<2.5` cut; the full-angle γ+Z value is 2.8443 pb.
+- `Amplitude.squared` no longer crashes on a line with zero couplings (its
+  trace is a plain `0`).
+
 ## [0.3.0] — 2026-10-07
 
 ### Added

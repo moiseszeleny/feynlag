@@ -1,7 +1,8 @@
 """Tests for 2→2 scattering (`feynlag.pheno.diagrams`/`.scattering`).
 
 House style: pin physics, not code paths.  Tiers 1–2 of
-``docs/manual/scattering_roadmap.md``.  The acceptance oracle is the textbook
+``docs/manual/scattering_roadmap.md`` (Tier 3, interference, is
+``tests/test_interference.py``).  The acceptance oracle is the textbook
 QED closed form for ``e⁺e⁻→μ⁺μ⁻`` through a single photon,
 ``σ = (4πα²/3s)·β(3−β²)/2``, ``β = √(1−4m_μ²/s)`` — together with an
 independent **explicit-4×4-matrix** evaluator (``_oracle_qed_general`` below)
@@ -483,12 +484,15 @@ def test_reduce_projectors_is_no_longer_on_the_chain_path():
     assert not hasattr(diagrams_mod, "reduce_projectors")
 
 
-def test_multi_diagram_raises():
+def test_malformed_diagram_raises():
+    """Tier 3 lifted the one-diagram guard (interference is computed — see
+    ``tests/test_interference.py``); a diagram outside the two-line,
+    one-propagator topology still raises rather than being guessed at."""
     amp = Amplitude(diagrams=(
         Diagram(chains=(), propagators=()),
         Diagram(chains=(), propagators=()),
     ))
-    with pytest.raises(NotImplementedError, match="interference"):
+    with pytest.raises(NotImplementedError, match="two-chain"):
         amp.squared(None)
 
 
@@ -566,9 +570,11 @@ def test_qed_mumu_total_cross_section():
 def test_qed_mumu_numeric_at_benchmark_point():
     """At MadGraph's benchmark parameter point (``docs/benchmark.md``:
     ``α⁻¹ = 132.50698``, ``√s = 200`` GeV), the QED-only (photon-only)
-    cross section is **2.322 pb** — the ``e⁺e⁻→μ⁺μ⁻`` fraction of MadGraph's
-    full **2.7878 ± 0.0027 pb**.  The ~20% gap is the γ/Z interference Tier 3
-    must supply; this number therefore cannot be accidentally "passed" here.
+    cross section is **2.322 pb**, over the full angular range.  The full
+    γ+Z result is 2.844 pb over the same range, and 2.7876 pb inside
+    MadGraph's default lepton acceptance ``|η|<2.5``, which is what its
+    **2.7878 ± 0.0027 pb** includes (Tier 3,
+    ``tests/test_interference.py::test_ee_to_mumu_gamma_z_reproduces_madgraph``).
     """
     m, e = sp.symbols('m e', positive=True)
     kin = TwoToTwoKinematics(0, 0, m, m)
