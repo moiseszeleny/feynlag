@@ -49,31 +49,28 @@ model, and ends with a recap of tools and traps and web-verified references.
 
 ## Scattering Tutorial
 
-The first native **cross section**, not a decay width: $e^+e^-\to\mu^+\mu^-$
-through a photon (Tier 1), matched against the Peskin & Schroeder closed form,
-then $e^+e^-\to\mu^+\mu^-$ through the Z alone (Tier 2), where a real electron
-Z coupling is pulled straight out of a built SM Lagrangian rather than typed
-in as a textbook formula. Derives by hand why the $\gamma_5$ (ε-tensor) term
-that vanishes in *every* decay this library computes — two independent
-momenta is never enough — survives for $2\to2$, where two chiral currents
-meeting at one propagator give three, and walks the two derived (not quoted)
-identities in `feynlag.pheno.epsilon` that compute it: the trace coefficient
-$\kappa=-4i$ and the Gram-determinant sign $s_{\det}=-1$. Reproduces the LEP
-forward–backward asymmetry $A_{FB}=\tfrac34A_eA_f$ from first principles, with
-a $d\sigma/d\cos\theta$ figure showing the chiral tilt against a symmetric
-vector-coupling baseline, and closes with a total-cross-section sanity check
-showing the ε term is an angular effect only — it integrates away, so Tier 1's
-QED benchmark is untouched. Section 6 adds **interference** (Tier 3), all from
-the Lagrangian through `ScatteringCalculator`:
+The first native **cross sections**, derived and checked in the same set-up / collect /
+recognise / check style as the SU(N) and Decays notebooks: a prediction before most cells
+and an `assert` behind every claim.
 
-- $\gamma$+Z $e^+e^-\to\mu^+\mu^-$ reproduces MadGraph's 2.7878 pb, once its
-  default $|\eta|<2.5$ lepton cut is applied;
-- the γ–Z cross term is predicted and found to be under 1% of the total
-  cross section, yet to drive $A_{FB}$ to 0.57 (axial versus vector
-  couplings);
-- Bhabha scattering, where two diagrams pair the fermions differently,
-  carries a relative minus sign, and fuses into a single trace, matching
-  Peskin & Schroeder's closed form.
+- **Kinematics and averaging.** It starts from two Mandelstam invariants, and from
+  $d\sigma/d\cos\theta$ with the spin average applied once.
+- **One photon, computed two ways.** QED $e^+e^-\to\mu^+\mu^-$ through the covariant engine
+  *and* with literal $4\times4$ Dirac matrices, against Peskin & Schroeder.
+- **Why a 2→2 process keeps a $\gamma_5$ term no decay had.** Three independent momenta,
+  shown with Gram determinants. The constants $\kappa=-4i$ and $s_{\det}=-1$ are derived from
+  the matrices, not quoted.
+- **The Z alone.** Couplings extracted from a Lagrangian give LEP's
+  $A_{FB}=\tfrac34A_eA_\mu$.
+- **Interference (Tier 3), through `ScatteringCalculator`:**
+  - γ+Z reproduces MadGraph's 2.7878 pb once its default $|\eta|<2.5$ cut is applied;
+  - the γ–Z cross term is under 1% of σ but drives $A_{FB}$ to 0.57 (vector versus axial
+    couplings);
+  - Bhabha's s–t interference carries a relative minus sign, which the notebook shows to
+    be physics by flipping it.
+- **Capstone.** Møller scattering is built by hand from the slot and Wick-sign rules and
+  held against the calculator, the crossed Bhabha form, and the identical-particle ½.
+- It closes with a Recap (a tools table and the roadmap status) and verified References.
 
 ## SU(N) Groups Tutorial
 
