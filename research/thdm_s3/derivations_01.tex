@@ -11,7 +11,17 @@
 \begin{document}
 \maketitle
 
-\subsection*{1.\quad [DasDey14] Erratum, Phys. Rev. D 91, 039905 (2015) --- it corrects Eqs. (9a)--(9c), the tadpole conditions, and nothing else}
+\subsection*{1.\quad The $\sqrt3$ vacuum alignment $v_2=\sqrt3\,v_1$ is forced by the tadpoles}
+\emph{derived here} --- \S2.1\par\medskip
+\textbf{Claim}\par\nopagebreak
+\begin{equation*}\small \tfrac32\lambda_4v_S\,(3v_1^2-v_2^2)=0 \end{equation*}
+\textbf{Independent checks}\begin{itemize}\itemsep0pt
+\item derived from the Lagrangian's three tadpole conditions, not imported
+\item the corrected [DasDey14] erratum Eq. (9) has the same zero set (section 2.2)
+\end{itemize}
+\textbf{Would be falsified by:} a tadpole residual vanishing off $v_2=\sqrt3v_1$ for $\lambda_4v_S\neq0$\par
+\medskip\hrule\medskip
+\subsection*{2.\quad [DasDey14] Erratum, Phys. Rev. D 91, 039905 (2015) --- it corrects Eqs. (9a)--(9c), the tadpole conditions, and nothing else}
 \emph{imported} --- \S2.2\par\medskip
 \textbf{Independent checks}\begin{itemize}\itemsep0pt
 \item the corrected (9a)$=$(9b) forces $v_1=\sqrt3v_2$
@@ -20,7 +30,7 @@
 \end{itemize}
 \textbf{Would be falsified by:} a corrected Eq. (9) whose zero set differs from our tadpole residual's\par
 \medskip\hrule\medskip
-\subsection*{2.\quad The [GomezBock21] $(a\ldots h)\leftrightarrow$ feynlag $\lambda$ dictionary, with $e=-\lambda_4$}
+\subsection*{3.\quad The [GomezBock21] $(a\ldots h)\leftrightarrow$ feynlag $\lambda$ dictionary, with $e=-\lambda_4$}
 \emph{derived here} --- \S4.2\par\medskip
 \begin{equation*}\small \left[\begin{matrix}d & 2 \lambda_{2}\\e & - \lambda_{4}\\f & \lambda_{6}\\g & 2 \lambda_{3}\\h & 2 \lambda_{7}\end{matrix}\right] \end{equation*}
 \textbf{Independent checks}\begin{itemize}\itemsep0pt
@@ -31,7 +41,7 @@
 \end{itemize}
 \textbf{Would be falsified by:} $\mathrm{solve}()$ returning no solution, which any error in the potential/tadpole/mass-matrix/rotation chain would cause\par
 \medskip\hrule\medskip
-\subsection*{3.\quad The real neutral slice, and the absence of $\lambda_2$}
+\subsection*{4.\quad The real neutral slice, and the absence of $\lambda_2$}
 \emph{derived here} --- \S5.4\par\medskip
 \textbf{Claim}\par\nopagebreak
 \begin{equation*}\small V_4 = (\lambda_1+\lambda_3)\,x^2 + (\lambda_5+\lambda_6+2\lambda_7)\,xy + \lambda_8\,y^2 + 2\lambda_4\,\sqrt{y}\,x^{3/2}\cos3\psi \end{equation*}
@@ -48,14 +58,14 @@ V = & 2 \lambda_{4} r_{1} r_{S} \left(r_{1}^{2} - 3 r_{2}^{2}\right) + \lambda_{
 \end{itemize}
 \textbf{Would be falsified by:} any term outside the $(x,y,\cos3\psi)$ basis, or $\lambda_2$ appearing\par
 \medskip\hrule\medskip
-\subsection*{4.\quad [DasDey14] Eqs. (4a)--(4g) boundedness conditions}
+\subsection*{5.\quad [DasDey14] Eqs. (4a)--(4g) boundedness conditions}
 \emph{imported} --- \S5.3\par\medskip
 \textbf{Independent checks}\begin{itemize}\itemsep0pt
 \item tested directly against $V_4$: counterexamples found
 \end{itemize}
 \textbf{Would be falsified by:} already falsified in \S{}5.3 as a sufficient condition\par
 \medskip\hrule\medskip
-\subsection*{5.\quad The exact boundedness condition on the real neutral slice}
+\subsection*{6.\quad The exact boundedness condition on the real neutral slice}
 \emph{derived here} --- \S5.5\par\medskip
 \textbf{Claim}\par\nopagebreak
 \begin{equation*}\small \min_{t\ge0} f(t)\ge0,\qquad f(t) = \lambda_8\,t^4 + (\lambda_5+\lambda_6+2\lambda_7)\,t^2 - 2|\lambda_4|\,t + (\lambda_1+\lambda_3) \end{equation*}
@@ -64,5 +74,14 @@ V = & 2 \lambda_{4} r_{1} r_{S} \left(r_{1}^{2} - 3 r_{2}^{2}\right) + \lambda_{
 \item Eq. (4g) is exactly $f(1)>0$
 \end{itemize}
 \textbf{Would be falsified by:} a probe point where the closed form and the direction scan disagree on the sign\par
+\medskip\hrule\medskip
+\subsection*{7.\quad The $hVV$ couplings are the CP-even block overlaps with the vacuum direction; $h_0$ is exactly gauge-phobic}
+\emph{derived here} --- \S8.1\par\medskip
+\textbf{Independent checks}\begin{itemize}\itemsep0pt
+\item block overlaps equal the eigenvector projections of the un-rotated 3x3 matrix at 300 points
+\item the three $g^2$ sum to 1 to $10^{-12}$
+\item $g^2_{h_0VV}=0$ exactly
+\end{itemize}
+\textbf{Would be falsified by:} a point where overlap and projection disagree, or the sum is not 1\par
 \medskip\hrule\medskip
 \end{document}
