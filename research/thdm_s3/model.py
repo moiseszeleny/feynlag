@@ -90,7 +90,7 @@ class S3Model:                # the lru_caches below can key on the instance
 
 
 def build_model(vevs=(200.0, 115.0, 80.0), tex=False, check=False,
-                soft=False, soft_solve_for="mD2sq") -> S3Model:
+                soft=False, soft_solve_for="mD1sq") -> S3Model:
     """Build the S₃-invariant 3HDM and solve its tadpoles on the alignment.
 
     Parameters
@@ -120,8 +120,7 @@ def build_model(vevs=(200.0, 115.0, 80.0), tex=False, check=False,
         cosmetic**: solving for ``mD2sq`` divides by ``v₁² − v₂²``, singular on
         the ``v₁ = v₂`` (φ = 45°) line, while solving for ``mD1sq`` divides by
         ``v₁v₂`` only, regular everywhere inside the φ ∈ (0, π/3) fundamental
-        domain.  `scan_soft.py` therefore uses ``"mD1sq"``; the ``"mD2sq"``
-        default is kept because notebook 02 was executed with it.
+        domain, so ``"mD1sq"`` is the default (every notebook passes it explicitly too).
     """
     nm = (lambda plain, latex: latex if tex else plain)
 

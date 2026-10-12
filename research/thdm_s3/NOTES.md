@@ -468,10 +468,10 @@ not required. The three free soft terms were sampled as signed uniform variables
 to (500 GeV)², and the size of the breaking was tagged per point instead of imposed.
 
 **Two structural results, both pinned in `tests/test_thdm_s3.py`.**
-- Solving the tadpoles for $m_{D2}^2$ (the `build_model(soft=True)` default,
-  which notebook 02 was run with) divides by $v_1^2-v_2^2$, a coordinate pole at
+- Solving the tadpoles for $m_{D2}^2$ (the original `build_model(soft=True)`
+  default) divides by $v_1^2-v_2^2$, a coordinate pole at
   φ = 45°. Solving for $m_{D1}^2$ divides only by $v_1v_2$. `scan_soft.py` uses
-  `soft_solve_for="mD1sq"`.
+  `soft_solve_for="mD1sq"`, now the default.
 - φ ∈ (0, π/3) is a fundamental domain. The S₃ reflection about 60° maps φ to
   2π/3 − φ, with the same matrix acting on *both* spurion doublets, and gives an
   identical spectrum. Both edges are residual-Z₂ directions, and φ = π/3 is
