@@ -298,8 +298,8 @@ def image_point(tools: SoftTools, point):
     return out
 
 
-#: PDG inputs for the loop and VSS widths [PDG].
-M_W, M_Z, M_T = 80.377, 91.1876, 172.69
+#: PDG inputs for the loop and VSS widths [PDG], from the single inputs module.
+from sm_inputs import M_H, M_T, M_W, M_Z  # noqa: E402
 G_W = 2 * M_W / V_EW                        # g, from m_W = g v / 2
 C_W = M_W / M_Z
 
@@ -323,7 +323,7 @@ def scan_point(tools: SoftTools, point, mu3_grid, image=False):
     g = hhh_charged(tools, pt, rot)
     g_hpp = (g[k, 1, 1], g[k, 2, 2])
     m_hp = (mass["Hpm1"], mass["Hpm2"])
-    r_gg = diphoton_ratio(g_hpp, 125.25, m_hp, kappa, kappa, M_T, M_W)
+    r_gg = diphoton_ratio(g_hpp, M_H, m_hp, kappa, kappa, M_T, M_W)
 
     O_Z, O_W = vss_overlaps(rot)
     m_sm = mass[keys_even[k]]

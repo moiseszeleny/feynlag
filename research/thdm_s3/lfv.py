@@ -63,8 +63,8 @@ __all__ = [
     "lfv_width", "IDX",
 ]
 
-#: (m_e, m_μ, m_τ) in GeV [PDG].
-LEPTON_MASSES = (0.51099895e-3, 0.1056584, 1.77686)
+#: (m_e, m_μ, m_τ) in GeV [PDG], from the single inputs module.
+from sm_inputs import LEPTON_MASSES  # noqa: E402
 
 #: mass-basis index of each lepton (lightest first).
 IDX = {"e": 0, "mu": 1, "tau": 2}

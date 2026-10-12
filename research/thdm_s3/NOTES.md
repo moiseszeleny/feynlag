@@ -477,7 +477,7 @@ to (500 GeV)², and the size of the breaking was tagged per point instead of imp
   identical spectrum. Both edges are residual-Z₂ directions, and φ = π/3 is
   notebook 01's alignment. One consequence for notebook 02: each point stands
   for two draft-basis ratios, $r=-\cot(\varphi-\pi/6)$ and $-\tan\varphi$. The
-  quark-fit $|r|=1.349$ is φ = 53.44° in the domain.
+  quark-fit $|r|=1.354$ (closest-to-√3 exact solution; PDG 2024 targets) is φ = 53.54° in the domain.
 
 **The spectrum machinery generalizes.** The geometric rotation still isolates
 both Goldstones, with exact zeros at a rational point. The CP-even sector becomes a
@@ -504,7 +504,7 @@ reproduces notebook 01 to 1e-10.
   decoupling tail: the solved $m_{D1}^2\propto1/(v_1v_2)$ blows up, and all 34
   points with a state above 5 TeV sit at φ < 7°. At φ → π/3 the breaking is
   moderate (median 3.5v² within 10°). The quark-fit vacuum lies in the populated
-  upper range (205 points within ±2°).
+  upper range (203 points within ±2°).
 
 **Caveats.** The near-S₃ corner is barely populated under a uniform prior in $m^2$
 (15 points with every soft term below v²). Only a *local* minimum is required.

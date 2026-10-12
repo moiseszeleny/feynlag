@@ -1,57 +1,64 @@
 {
-  "description": "S3-3HDM quark sector with soft S3 breaking (mu5 = mu4 ansatz). Exact S3 forces |r| = |v1/v2| = sqrt(3) and V_us = 0; releasing r reproduces the observed six quark masses AND all three targeted CKM magnitudes |V_us|, |V_cb|, |V_ub| simultaneously, to numerical precision. The CP phase (and hence the full unitarity triangle) stays out of reach: this sector's Yukawas are real, so its CKM matrix is real and the Jarlskog invariant is exactly zero. With 9 parameters against 9 targeted observables the system is exactly determined, and the least-squares scan finds several distinct exact (cost~0) solutions at different r depending on the restart seed -- quote r and V_abs here as an existence proof of the mechanism, not a prediction; see finding 6 of notebook 02 and NOTES.md finding 9.",
+  "description": "S3-3HDM quark sector with soft S3 breaking (mu5 = mu4 ansatz). Exact S3 forces |r| = |v1/v2| = sqrt(3) and V_us = 0; releasing r reproduces the observed six quark masses AND all three targeted CKM magnitudes |V_us|, |V_cb|, |V_ub| simultaneously, to numerical precision. The CP phase (and hence the full unitarity triangle) stays out of reach: this sector's Yukawas are real, so its CKM matrix is real and the Jarlskog invariant is exactly zero. With 9 parameters against 9 targeted observables the system is exactly determined, and the least-squares scan finds several distinct exact (cost~0) solutions at different r depending on the restart seed -- quote r and V_abs here as an existence proof of the mechanism, not a prediction; see finding 6 of notebook 02 and NOTES.md finding 9. Every exact solution found is listed under exact_solutions_r; the one recorded here is selected by a stated rule, the |r| closest to the exact-S3 value sqrt3.",
+  "selection": "closest |r| to sqrt3 among exact solutions (cost < 1e-20)",
+  "exact_solutions_r": [
+    0.045576,
+    0.153628,
+    0.159125,
+    1.353584
+  ],
   "targets": {
     "m_u": 0.00216,
-    "m_c": 1.27,
-    "m_t": 172.69,
-    "m_d": 0.00467,
-    "m_s": 0.0934,
-    "m_b": 4.18,
-    "Vus": 0.2243,
+    "m_c": 1.273,
+    "m_t": 172.57,
+    "m_d": 0.0047,
+    "m_s": 0.0935,
+    "m_b": 4.183,
+    "Vus": 0.22431,
     "Vcb": 0.0411,
     "Vub": 0.00382
   },
   "converged": true,
-  "cost": 2.7723733840131044e-26,
-  "r": 1.3486753051522378,
+  "cost": 2.4140198987484927e-23,
+  "r": 1.353584448114037,
   "r_exact_S3": 1.7320508075688772,
   "params_up": [
-    -0.3011421383072655,
-    -0.1951315959021221,
-    -170.8198757233854,
-    -10.684618501028469
+    -0.30524136102821287,
+    -0.19683801475998144,
+    -170.68867727794358,
+    -10.687453293044108
   ],
   "params_down": [
-    -0.040680113874220825,
-    -0.021689000900766392,
-    4.163290227748443,
-    0.15881443062311013
+    -0.03594662320447777,
+    -0.02439379210508465,
+    4.166093246408953,
+    0.15942370093171665
   ],
   "masses_up_GeV": [
-    0.002160000000000051,
-    1.2700000000000093,
-    172.69000000000005
+    0.002159999999986629,
+    1.2730000000000308,
+    172.57000000000005
   ],
   "masses_down_GeV": [
-    0.004670000000001077,
-    0.0934000000000002,
-    4.180000000000003
+    0.004700000000000183,
+    0.0935,
+    4.182999999999996
   ],
   "V_abs": [
     [
-      0.974512656459628,
-      0.22430000000000025,
-      0.0038200000000000018
+      0.9745103547423264,
+      0.22430999999996848,
+      0.003819999999998636
     ],
     [
-      0.2242651101024575,
-      0.973661106541046,
-      0.04110000000000031
+      0.22427510136420387,
+      0.9736588051818137,
+      0.04109999999999998
     ],
     [
-      0.005499344573013391,
-      0.04090916290108236,
-      0.9991477356227162
+      0.005499764364205348,
+      0.040909106467120655,
+      0.9991477356227159
     ]
   ]
 }

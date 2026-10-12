@@ -201,9 +201,10 @@ from it: the ratio of its values at $r=\sqrt3+0.05$ and $\sqrt3+0.025$ is $1.999
 
 To show that the mechanism reaches the observed values, I fitted the eight Yukawa
 parameters $(\mu_1,\ldots,\mu_4)_{u,d}$ plus $r$ to the six quark masses and three CKM
-magnitudes \cite{PDG}. The fit converges (cost $2.8\times10^{-26}$) at
+magnitudes \cite{PDG}. The system has several exact solutions (cost below $10^{-20}$; four with these targets). The
+one closest to the exact-$S_3$ value is kept, by that stated rule (cost $2.4\times10^{-23}$):
 \[
-r=1.3487\quad(\text{exact }S_3:\ \sqrt3=1.7321),\qquad r-\sqrt3=-0.383 ,
+r=1.3536\quad(\text{exact }S_3:\ \sqrt3=1.7321),\qquad r-\sqrt3=-0.378 ,
 \]
 reproducing all nine targets:
 \begin{center}
@@ -211,23 +212,24 @@ reproducing all nine targets:
 \toprule
  & $|V_{us}|$ & $|V_{cb}|$ & $|V_{ub}|$\\
 \midrule
-fit & $0.22430$ & $0.04110$ & $0.00382$\\
+fit & $0.22431$ & $0.04110$ & $0.00382$\\
 target \cite{PDG} & $0.2243$ & $0.0411$ & $0.00382$\\
 \bottomrule
 \end{tabular}
 \end{center}
 together with the six masses,
 \[
-(m_u,m_c,m_t)=(0.00216,\ 1.27,\ 172.69)~\text{GeV},\qquad
-(m_d,m_s,m_b)=(0.00467,\ 0.0934,\ 4.18)~\text{GeV}.
+(m_u,m_c,m_t)=(0.00216,\ 1.2730,\ 172.57)~\text{GeV},\qquad
+(m_d,m_s,m_b)=(0.00470,\ 0.0935,\ 4.183)~\text{GeV}.
 \]
 The fit is stored in \texttt{results/quark\_soft\_fit.json}.
 
 Two caveats govern how to read this.
 \begin{itemize}\itemsep1pt
 \item \textbf{$r$ is an existence proof, not a prediction.} Nine parameters against nine
-targets is an exactly determined system. Different restarts land on different exact
-solutions at different $r$, and so does a different numpy/scipy version. What the fit
+targets is an exactly determined system with several exact solutions at different $r$;
+which restart has the smallest cost is numerical noise, so the notebook lists all of them and
+selects by the rule above. What the fit
 establishes is that the two-stage structure does \emph{not} prevent the three magnitudes
 from being matched simultaneously.
 \item \textbf{The CP phase is structurally out of reach.} The Yukawas are real, so the CKM
@@ -235,8 +237,8 @@ matrix is real and the Jarlskog invariant vanishes identically.
 \end{itemize}
 
 Where this vacuum sits in the soft-broken \emph{scalar} scan is the subject of the
-companion report on the soft-broken vacuum. The fit's $|r|=1.349$ corresponds to
-$\varphi=53.4^\circ$ inside the scanned domain, a well-populated region.
+companion report on the soft-broken vacuum. The fit's $|r|=1.354$ corresponds to
+$\varphi=53.5^\circ$ inside the scanned domain, a well-populated region.
 
 \section{The neutrinos the draft declares but does not use}
 
