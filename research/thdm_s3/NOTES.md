@@ -455,8 +455,8 @@ So the exact-S₃ vacuum ties the quark and lepton flavour structures together: 
 9 and 10 are the same first-generation decoupling.
 
 **Library work this required** (both in `src/`, pinned by the main suite):
-`VSS` decays ($A\to Zh$, $H^\pm\to W^\pm h$ — open at every benchmark point and
-gauge-strength, so omitting them would have made heavy-state BRs wrong rather
+`VSS` decays ($A\to Zh$, $H^\pm\to W^\pm h$ — open at 1947 of the 1964 benchmark
+points and gauge-strength, so omitting them would have made heavy-state BRs wrong rather
 than merely incomplete), and the spin-0 form factor `A_zero` plus a general
 `higgs_diphoton_amplitude` so a charged Higgs can run in the $\gamma\gamma$ loop.
 

@@ -1,5 +1,5 @@
 {
-  "description": "3HDM-S3 scalar decay observables at general delta, the CP-even Higgs-basis angle (delta = -psi, the residual 2x2 block angle; the draft's total angle is alpha = theta_v + delta). VV couplings, predicted delta per benchmark point, and LFV Higgs branching ratios (tau mu, tau e, e mu) against the CMS limits.  Quark Yukawas are not part of this build, so BRs use the measured SM-like total width.",
+  "description": "3HDM-S3 scalar decay observables at general delta, the CP-even Higgs-basis angle (delta = -psi, the residual 2x2 block angle; the draft's total angle is alpha = theta_v + delta). VV couplings, predicted delta per benchmark point, and LFV Higgs branching ratios (tau mu, tau e, e mu) against the CMS limits.  Quark Yukawas are not part of this build, so BRs use the SM prediction for the total Higgs width (LHC Higgs XS WG).",
   "conventions": {
     "delta": "-psi with psi the residual CP-even 2x2 block angle; alpha = theta_v + delta. Scenario A is delta 0, B is pi/2, but |delta| < pi/4 always, so h_1 always carries the larger hVV coupling and B is a limit, not a reachable point.",
     "gamma_h_total_GeV": 0.0041,
@@ -15930,6 +15930,14 @@
     }
   ],
   "lfv_n_entries": 35352,
+  "benchmark0_hpp_trilinears_GeV": {
+    "h_0,1": 0.0,
+    "h_0,2": 0.0,
+    "h_1,1": -828.0986544842026,
+    "h_1,2": -333.32543566662093,
+    "h_2,1": 332.5425097129674,
+    "h_2,2": 478.73612973183685
+  },
   "lfv_sample": [
     {
       "point": 0,
