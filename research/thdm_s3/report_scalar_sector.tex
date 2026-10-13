@@ -413,6 +413,12 @@ close that gap properly.
 
 \item \textbf{Complete the boundedness analysis} for complex-neutral and charged directions,
 following \cite{BotoRomaoSilva22}'s method. $S_3$ is not among the cases they treat.
+\emph{Narrowed since:} the boundedness notebook (\texttt{04\_bfb\_conditions.ipynb})
+applies their method: in their decomposition $V_4=V_N+V_{CB}+V_G$ ($V_N$ a quadratic form in
+the doublet norms, $V_G$ what the symmetry leaves over), all three pieces of our potential fit
+their framework. Only the $\lam4$
+remainder does not: bounding it gives a quartic form in $\sqrt{r_i}$ rather than a
+quadratic form in $r_i$.
 
 \item \textbf{Is \S\ref{sec:main} worth writing up separately}, or does it belong as a
 section of the LFV paper? This is now the open question that matters. The constraint is
@@ -432,6 +438,14 @@ version is the companion document \texttt{derivations\_01.tex}; in summary:
 \toprule
 claim & status & independent checks\\
 \midrule
+The $\sqrt3$ alignment $v_2=\sqrt3\,v_1$ is forced by the tadpoles & derived &
+derived from the Lagrangian's three tadpole conditions, not imported; the corrected
+erratum Eq.~(9) has the same zero set\\
+\addlinespace
+\cite{DasDey14} erratum: it corrects Eqs.~(9a)--(9c) only & \textbf{imported} &
+the corrected (9a)$=$(9b) forces $v_1=\sqrt3v_2$, our own alignment under the
+$v_1\leftrightarrow v_2$ relabelling; Eqs.~(4) and (36)--(37) are untouched\\
+\addlinespace
 The $(a\ldots h)\leftrightarrow\lambda$ dictionary, $e=-\lam4$ & derived &
 solved from an over-determined system, not guessed; the four solved entries agree with
 term matching; $e=+\lam4$ fails all four published masses; the sign question vanishes as
@@ -448,6 +462,10 @@ tested directly against our own $V_4$: counterexamples found\\
 The exact boundedness condition \eqref{eq:ft} & derived &
 agrees with $60\,000$-direction brute force on every probe point; Eq.~(4g) is exactly
 $f(1)>0$\\
+\addlinespace
+The $hVV$ couplings are the CP-even block overlaps with $\hat v$; $h_0$ is gauge-phobic & derived &
+block overlaps equal the eigenvector projections of the un-rotated $3\times3$ matrix at
+300 points; the three $g^2$ sum to 1 to $10^{-12}$; $g^2_{h_0VV}=0$ exactly\\
 \bottomrule
 \end{tabular}
 \end{center}
