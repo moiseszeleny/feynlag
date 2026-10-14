@@ -25,6 +25,7 @@ NB02 = "02_s3_fermion_sector.ipynb"          # report_fermion_sector.tex
 NB03 = "03_scalar_decays.ipynb"              # report_scalar_decays.tex
 NB05 = "05_soft_scalar_scan.ipynb"           # report_soft_vacuum.tex
 NB06 = "06_soft_decays.ipynb"                # report_soft_decays.tex
+NB07 = "07_mu_to_e_gamma.ipynb"              # report_mu_e_gamma.tex
 
 #: name -> (notebook, cell index, marker that must occur in that cell's source)
 FIGURES = {
@@ -44,6 +45,7 @@ FIGURES = {
     "softdec_mu3_existence": (NB06, 14, "Where a charged-lepton fit exists"),
     "softdec_lfv": (NB06, 18, "LFV needs a non-vacuum admixture"),
     "softdec_gammagamma": (NB06, 20, "in the soft-broken vacuum"),
+    "meg_scan": (NB07, 35, "over the soft scan (2021 points"),
 }
 
 

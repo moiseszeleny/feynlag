@@ -38,7 +38,8 @@ pedagogical walk-through). This directory is where the open questions go.
 | `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
 | `report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
 | `report_soft_decays.tex` | report on notebook 06: the arrowhead lepton fit, SM-like LFV from the non-vacuum admixture, $R_{\gamma\gamma}$ and VSS in the soft vacuum. |
-| `build_reports.sh` | rebuilds the five `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
+| `report_mu_e_gamma.tex` | report on notebook 07: the exact-vacuum zero (residual $\mathbb Z_2$), the amplitude checks, the scan against MEG II and its robustness. |
+| `build_reports.sh` | rebuilds the six `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
 | `README.md` | the folder's GitHub landing page: the report index. |
 | `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
 | `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
