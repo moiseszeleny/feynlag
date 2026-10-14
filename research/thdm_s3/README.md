@@ -15,7 +15,9 @@ is [`NOTES.md`](NOTES.md).
 | [Soft-broken vacuum](report_soft_vacuum.pdf) | [05](05_soft_scalar_scan.ipynb) | The soft-broken spectrum is decoupling-like; the exact scan's light gauge-phobic scalars do not survive generic soft breaking. |
 | [Soft-vacuum decays and LFV](report_soft_decays.pdf) | [06](06_soft_decays.ipynb) | The lepton fit is an exact arrowhead cubic and soft breaking pins μ₃ near ±m_τ; SM-like LFV is pure non-vacuum admixture; h→eμ binds hardest; only 5 of 2021 scalar points are LFV-excluded. |
 
-Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness method) has no
+Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness method) and
+notebook [07](07_mu_to_e_gamma.ipynb) (μ→eγ: zero at the exact vacuum; in the soft vacuum
+MEG II keeps 610 of 2021 scalar points, against 2016 for the Higgs LFV limits) have no
 report yet. Each notebook also emits a printable derivation ledger, `derivations_0N.tex`.
 
 ## Rebuilding

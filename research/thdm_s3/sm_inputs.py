@@ -47,3 +47,5 @@ V_UB = 0.00382           # (12.12): inclusive and exclusive average
 ALPHA = 1 / 137.035999     # fine-structure constant at q^2 = 0 (Thomson limit), the
                             # coupling of on-shell photons in h -> gamma gamma; the
                             # digits beyond these differ between CODATA editions
+G_F = 1.1663788e-5         # Fermi constant G_F/(hbar c)^3 in GeV^-2, 1.1663788(6)e-5, from
+                            # the muon lifetime: the denominator of BR(mu -> e gamma)

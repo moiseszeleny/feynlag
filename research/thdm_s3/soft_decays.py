@@ -48,6 +48,7 @@ __all__ = [
     "SoftTools", "build_tools", "point_inputs", "point_rotations",
     "trilinear_function", "hhh_charged", "vss_overlaps", "vss_width",
     "lfv_point", "diphoton_ratio", "sm_like_index", "image_point", "scan_point",
+    "mass_basis_yukawas", "mu_e_gamma",
 ]
 
 #: The S₃ reflection about the 60° axis (the element ab), acting on both soft
@@ -64,6 +65,7 @@ class SoftTools:
     mass_fn: object                # soft_mass_function(model)
     tri_fn: object                 # trilinear_function(model)
     g_of: object                   # lfv.lepton_g_function
+    yuk_of: object = None          # lfv.scalar_lepton_couplings (CP-even, CP-odd, charged)
     _cache: dict = _field(default_factory=dict, repr=False)
 
 
@@ -109,7 +111,8 @@ def build_tools() -> SoftTools:
     m = build_model(soft=True, soft_solve_for="mD1sq")
     lep = F.build_lepton_sector(m.s3, m.SU2L, m.U1Y, m.doublets)
     return SoftTools(model=m, mass_fn=soft_mass_function(m),
-                     tri_fn=trilinear_function(m), g_of=lfv.lepton_g_function(lep, m))
+                     tri_fn=trilinear_function(m), g_of=lfv.lepton_g_function(lep, m),
+                     yuk_of=lfv.scalar_lepton_couplings(lep, m))
 
 
 # --------------------------------------------------------------------------
@@ -340,3 +343,107 @@ def scan_point(tools: SoftTools, point, mu3_grid, image=False):
     return {"sm_like": k, "kappa_v": kappa, "r_gammagamma": r_gg,
             "g_hpp": [float(x) for x in g_hpp], "vss": vss, "lfv": lfv_rows,
             "mass": mass, "phi": pt["phi"], "theta": pt["theta"]}
+
+
+# --------------------------------------------------------------------------
+# mu -> e gamma
+# --------------------------------------------------------------------------
+
+#: MEG II, B(μ⁺ → e⁺γ) < 1.5×10⁻¹³ at 90% CL (arXiv:2504.15711, 2025).
+MEG_II_LIMIT = 1.5e-13
+
+#: Contribution labels of `mu_e_gamma`, in the order they are summed.
+MEG_PARTS = ("1loop_neutral", "1loop_charged", "BZ_quark", "BZ_tau", "BZ_W", "BZ_Hpm")
+
+
+def mass_basis_yukawas(tools: SoftTools, Y, rot):
+    """Every physical scalar's Yukawa matrix in the positive-mass lepton basis.
+
+    Returns ``(masses, couplings)``.  ``couplings`` maps ``"h1".."h3"``, ``"A1"``,
+    ``"A2"``, ``"Hpm1"``, ``"Hpm2"`` (and the Goldstones ``"G0"``, ``"Gp"``) to 3×3
+    arrays in the convention of `radiative` (``L ⊃ −ē_L Y e_R φ``,
+    ``−ν̄_L Y_C e_R H⁺``).  The weak-basis per-doublet matrices come from
+    `lfv.scalar_lepton_couplings` and are combined with the rotation columns:
+    ``r_k = Σ_i R_even[k,i] h_i``, ``a_k = Σ_a R_odd[k,a] A_a`` and
+    ``c_k = Σ_a R_C[k,a] H⁺_a``.
+    """
+    C = tools.yuk_of(Y)
+    masses, O, s = lfv.signed_mass_basis(C["even"], rot["vevs"])
+
+    def phys(group, R, col):
+        return lfv.mass_basis_couplings(sum(R[k, col] * C[group][k] for k in range(3)), O, s)
+
+    out = {key: phys("even", rot["R_even"], i) for i, key in enumerate(("h1", "h2", "h3"))}
+    out.update({key: phys("odd", rot["R_odd"], a) for a, key in ((0, "G0"), (1, "A1"), (2, "A2"))})
+    out.update({key: phys("charged", rot["R_C"], a)
+                for a, key in ((0, "Gp"), (1, "Hpm1"), (2, "Hpm2"))})
+    return masses, out
+
+
+def mu_e_gamma(tools: SoftTools, point, rot, Y, g_trilinear=None, top_ansatz=True):
+    """``BR(μ→eγ)`` at one point and one lepton configuration, with its breakdown.
+
+    Returns ``{"br", "A_L", "A_R", "parts": {label: (A_L, A_R)}}`` with labels
+    `MEG_PARTS`:
+
+    * ``1loop_neutral``: h₁,₂,₃ and A₁,₂ with ℓ_f = e, μ, τ in the loop;
+    * ``1loop_charged``: H⁺₁,₂ with massless ν;
+    * ``BZ_quark``: t and b loops.  **Ansatz** (``top_ansatz``): each quark's Yukawa
+      lies along the vacuum direction, so ``y_qq(h_i) = κ_i m_q/v`` and ``A_a``
+      has none.  This stands in for the per-point quark sector, which does not
+      exist yet; notebook 06 makes the same choice for ``R_γγ``;
+    * ``BZ_tau``: the τ loop, with the τ coupling actually computed;
+    * ``BZ_W``: W loop, ``g_{h_iVV} = κ_i``;
+    * ``BZ_Hpm``: H⁺₁,₂ loops with the ``h_i H⁺_a H⁻_a`` trilinears.
+
+    The Goldstones are left out.  Their lepton couplings are flavour-diagonal at
+    any vacuum (notebook 07 checks this), and their part of the W loop is
+    already inside [OST16]'s W bracket.
+    """
+    import radiative as RD
+
+    mass = rot["mass"]
+    if g_trilinear is None:
+        g_trilinear = hhh_charged(tools, point, rot)
+    masses, Yp = mass_basis_yukawas(tools, Y, rot)
+    vhat = np.array(rot["vevs"]) / np.linalg.norm(rot["vevs"])
+    kappa = vhat @ rot["R_even"]
+    m_mu = masses[RD.MU]
+    parts = {p: [0j, 0j] for p in MEG_PARTS}
+
+    def add(label, AL, AR):
+        parts[label][0] += AL
+        parts[label][1] += AR
+
+    for i, key in enumerate(("h1", "h2", "h3")):
+        Yh, m_phi = Yp[key], mass[key]
+        add("1loop_neutral", *RD.one_loop_neutral(Yh, masses, m_phi))
+        quarks = ([(3, 2 / 3, M_T, kappa[i] * M_T / V_EW), (3, -1 / 3, M_B, kappa[i] * M_B / V_EW)]
+                  if top_ansatz else [])
+        bz_q = RD.barr_zee(Yh[RD.MU, RD.E], Yh[RD.E, RD.MU], m_phi, ALPHA, V_EW,
+                           fermions=quarks, m_mu=m_mu)
+        bz = RD.barr_zee(Yh[RD.MU, RD.E], Yh[RD.E, RD.MU], m_phi, ALPHA, V_EW, m_w=M_W,
+                         kappa_w=kappa[i],
+                         fermions=[(1, -1, masses[RD.TAU], Yh[RD.TAU, RD.TAU])],
+                         charged=[(g_trilinear[i, a, a], mass[f"Hpm{a}"]) for a in (1, 2)],
+                         m_mu=m_mu)
+        add("BZ_quark", *bz_q["fermion"])
+        add("BZ_tau", *bz["fermion"])
+        add("BZ_W", *bz["W"])
+        add("BZ_Hpm", *bz["Hpm"])
+    for key in ("A1", "A2"):
+        YA, m_phi = Yp[key], mass[key]
+        add("1loop_neutral", *RD.one_loop_neutral(YA, masses, m_phi))
+        bz = RD.barr_zee(YA[RD.MU, RD.E], YA[RD.E, RD.MU], m_phi, ALPHA, V_EW,
+                         fermions=[(1, -1, masses[RD.TAU], YA[RD.TAU, RD.TAU])], m_mu=m_mu)
+        add("BZ_tau", *bz["fermion"])
+    for key in ("Hpm1", "Hpm2"):
+        add("1loop_charged", *RD.one_loop_charged(Yp[key], mass[key]))
+
+    A_L = sum(p[0] for p in parts.values())
+    A_R = sum(p[1] for p in parts.values())
+    return {"br": RD.branching_ratio(A_L, A_R, ALPHA, G_F), "A_L": A_L, "A_R": A_R,
+            "parts": {k: tuple(v) for k, v in parts.items()}}
+
+
+from sm_inputs import ALPHA, G_F, M_B  # noqa: E402

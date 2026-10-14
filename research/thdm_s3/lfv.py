@@ -60,6 +60,7 @@ __all__ = [
     "lepton_mass_basis", "fit_yukawas", "lepton_branches", "branch_kind",
     "mu3_allowed",
     "q_matrices",
+    "scalar_lepton_couplings", "signed_mass_basis", "mass_basis_couplings",
     "lfv_width", "IDX",
 ]
 
@@ -293,6 +294,99 @@ def q_matrices(G, O, mixing):
     Gt = [O.T @ g @ O for g in G]
     mixing = np.asarray(mixing, dtype=float)
     return [sum(mixing[j, i] * Gt[j] for j in range(3)) for i in range(mixing.shape[1])]
+
+
+def scalar_lepton_couplings(lep, scalar):
+    """Lambdified ``Y₁…Y₅ → {"even", "odd", "charged"}``: per-doublet Yukawa matrices.
+
+    Read off the Lagrangian, like `lepton_g_function`, but for **every** scalar
+    component.  The neutral component of doublet k is expanded as
+    ``H_k⁰ = (v_k + r_k + i a_k)/√2`` and the charged one is renamed ``c_k``; then
+
+    * ``even[k][i, j]`` is ``−∂/∂r_k`` of the coefficient of ``ē_{iL} P_R e_{jR}``,
+    * ``odd[k][i, j]``  is ``−∂/∂a_k`` of the same coefficient,
+    * ``charged[k][i, j]`` is ``−∂/∂c_k`` of the coefficient of ``ν̄_{iL} P_R e_{jR}``,
+
+    so that ``L ⊃ −ē_L Y e_R φ − ν̄_L Y_C e_R c + h.c.`` with the minus sign of
+    ``L = −ψ̄Mψ``.  That is the convention [OST16] Eq. (6) and [HKZ13] write
+    their dipole formulae in.  Nothing is assumed about how the three relate.
+    The doublet structure fixes ``odd = i·even`` and ``charged = √2·even``, and
+    the notebook checks that this comes out.  ``even`` reproduces
+    `lepton_g_function`'s ``G_k``.
+
+    Rows are generations (1, 2, S) in feynlag's S₃ basis, in the weak basis.  Use
+    `mass_basis_couplings` to rotate.
+
+    [OST16] Y. Omura, E. Senaha, K. Tobe, Phys. Rev. D 94, 055019 (2016), arXiv:1511.08880.
+    [HKZ13] R. Harnik, J. Kopp, J. Zupan, JHEP 03 (2013) 026, arXiv:1209.1397.
+    """
+    from feynlag.vertices.bilinear import Bilinear, expand_bilinear
+    from feynlag.dirac import diracPR
+
+    def leg(f, slot):
+        return f.bar_components[slot][0]
+
+    e_bars = [leg(f, 1) for f in lep.left]
+    nu_bars = [leg(f, 0) for f in lep.left]
+    rights = [r.components[0][0] for r in lep.right]
+    vs = [scalar.v1.s, scalar.v2.s, scalar.vS.s]
+    r = sp.symbols("r0:3", real=True)
+    a = sp.symbols("a0:3", real=True)
+    c = sp.symbols("c0:3")
+    sub = {}
+    for k, H in enumerate(scalar.doublets):
+        Hp, H0 = H.components
+        sub[H0] = (vs[k] + r[k] + sp.I * a[k]) / sp.sqrt(2)
+        sub[Hp] = c[k]
+    L = sp.expand(expand_bilinear(sp.expand(lep.lagrangian().xreplace(sub))))
+
+    def block(bars, var):
+        return sp.Matrix(3, 3, lambda i, j: -sp.diff(
+            L.coeff(Bilinear(bars[i], diracPR, rights[j])), var))
+
+    even = [block(e_bars, r[k]) for k in range(3)]
+    odd = [block(e_bars, a[k]) for k in range(3)]
+    charged = [block(nu_bars, c[k]) for k in range(3)]
+    stray = set().union(*(m.free_symbols for m in even + odd + charged)) - set(lep.coupling_symbols)
+    if stray:
+        raise ValueError(f"a Yukawa matrix depends on {sorted(map(str, stray))}: not linear in the fields")
+    fn = sp.lambdify([lep.coupling_symbols],
+                     [[m.tolist() for m in grp] for grp in (even, odd, charged)], "numpy")
+
+    def couplings_of(Y):
+        ev, od, ch = fn(list(Y))
+        return {"even": [np.array(m, dtype=float) for m in ev],
+                "odd": [np.array(m, dtype=complex) for m in od],
+                "charged": [np.array(m, dtype=float) for m in ch]}
+    return couplings_of
+
+
+def signed_mass_basis(G, vevs):
+    """``(masses, O, s)``: |eigenvalues| ascending, O orthogonal, ``s`` the eigenvalue signs.
+
+    Same diagonalization as `lepton_mass_basis`, keeping the signs it discards.
+    ``Oᵀ M O = diag(s·m)``, so the right-handed rephasing ``e_R → s e_R`` makes the
+    masses positive.  h→ℓℓ′ only needs ``|Q|``, which the signs do not touch.
+    The dipole amplitude does need them: its τ-enhanced term
+    ``m_τ Y*_{τe} Y*_{μτ}`` changes sign with the τ eigenvalue.
+    """
+    M = sum(v * g for v, g in zip(vevs, G))
+    if np.abs(M - M.T).max() > 1e-12 * max(np.abs(M).max(), 1e-300):
+        raise ValueError("M_l is not symmetric: set Y5 = Y4 (the mu5 = mu4 ansatz)")
+    w, O = np.linalg.eigh(M)
+    order = np.argsort(np.abs(w))
+    w, O = w[order], O[:, order]
+    return np.abs(w), O, np.where(w < 0, -1.0, 1.0)
+
+
+def mass_basis_couplings(Y, O, s):
+    """``Oᵀ Y O diag(s)``: a Yukawa matrix in the positive-mass charged-lepton basis.
+
+    The left index is ``ē_L`` (or ``ν̄_L``, rotated by the same O; neutrinos are
+    massless here, so their basis is a free choice), and the right index is
+    ``e_R``, which carries the sign rephasing of `signed_mass_basis`.
+    """
+    return O.T @ Y @ O * s[None, :]
 
 
 def lfv_width(q_ab, q_ba, m_h):

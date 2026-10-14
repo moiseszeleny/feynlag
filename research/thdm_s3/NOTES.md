@@ -29,6 +29,10 @@ pedagogical walk-through). This directory is where the open questions go.
 | `soft_decays.py` | per-point numeric decay machinery for the soft-broken vacuum: rotations rebuilt from the stored inputs, the $hH^+H^-$ cubic tensor, VSS overlaps and widths, $R_{\gamma\gamma}$, LFV over every lepton branch, the S₃-image map. |
 | `06_soft_decays.ipynb` | decays and LFV on the 2021 soft points, validated against the extractor, the exact-S₃ limit and the S₃ image. **Done.** |
 | `derivations_06.tex` | printable appendix emitted by notebook 06. |
+| `radiative.py` | μ→eγ dipole amplitudes, numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$W$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
+| `07_mu_to_e_gamma.ipynb` | μ→eγ on the 2021 soft points: couplings of every scalar checked against the extractor, each amplitude piece against an independent source, the exact-S₃ zero, the scan against MEG II. **Done.** |
+| `derivations_07.tex` | printable appendix emitted by notebook 07. |
+| `results/mu_e_gamma.json` | per soft point: the least-constrained (μ₃, branch) configuration and its breakdown, plus scan summaries. Written by notebook 07. |
 | `report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
 | `report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
 | `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
@@ -558,6 +562,49 @@ LFV again bounds the lepton dial, not the scalar sector.
 - $A_{1,2}\to Zh$ and $H^\pm_{1,2}\to W^\pm h$ are open almost everywhere (median 20–80 MeV).
   Their couplings to the SM-like state obey $\sum_a|O_{ak}|^2=1-\kappa_V^2$ exactly.
 
+### 13. μ→eγ: zero at the exact vacuum, the binding LFV constraint in the soft one (notebook 07)
+
+**Machinery, checked piece by piece.** `lfv.scalar_lepton_couplings` reads the CP-even,
+CP-odd and charged Yukawa matrices of every doublet off the Lagrangian. They come out
+$Y^{(a)}=iY^{(r)}$ and $Y^{(c)}=\sqrt2Y^{(r)}$, and all seven physical scalars match
+feynlag's extractor to $10^{-18}$. `lfv.signed_mass_basis` keeps the eigenvalue signs that
+h→ℓℓ′ could ignore. `radiative.py` sums four pieces:
+- the neutral one loop: [HKZ13] Eq. (A3) in closed form, exact in $m_f/m_\phi$, and equal
+  to the 2D integral with external masses kept;
+- the charged one loop: [OST16] Eq. (32), equal to $-\tfrac12$ of the neutral non-flip
+  term, also from [Lavoura03];
+- Barr–Zee fermion and $W$ terms ([OST16] Eq. (20)). The top term matches [HKZ13] to 1%.
+  The $W$ term matches [Ilisie15]'s $F^{(3)}$ to 1% but is 14% above [HKZ13]'s quoted 0.11,
+  presumably their "set C";
+- a Barr–Zee $H^\pm$ term built from [Ilisie15]'s vertices, with its sign fixed by the
+  low-energy theorem against feynlag's diphoton amplitude.
+
+[OST16] Eq. (30) carries a typo: an $m_i/m_\mu$ on the non-flip term.
+
+**Exact S₃: identically zero.** The residual $\mathbb Z_2$ of the aligned vacuum makes the
+electron and the in-plane non-vacuum scalars ($h_0$, one $A$, one $H^\pm$) odd, so the
+dipole is forbidden to all orders, even though those scalars carry $e\mu$ couplings up to
+~0.1. It is the radiative-decay face of the decoupling behind findings 9–10. Off the
+alignment $\mathcal B\propto(60^\circ-\varphi)^2$, and 0.1° already reaches the MEG II limit.
+
+**Soft vacuum: it constrains the scalar sector.**
+- 415 464 (point, μ₃, branch) configurations; median $\mathcal B=7.7\times10^{-10}$.
+- 2.5% pass MEG II ($1.5\times10^{-13}$ [MEGII25]), against 80% for the Higgs LFV limits.
+  Per configuration, μ→eγ is a median $9\times10^4$ times more restrictive than $h\to e\mu$.
+- **610 of 2021 points** keep a MEG-allowed lepton configuration (599 with the h→ℓℓ′
+  limits too). The h→ℓℓ′ limits alone keep 2016.
+- The Barr–Zee $W$ loop through the SM-like Higgs dominates (largest piece in 92% of
+  configurations). Survivors are more aligned, with median $1-\kappa_V^2=8\times10^{-4}$
+  against $2.4\times10^{-3}$.
+- No μ₃ window or branch kind is singled out, and φ near π/3 does not protect a point: the
+  free soft terms break the $\mathbb Z_2$ whatever φ is.
+
+**Robust to the soft spots.** With no quark Barr–Zee, the quark sign flipped, or the $W$
+loop at [HKZ13]'s value, 499, 456 and 675 points survive.
+
+**Not included:** [HKZ13] set C, the $\phi Z\gamma$ (+6% on the $W$ term) and $H^\pm W\gamma$
+Barr–Zee diagrams. The quark couplings are an ansatz (along $\hat v$).
+
 ## Open questions / next
 
 - ~~Get the [DasDey14] erratum.~~ **Closed** — see finding 4. It corrects only the
@@ -602,9 +649,13 @@ LFV again bounds the lepton dial, not the scalar sector.
 - **$R_{\gamma\gamma}$ as a cut.** 48 soft points have $R_{\gamma\gamma}<0.8$, all with a
   light $H^\pm$. Turning that into an exclusion needs the production side and a
   cited $\mu_{\gamma\gamma}$.
-- **$\mu\to e\gamma$.** Off the exact vacuum the $e\mu$ and $e\tau$ couplings are
-  switched on, so the radiative decays will likely constrain more than $h\to e\mu$.
-  They need a loop calculation.
+- ~~$\mu\to e\gamma$.~~ **Done** — finding 13, `07_mu_to_e_gamma.ipynb`, `radiative.py`.
+  It removes ~70% of the soft scalar points. Left open:
+  - [HKZ13]'s set C and the $\phi Z\gamma$ and $H^\pm W\gamma$ Barr–Zee diagrams;
+  - μ→3e and μ–e conversion, which share the dipole and add contact terms;
+  - τ→ℓγ (generalize `radiative.py`'s indices);
+  - an order parameter for the residual $\mathbb Z_2$ in the soft vacuum, a combination of
+    soft terms rather than φ.
 - **The neutrino sector** (finding 7) is enumerated but not built: Dirac Yukawas
   on $\tilde H$ plus S₃-allowed Majorana $\nu_R$ masses. feynlag has the pieces
   (`seesaw_mass_matrix`, `MajoranaRotation`, Takagi) — see `examples/sm_seesaw.py`.
@@ -722,6 +773,25 @@ LFV again bounds the lepton dial, not the scalar sector.
   [doi:10.1007/978-1-4684-7571-5_9](https://doi.org/10.1007/978-1-4684-7571-5_9).
   Technical naturalness: a parameter may be small if setting it to zero enlarges
   the symmetry. Used in finding 11 for why soft terms need not be small, but may be.
+- **[OST16]** Y. Omura, E. Senaha, K. Tobe, *"τ- and μ-physics in a general two Higgs
+  doublet model with μ−τ flavor violation"*, Phys. Rev. D **94**, 055019 (2016),
+  [arXiv:1511.08880](https://arxiv.org/abs/1511.08880). The μ→eγ amplitude, its
+  normalization and the Barr–Zee fermion/$W$ terms (Eqs. (20), (28)–(33)); used in
+  finding 13. Its Eq. (30) has a non-flip-term typo (notebook 07 §2.1).
+- **[HKZ13]** R. Harnik, J. Kopp, J. Zupan, *"Flavor violating Higgs decays"*, JHEP **03**
+  (2013) 026, [arXiv:1209.1397](https://arxiv.org/abs/1209.1397). Eq. (A3) the exact one
+  loop; Eqs. (A4)–(A9) Barr–Zee; Eq. (14) and Table I the numerical oracles of notebook 07.
+- **[Ilisie15]** V. Ilisie, *"New Barr-Zee contributions to (g−2)_μ in two-Higgs-doublet
+  models"*, JHEP **04** (2015) 077, [arXiv:1502.04199](https://arxiv.org/abs/1502.04199).
+  Eqs. (11), (13) the off-shell φγγ vertices (the $H^\pm$ Barr–Zee term), Eq. (28) the
+  independent $W$-loop check.
+- **[Lavoura03]** L. Lavoura, *"General formulae for f₁ → f₂γ"*, Eur. Phys. J. C **29**,
+  191 (2003), [hep-ph/0302221](https://arxiv.org/abs/hep-ph/0302221),
+  [doi:10.1140/epjc/s2003-01212-7](https://doi.org/10.1140/epjc/s2003-01212-7).
+  Eqs. (40)–(41), the charged/neutral one-loop cross-check.
+- **[MEGII25]** MEG II Collaboration, *"New limit on the μ⁺→e⁺γ decay with the MEG II
+  experiment"* (2025), [arXiv:2504.15711](https://arxiv.org/abs/2504.15711).
+  $\mathcal B(\mu^+\to e^+\gamma)<1.5\times10^{-13}$ at 90% CL.
 - **[Yildirim26]** E. Yildirim, *"Double SM-like Higgs Production at future
   $e^+e^-$ colliders in the 3-Higgs Doublet Model under the $S_3$ symmetry"*,
   [arXiv:2604.24421](https://arxiv.org/abs/2604.24421) (2026). Applies
