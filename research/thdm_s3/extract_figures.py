@@ -26,6 +26,7 @@ NB03 = "03_scalar_decays.ipynb"              # report_scalar_decays.tex
 NB05 = "05_soft_scalar_scan.ipynb"           # report_soft_vacuum.tex
 NB06 = "06_soft_decays.ipynb"                # report_soft_decays.tex
 NB07 = "07_mu_to_e_gamma.ipynb"              # report_mu_e_gamma.tex
+NB08 = "08_tau_to_l_gamma.ipynb"             # notebook 08 (no report yet)
 
 #: name -> (notebook, cell index, marker that must occur in that cell's source)
 FIGURES = {
@@ -46,6 +47,7 @@ FIGURES = {
     "softdec_lfv": (NB06, 18, "LFV needs a non-vacuum admixture"),
     "softdec_gammagamma": (NB06, 20, "in the soft-broken vacuum"),
     "meg_scan": (NB07, 35, "over the soft scan (2021 points"),
+    "tau_l_gamma_scan": (NB08, 30, "over the soft scan (2021 points"),
 }
 
 

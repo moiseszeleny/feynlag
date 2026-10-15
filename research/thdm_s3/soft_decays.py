@@ -380,11 +380,12 @@ def mass_basis_yukawas(tools: SoftTools, Y, rot):
     return masses, out
 
 
-def mu_e_gamma(tools: SoftTools, point, rot, Y, g_trilinear=None, top_ansatz=True):
-    """``BR(μ→eγ)`` at one point and one lepton configuration, with its breakdown.
+def lfv_radiative(tools: SoftTools, point, rot, Y, i, j, g_trilinear=None, top_ansatz=True,
+                  yukawas=None):
+    """``B(ℓ_i → ℓ_j γ)`` at one point and one lepton configuration, with its breakdown.
 
-    Returns ``{"br", "A_L", "A_R", "parts": {label: (A_L, A_R)}}`` with labels
-    `MEG_PARTS`:
+    ``i`` decays, ``j`` is the final lepton (`radiative.E`, ``MU``, ``TAU``).  Returns
+    ``{"br", "A_L", "A_R", "parts": {label: (A_L, A_R)}}`` with labels `MEG_PARTS`:
 
     * ``1loop_neutral``: h₁,₂,₃ and A₁,₂ with ℓ_f = e, μ, τ in the loop;
     * ``1loop_charged``: H⁺₁,₂ with massless ν;
@@ -399,51 +400,83 @@ def mu_e_gamma(tools: SoftTools, point, rot, Y, g_trilinear=None, top_ansatz=Tru
     The Goldstones are left out.  Their lepton couplings are flavour-diagonal at
     any vacuum (notebook 07 checks this), and their part of the W loop is
     already inside [OST16]'s W bracket.
+
+    For τ decays the ratio to ``Γ(τ → ℓνν̄)`` is multiplied by ``B(τ → ℓνν̄)``
+    (`TAU_BR_LNN`).  ``yukawas`` is an optional precomputed
+    `mass_basis_yukawas` result, so several channels can share it.
     """
     import radiative as RD
 
     mass = rot["mass"]
     if g_trilinear is None:
         g_trilinear = hhh_charged(tools, point, rot)
-    masses, Yp = mass_basis_yukawas(tools, Y, rot)
+    masses, Yp = yukawas if yukawas is not None else mass_basis_yukawas(tools, Y, rot)
     vhat = np.array(rot["vevs"]) / np.linalg.norm(rot["vevs"])
     kappa = vhat @ rot["R_even"]
-    m_mu = masses[RD.MU]
+    m_i = masses[i]
     parts = {p: [0j, 0j] for p in MEG_PARTS}
 
     def add(label, AL, AR):
         parts[label][0] += AL
         parts[label][1] += AR
 
-    for i, key in enumerate(("h1", "h2", "h3")):
+    for k, key in enumerate(("h1", "h2", "h3")):
         Yh, m_phi = Yp[key], mass[key]
-        add("1loop_neutral", *RD.one_loop_neutral(Yh, masses, m_phi))
-        quarks = ([(3, 2 / 3, M_T, kappa[i] * M_T / V_EW), (3, -1 / 3, M_B, kappa[i] * M_B / V_EW)]
+        add("1loop_neutral", *RD.one_loop_neutral(Yh, masses, m_phi, i=i, j=j))
+        quarks = ([(3, 2 / 3, M_T, kappa[k] * M_T / V_EW), (3, -1 / 3, M_B, kappa[k] * M_B / V_EW)]
                   if top_ansatz else [])
-        bz_q = RD.barr_zee(Yh[RD.MU, RD.E], Yh[RD.E, RD.MU], m_phi, ALPHA, V_EW,
-                           fermions=quarks, m_mu=m_mu)
-        bz = RD.barr_zee(Yh[RD.MU, RD.E], Yh[RD.E, RD.MU], m_phi, ALPHA, V_EW, m_w=M_W,
-                         kappa_w=kappa[i],
+        bz_q = RD.barr_zee(Yh[i, j], Yh[j, i], m_phi, ALPHA, V_EW,
+                           fermions=quarks, m_mu=m_i)
+        bz = RD.barr_zee(Yh[i, j], Yh[j, i], m_phi, ALPHA, V_EW, m_w=M_W,
+                         kappa_w=kappa[k],
                          fermions=[(1, -1, masses[RD.TAU], Yh[RD.TAU, RD.TAU])],
-                         charged=[(g_trilinear[i, a, a], mass[f"Hpm{a}"]) for a in (1, 2)],
-                         m_mu=m_mu)
+                         charged=[(g_trilinear[k, a, a], mass[f"Hpm{a}"]) for a in (1, 2)],
+                         m_mu=m_i)
         add("BZ_quark", *bz_q["fermion"])
         add("BZ_tau", *bz["fermion"])
         add("BZ_W", *bz["W"])
         add("BZ_Hpm", *bz["Hpm"])
     for key in ("A1", "A2"):
         YA, m_phi = Yp[key], mass[key]
-        add("1loop_neutral", *RD.one_loop_neutral(YA, masses, m_phi))
-        bz = RD.barr_zee(YA[RD.MU, RD.E], YA[RD.E, RD.MU], m_phi, ALPHA, V_EW,
-                         fermions=[(1, -1, masses[RD.TAU], YA[RD.TAU, RD.TAU])], m_mu=m_mu)
+        add("1loop_neutral", *RD.one_loop_neutral(YA, masses, m_phi, i=i, j=j))
+        bz = RD.barr_zee(YA[i, j], YA[j, i], m_phi, ALPHA, V_EW,
+                         fermions=[(1, -1, masses[RD.TAU], YA[RD.TAU, RD.TAU])], m_mu=m_i)
         add("BZ_tau", *bz["fermion"])
     for key in ("Hpm1", "Hpm2"):
-        add("1loop_charged", *RD.one_loop_charged(Yp[key], mass[key]))
+        add("1loop_charged", *RD.one_loop_charged(Yp[key], mass[key], i=i, j=j))
 
     A_L = sum(p[0] for p in parts.values())
     A_R = sum(p[1] for p in parts.values())
-    return {"br": RD.branching_ratio(A_L, A_R, ALPHA, G_F), "A_L": A_L, "A_R": A_R,
+    br_lnn = TAU_BR_LNN[j] if i == RD.TAU else 1.0
+    return {"br": RD.branching_ratio(A_L, A_R, ALPHA, G_F, br_lnn), "A_L": A_L, "A_R": A_R,
             "parts": {k: tuple(v) for k, v in parts.items()}}
 
 
-from sm_inputs import ALPHA, G_F, M_B  # noqa: E402
+def mu_e_gamma(tools: SoftTools, point, rot, Y, g_trilinear=None, top_ansatz=True):
+    """``B(μ → eγ)``: `lfv_radiative` with ``(i, j) = (μ, e)``."""
+    import radiative as RD
+    return lfv_radiative(tools, point, rot, Y, RD.MU, RD.E, g_trilinear, top_ansatz)
+
+
+#: The three radiative channels, ``name: (i, j, 90% CL limit)``.  Limits:
+#: MEG II 2025 (arXiv:2504.15711); Belle, JHEP 10 (2021) 019 (arXiv:2103.12994), 988 fb⁻¹;
+#: BaBar, PRL 104 (2010) 021802 (arXiv:0908.2381), stronger than Belle's 5.6×10⁻⁸ for eγ.
+TAU_MU_GAMMA_LIMIT = 4.2e-8
+TAU_E_GAMMA_LIMIT = 3.3e-8
+RADIATIVE_CHANNELS = {"mu_e": (1, 0, MEG_II_LIMIT), "tau_mu": (2, 1, TAU_MU_GAMMA_LIMIT),
+                      "tau_e": (2, 0, TAU_E_GAMMA_LIMIT)}
+
+
+def radiative_lfv_all(tools: SoftTools, point, rot, Y, g_trilinear=None, top_ansatz=True):
+    """All of `RADIATIVE_CHANNELS` at one configuration, sharing the couplings."""
+    if g_trilinear is None:
+        g_trilinear = hhh_charged(tools, point, rot)
+    yuk = mass_basis_yukawas(tools, Y, rot)
+    return {name: lfv_radiative(tools, point, rot, Y, i, j, g_trilinear, top_ansatz, yukawas=yuk)
+            for name, (i, j, _) in RADIATIVE_CHANNELS.items()}
+
+
+from sm_inputs import ALPHA, BR_TAU_ENUNU, BR_TAU_MUNUNU, G_F, M_B  # noqa: E402
+
+#: ``B(τ → ℓ_j νν̄)`` by final-lepton index j, the normalization of ``B(τ → ℓ_j γ)``.
+TAU_BR_LNN = {0: BR_TAU_ENUNU, 1: BR_TAU_MUNUNU}

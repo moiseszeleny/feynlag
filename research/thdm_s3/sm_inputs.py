@@ -49,3 +49,10 @@ ALPHA = 1 / 137.035999     # fine-structure constant at q^2 = 0 (Thomson limit),
                             # digits beyond these differ between CODATA editions
 G_F = 1.1663788e-5         # Fermi constant G_F/(hbar c)^3 in GeV^-2, 1.1663788(6)e-5, from
                             # the muon lifetime: the denominator of BR(mu -> e gamma)
+
+# --- tau decay ----------------------------------------------------------------
+BR_TAU_ENUNU = 0.1782      # B(tau- -> e- nubar_e nu_tau), (17.82 +- 0.04)%
+BR_TAU_MUNUNU = 0.1739     # B(tau- -> mu- nubar_mu nu_tau), (17.39 +- 0.04)%: the
+                            # denominators of B(tau -> e gamma), B(tau -> mu gamma)
+TAU_LIFETIME = 290.3e-15   # tau mean life in s, 290.3 +- 0.5 fs
+HBAR_GEV_S = 6.582119569e-25   # hbar in GeV s (CODATA, exact since the 2019 SI)

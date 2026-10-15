@@ -26,13 +26,16 @@ pedagogical walk-through). This directory is where the open questions go.
 | `05_soft_scalar_scan.ipynb` | the soft-broken vacuum: released tadpoles, the φ fundamental domain, the general-vacuum spectrum, and the scan against notebook 01. **Done.** |
 | `derivations_05.tex` | printable appendix emitted by notebook 05 §7. |
 | `lfv.py` | charged-lepton LFV couplings at any vacuum: per-doublet $G_k$ read off the Lagrangian (`lepton_g_function`), the draft's analytic inversion at the alignment, and the exact arrowhead-cubic enumeration of every lepton-fit branch off it (`lepton_branches`, `branch_kind`). Shared by notebooks 03 and 06. |
-| `soft_decays.py` | per-point numeric decay machinery for the soft-broken vacuum: rotations rebuilt from the stored inputs, the $hH^+H^-$ cubic tensor, VSS overlaps and widths, $R_{\gamma\gamma}$, LFV over every lepton branch, the S₃-image map. |
+| `soft_decays.py` | per-point numeric decay machinery for the soft-broken vacuum: rotations rebuilt from the stored inputs, the $hH^+H^-$ cubic tensor, VSS overlaps and widths, $R_{\gamma\gamma}$, LFV over every lepton branch, the S₃-image map, and the radiative decays (`lfv_radiative` for any $\ell_i\to\ell_j\gamma$, `radiative_lfv_all` for the three channels at once). |
 | `06_soft_decays.ipynb` | decays and LFV on the 2021 soft points, validated against the extractor, the exact-S₃ limit and the S₃ image. **Done.** |
 | `derivations_06.tex` | printable appendix emitted by notebook 06. |
-| `radiative.py` | μ→eγ dipole amplitudes, numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$W$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
+| `radiative.py` | $\ell_i\to\ell_j\gamma$ dipole amplitudes (μ→eγ, τ→μγ, τ→eγ; the decaying and final lepton are arguments), numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$W$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
 | `07_mu_to_e_gamma.ipynb` | μ→eγ on the 2021 soft points: couplings of every scalar checked against the extractor, each amplitude piece against an independent source, the exact-S₃ zero, the scan against MEG II. **Done.** |
 | `derivations_07.tex` | printable appendix emitted by notebook 07. |
 | `results/mu_e_gamma.json` | per soft point: the least-constrained (μ₃, branch) configuration and its breakdown, plus scan summaries. Written by notebook 07. |
+| `08_tau_to_l_gamma.ipynb` | τ→μγ and τ→eγ: the index generalization checked against notebook 07, [HKZ13] and [OST16]; the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed); the soft scan against Belle/BaBar and h→τℓ. **Done.** |
+| `derivations_08.tex` | printable appendix emitted by notebook 08. |
+| `results/tau_l_gamma.json` | per soft point: the least-constrained configuration of each τ channel and the counts allowed by each limit; exact-vacuum and scan summaries. Written by notebook 08. |
 | `report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
 | `report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
 | `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
@@ -606,6 +609,42 @@ loop at [HKZ13]'s value, 499, 456 and 675 points survive.
 **Not included:** [HKZ13] set C, the $\phi Z\gamma$ (+6% on the $W$ term) and $H^\pm W\gamma$
 Barr–Zee diagrams. The quark couplings are an ansatz (along $\hat v$).
 
+### 14. τ→μγ and τ→eγ: the exact vacuum splits them; the soft vacuum adds nothing to MEG II (notebook 08)
+
+**Machinery.** `radiative.py` takes the decaying and final lepton as arguments, and
+`soft_decays.lfv_radiative(…, i, j)` assembles any channel (`mu_e_gamma` is its $(\mu,e)$
+case). Checks:
+- notebook 07 is reproduced;
+- a flavour relabelling maps the τ channels onto the μ→eγ code exactly;
+- [HKZ13] (A3) with the external masses kept agrees at the 1% level down to a 6.7 GeV scalar;
+- [OST16] Eq. (19) is reproduced;
+- the $\times\mathcal B(\tau\to\ell\nu\bar\nu)$ normalization ([OST16] Eq. (17)) matches the
+  lifetime one to 0.2%;
+- both [HKZ13] τ bounds (0.016, 0.014) are reproduced with their $W$ number. This also fixes the
+  one/two-loop relative sign.
+
+For an SM-like Higgs, $h\to\tau\mu$ is ~12× stronger in the coupling than τ→μγ: the reverse of
+the $e\mu$ sector.
+
+**Exact S₃: τ→eγ ≡ 0, τ→μγ allowed.** The residual $\mathbb Z_2$ makes τ→eγ, which has one odd
+lepton, round-off at all 1964 × 60 exact configurations. Off alignment it grows as
+$(60^\circ-\varphi)^2$. τ→μγ goes through the four even states (the three odd ones, h₀, one $A$
+and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
+- Belle [Belle21] excludes 0.76% of exact configurations, against 18.5% for $h\to\tau\mu$.
+- That exclusion is **not a subset** of the Higgs one: 485 configurations at 20 points are
+  τ→μγ-excluded and $h\to\tau\mu$-allowed. All of them are one-loop dominated and have a light
+  non-SM neutral even scalar (6.7–223 GeV).
+- No exact point loses its whole μ₃ range.
+
+**Soft vacuum: nothing beyond MEG II.**
+- Median $\mathcal B=2.3\times10^{-12}$ in both channels.
+- 0.021% (τμ) and 0.034% (τe) of configurations exceed the limits.
+- The point counts stay at 610, and 599 with h→ℓℓ′, also under all three variants.
+- τ→μγ is a median $9\times10^{-3}$ as restrictive as $h\to\tau\mu$.
+- The $W$ Barr–Zee term dominates here too (93%).
+- **Belle II prediction:** where every limit holds, $\mathcal B(\tau\to\ell\gamma)\le4\times10^{-10}$,
+  about 20× below the 50 ab⁻¹ reach [BelleII22]. A τ→ℓγ signal would exclude the soft vacuum.
+
 ## Open questions / next
 
 - ~~Get the [DasDey14] erratum.~~ **Closed** — see finding 4. It corrects only the
@@ -654,7 +693,9 @@ Barr–Zee diagrams. The quark couplings are an ansatz (along $\hat v$).
   It removes ~70% of the soft scalar points. Left open:
   - [HKZ13]'s set C and the $\phi Z\gamma$ and $H^\pm W\gamma$ Barr–Zee diagrams;
   - μ→3e and μ–e conversion, which share the dipole and add contact terms;
-  - τ→ℓγ (generalize `radiative.py`'s indices);
+  - ~~τ→ℓγ~~ **done**, finding 14 and `08_tau_to_l_gamma.ipynb`. Left open from it: the
+    direct-search status of the light non-SM even scalars behind the exact-vacuum τ→μγ
+    exclusions, and τ→3μ / τ→μee (same dipole plus contact terms);
   - an order parameter for the residual $\mathbb Z_2$ in the soft vacuum, a combination of
     soft terms rather than φ.
 - **The neutrino sector** (finding 7) is enumerated but not built: Dirac Yukawas
@@ -790,6 +831,15 @@ Barr–Zee diagrams. The quark couplings are an ansatz (along $\hat v$).
   191 (2003), [hep-ph/0302221](https://arxiv.org/abs/hep-ph/0302221),
   [doi:10.1140/epjc/s2003-01212-7](https://doi.org/10.1140/epjc/s2003-01212-7).
   Eqs. (40)–(41), the charged/neutral one-loop cross-check.
+- **[Belle21]** Belle Collaboration, *"Search for lepton-flavor-violating tau-lepton decays
+  to ℓγ at Belle"*, JHEP **10** (2021) 019, [arXiv:2103.12994](https://arxiv.org/abs/2103.12994).
+  $\mathcal B(\tau\to\mu\gamma)<4.2\times10^{-8}$, $\mathcal B(\tau\to e\gamma)<5.6\times10^{-8}$ (90% CL).
+- **[BaBar10]** BaBar Collaboration, *"Searches for lepton flavor violation in the decays
+  τ±→e±γ and τ±→μ±γ"*, Phys. Rev. Lett. **104**, 021802 (2010),
+  [arXiv:0908.2381](https://arxiv.org/abs/0908.2381). $\mathcal B(\tau\to e\gamma)<3.3\times10^{-8}$ (90% CL).
+- **[BelleII22]** Belle II, *"Searches for lepton flavor violation in tau decays at Belle II"*,
+  [arXiv:2209.11639](https://arxiv.org/abs/2209.11639). Expected 50 ab⁻¹ limits $6.9\times10^{-9}$
+  (μγ), $9.0\times10^{-9}$ (eγ).
 - **[MEGII25]** MEG II Collaboration, *"New limit on the μ⁺→e⁺γ decay with the MEG II
   experiment"* (2025), [arXiv:2504.15711](https://arxiv.org/abs/2504.15711).
   $\mathcal B(\mu^+\to e^+\gamma)<1.5\times10^{-13}$ at 90% CL.

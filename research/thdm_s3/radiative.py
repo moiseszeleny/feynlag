@@ -1,4 +1,4 @@
-"""μ → eγ from scalar exchange: one-loop and Barr–Zee two-loop dipole amplitudes.
+"""ℓ_i → ℓ_j γ (μ → eγ, τ → μγ, τ → eγ) from scalar exchange: one-loop and Barr–Zee two-loop dipole amplitudes.
 
 Pure numerics, no model knowledge.  A model supplies its scalars' masses and
 their Yukawa matrices **in the positive-mass charged-lepton basis**, in the
@@ -8,6 +8,9 @@ convention
 
 of [OST16] Eq. (6) and [HKZ13].  `lfv.scalar_lepton_couplings` +
 `lfv.mass_basis_couplings` produce exactly this.
+
+Every amplitude takes the decaying lepton ``i`` and the final one ``j`` as
+indices (default μ → e), with ``m_μ → m_i`` in the formulas below.
 
 **Normalization** ([OST16] Eqs. (28)–(29)).  The amplitude is
 ``T = e ε*_α ū_e m_μ iσ^{αβ}q_β (A_L P_L + A_R P_R) u_μ`` and
@@ -186,36 +189,38 @@ def w_loop(m_phi, m_w):
 # amplitudes
 # --------------------------------------------------------------------------
 
-def one_loop_neutral(Y, masses, m_phi):
+def one_loop_neutral(Y, masses, m_phi, i=MU, j=E):
     """``(A_L, A_R)`` from one neutral scalar, summed over internal ℓ_f = e, μ, τ.
 
-    [HKZ13] Eq. (A3) with i = μ (decaying) and j = e, after the x, y integration:
+    [HKZ13] Eq. (A3) for ℓ_i → ℓ_j γ (defaults i = μ decaying, j = e), after the
+    x, y integration:
 
-        c_L = Σ_f [ ½ I1(t_f) (m_e Y_ef Y*_μf + m_μ Y*_fe Y_fμ)
-                    + I2(t_f) m_f Y*_fe Y*_μf ] / (4 m_μ m_φ²),
+        c_L = Σ_f [ ½ I1(t_f) (m_j Y_jf Y*_if + m_i Y*_fj Y_fi)
+                    + I2(t_f) m_f Y*_fj Y*_if ] / (4 m_i m_φ²),
 
     with ``c_R`` the same with ``Y → Y†``, and ``A = c/4π²``.  ``Y`` is a complex 3×3
     in the (e, μ, τ) mass basis and ``masses`` are the positive lepton masses.
     """
-    m_e, m_mu = masses[E], masses[MU]
+    m_j, m_i = masses[j], masses[i]
 
     def c(Y):
         out = 0j
         for f in range(3):
             t = masses[f] ** 2 / m_phi**2
-            out += (0.5 * I1(t) * (m_e * Y[E, f] * np.conj(Y[MU, f])
-                                   + m_mu * np.conj(Y[f, E]) * Y[f, MU])
-                    + I2(t) * masses[f] * np.conj(Y[f, E]) * np.conj(Y[MU, f]))
-        return out / (4 * m_mu * m_phi**2)
+            out += (0.5 * I1(t) * (m_j * Y[j, f] * np.conj(Y[i, f])
+                                   + m_i * np.conj(Y[f, j]) * Y[f, i])
+                    + I2(t) * masses[f] * np.conj(Y[f, j]) * np.conj(Y[i, f]))
+        return out / (4 * m_i * m_phi**2)
 
     Y = np.asarray(Y, dtype=complex)
     return c(Y) / (4 * math.pi**2), c(Y.conj().T) / (4 * math.pi**2)
 
 
-def one_loop_charged(Yc, m_hpm):
-    """``(A_L, A_R)`` from one charged scalar with massless neutrinos ([OST16] Eq. (32))."""
+def one_loop_charged(Yc, m_hpm, i=MU, j=E):
+    """``(A_L, A_R)`` from one charged scalar with massless neutrinos ([OST16] Eq. (32)),
+    for ℓ_i → ℓ_j γ: ``A_L = −(Y_C†Y_C)_{ji}/(192π² m_{H±}²)``."""
     Yc = np.asarray(Yc, dtype=complex)
-    return -(Yc.conj().T @ Yc)[E, MU] / (192 * math.pi**2 * m_hpm**2), 0j
+    return -(Yc.conj().T @ Yc)[j, i] / (192 * math.pi**2 * m_hpm**2), 0j
 
 
 def barr_zee(y_mue, y_emu, m_phi, alpha, v, m_w=None, kappa_w=0.0,
@@ -224,6 +229,8 @@ def barr_zee(y_mue, y_emu, m_phi, alpha, v, m_w=None, kappa_w=0.0,
 
     Args:
         y_mue, y_emu: φ's ``Y_{μe}`` (coefficient of ``μ̄_L e_R``) and ``Y_{eμ}``.
+            For a general ℓ_i → ℓ_j γ pass ``Y_{ij}`` and ``Y_{ji}``, with ``m_mu``
+            the decaying lepton's mass ``m_i``.
         kappa_w: ``g_{φVV}/g^{SM}``.
         fermions: ``(N_c, Q, m_f, y_ff)`` with ``y_ff`` φ's (complex) ``f̄_L f_R``
             coupling in the same convention.  An imaginary part is a pseudoscalar
@@ -250,6 +257,10 @@ def barr_zee(y_mue, y_emu, m_phi, alpha, v, m_w=None, kappa_w=0.0,
     return {key: tuple(val) for key, val in out.items()}
 
 
-def branching_ratio(A_L, A_R, alpha, G_F):
-    """[OST16] Eq. (29): ``48π³α(|A_L|² + |A_R|²)/G_F²``."""
-    return 48 * math.pi**3 * alpha * (abs(A_L) ** 2 + abs(A_R) ** 2) / G_F**2
+def branching_ratio(A_L, A_R, alpha, G_F, br_lnn=1.0):
+    """[OST16] Eq. (29): ``48π³α(|A_L|² + |A_R|²)/G_F² × B(ℓ_i → ℓ_k νν̄)``.
+
+    The ratio is to ``Γ(ℓ_i → ℓ_k νν̄) = G_F² m_i⁵/192π³``, so ``br_lnn = 1`` for the
+    muon and ``B(τ → ℓνν̄)`` for the tau ([OST16] Eq. (17)).
+    """
+    return 48 * math.pi**3 * alpha * (abs(A_L) ** 2 + abs(A_R) ** 2) / G_F**2 * br_lnn
