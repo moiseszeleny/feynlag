@@ -5,6 +5,8 @@ Research project on the S₃-symmetric three-Higgs-doublet model, built end to e
 lepton-flavour-violating Higgs rates. These are findings and may be revised. The running log
 is [`NOTES.md`](NOTES.md).
 
+**Reviewing?** Start with [`CLAIMS.md`](CLAIMS.md). It lists every claim across the notebooks, load-bearing assumptions first. Record review marks in [`review_status.csv`](review_status.csv).
+
 ## Reports
 
 | report | source notebook | main result |

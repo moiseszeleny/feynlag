@@ -45,6 +45,10 @@ pedagogical walk-through). This directory is where the open questions go.
 | `build_reports.sh` | rebuilds the six `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
 | `README.md` | the folder's GitHub landing page: the report index. |
 | `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
+| `claims.py` | builds `CLAIMS.md`, the review register: every `derivations_*.tex` ledger step plus the curated assumptions, ordered assumed → imported → derived. Picks up a new notebook's ledger with no change. Run `python research/thdm_s3/claims.py` after re-executing a notebook. |
+| `assumptions.py` | the load-bearing assumptions the ledgers do not record (scan priors, local minimum, cuts, κ_t = κ_V, missing diagrams, experimental limits), plus `PIPELINE`, the notebook/script → results-file map used to mark what is downstream of each assumption. New notebooks should record their choices in their own ledger as `obtained="assumed"` instead. |
+| `CLAIMS.md` | generated; the place to start a manual review. |
+| `review_status.csv` | review marks per claim id (`todo`/`ok`/`doubt`/`wrong` + note). Edit this, not `CLAIMS.md`. A ledger claim's id hashes its text, so an edited claim resets to `todo` with a note, and a removed one stays listed as an orphaned mark. |
 | `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
 | `results/viable_points_soft.json` | 2021 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
