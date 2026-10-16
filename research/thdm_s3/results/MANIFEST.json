@@ -73,6 +73,41 @@
     "results/tau_l_gamma.json": "314f6a4af7fb1cf2"
    },
    "stamped": "2026-10-16"
+  },
+  "scan.py": {
+   "commit": "613ef13",
+   "fingerprint": {
+    "code": "3041beec98f5b2c2",
+    "inputs": {},
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "constraints": "76c7d23eab05b22e",
+     "model": "b832810ea98fb465"
+    }
+   },
+   "note": "baseline 2026-10-16: re-run at HEAD (30 and 55 chunks) reproduces the stored JSON byte for byte",
+   "outputs": {
+    "results/viable_points.json": "f94af42dfb0fd425"
+   },
+   "stamped": "2026-10-16"
+  },
+  "scan_soft.py": {
+   "commit": "613ef13",
+   "fingerprint": {
+    "code": "02ad35809ebdfb29",
+    "inputs": {},
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "constraints": "76c7d23eab05b22e",
+     "model": "b832810ea98fb465",
+     "scan": "3041beec98f5b2c2"
+    }
+   },
+   "note": "baseline 2026-10-16: re-run at HEAD (30 and 55 chunks) reproduces the stored JSON byte for byte",
+   "outputs": {
+    "results/viable_points_soft.json": "d5314296183f02ac"
+   },
+   "stamped": "2026-10-16"
   }
  },
  "reports": {
