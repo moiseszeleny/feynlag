@@ -45,6 +45,24 @@
    },
    "stamped": "2026-10-16"
   },
+  "04": {
+   "commit": "de92697",
+   "fingerprint": {
+    "code": "7a8c2011f07aec85",
+    "inputs": {},
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "constraints": "76c7d23eab05b22e",
+     "derive": "8fff185522e07f25",
+     "model": "b832810ea98fb465"
+    }
+   },
+   "note": "re-executed 2026-10-16 (py3.13): text outputs and ledger identical",
+   "outputs": {
+    "derivations_04.tex": "f1e676f5dd4ad58e"
+   },
+   "stamped": "2026-10-16"
+  },
   "07": {
    "commit": "a560a73",
    "fingerprint": {
