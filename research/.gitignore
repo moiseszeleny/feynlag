@@ -1,0 +1,19 @@
+# Ignore patterns for research/ only. They live here, not in the root
+# .gitignore, because nothing outside research/ refers to it (README rule 6).
+
+# heavy scan intermediates; small results/*.json artifacts ARE committed
+**/cache/
+
+# LaTeX build products of the generated derivation appendices (the .tex the
+# notebooks emit IS committed; the PDF and friends are rebuilt on demand)
+*.pdf
+# ...except the report PDFs: those are deliverables, committed so they read on GitHub
+!report_*.pdf
+*.aux
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.log
+*.bbl
+*.blg

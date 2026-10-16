@@ -202,8 +202,8 @@ def test_cp_even_mass_matrix_structure(s3_model):
 #
 # These pin what previously lived only as print statements inside
 # examples/THDM_S3_Tutorial.ipynb §6-§9.  Built here from this file's own
-# fixture, deliberately NOT importing research/thdm_s3/model.py — research
-# code churns, and the suite must not be hostage to it (see research/README.md).
+# fixture, deliberately importing no exploratory code: such code churns, and
+# the suite must not be hostage to it.
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
@@ -290,9 +290,9 @@ def test_block_overlap_is_the_hvv_coupling(s3_sectors):
 
     Checked against the definition (numerically diagonalize the *un-rotated*
     M_S, project each eigenvector on v̂) at random points, not derived from the
-    block; and the opposite assignment fails, so the test has teeth.  The
-    research scan (research/thdm_s3/model.py::hvv_function) tags every viable
-    point with this quantity and relies on it.
+    block; and the opposite assignment fails, so the test has teeth.  A
+    parameter scan that tags every viable point with this quantity relies on
+    it.
     """
     import numpy as np
     M_S, M_A, M_C, R, (v1, v2, vS), l = s3_sectors
@@ -336,8 +336,8 @@ def test_block_overlap_is_the_hvv_coupling(s3_sectors):
 def test_delta_is_minus_the_block_angle(s3_sectors):
     """R_S = R·R_H(δ) diagonalizes M_S for δ = −ψ, and for neither ψ nor ψ−θ_v.
 
-    Two conventions compose here and the research code got their combination
-    wrong (it used δ = ψ − θ_v), so both halves are pinned:
+    Two conventions compose here and an earlier implementation got their
+    combination wrong (it used δ = ψ − θ_v), so both halves are pinned:
 
     1. ``R_A(φ,θ)·R_H(δ) = R_A(φ,θ+δ)`` identically, so δ is the rotation *on
        top of* the geometric basis — there is no θ_v to subtract from a block
@@ -401,7 +401,7 @@ def test_delta_is_minus_the_block_angle(s3_sectors):
 
         assert off(-psi) < 1e-12                      # the fix
         assert off(psi) > 1e-3                        # the un-transposed sign
-        assert off(psi - theta_v) > 1e-3              # the old research formula
+        assert off(psi - theta_v) > 1e-3              # the earlier, wrong formula
 
     # the branch of atan pins the labelling: |cos δ| >= |sin δ| always, i.e.
     # h_1 IS the state carrying the larger hVV coupling.
@@ -423,8 +423,8 @@ def test_masses_match_gomezbock_closed_forms(s3_sectors):
     the literature's (the λ₄ invariant transcribed literally from [DasDey14]
     is not even S₃-invariant here).  Because the [DasDey14] boundedness and
     unitarity conditions involve λ₄ only as |λ₄| or λ₄², they nevertheless
-    transfer to feynlag's λ's unchanged — which is what
-    research/thdm_s3/constraints.py relies on.
+    transfer to feynlag's λ's unchanged — which is what any implementation
+    of those conditions in feynlag's basis relies on.
 
     [GomezBock21] M. Gómez-Bock, M. Mondragón, A. Pérez-Martínez,
         Eur. Phys. J. C 81, 942 (2021), arXiv:2102.02800,
@@ -499,8 +499,8 @@ def test_aligned_vacuum_can_meet_the_electroweak_scale(s3_model):
 #
 # Four S₃-breaking quadratics release the √3 alignment: the tadpoles become
 # ordinary equations and a general (v1, v2, vS) is a stationary point.  These
-# pin the structural facts research/thdm_s3/scan_soft.py rests on, built from
-# the fixture's own model (never importing research code).
+# pin the structural facts a soft-broken parameter scan rests on, built from
+# the fixture's own model (importing no exploratory code).
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
@@ -648,10 +648,10 @@ def test_soft_s3_image_is_the_same_physics(s3_soft):
 # ---------------------------------------------------------------------------
 # The S₃ FERMION sector (leptons and quarks).
 #
-# Physics input: the S₃ irrep assignment of research/thdm_s3/paper_lfvhd/LFVHD_3HDMS3.tex —
-# (F1, F2) a doublet and F_S a singlet, for every left- and right-handed
-# species.  Rebuilt here from scratch, deliberately NOT importing
-# research/thdm_s3/fermions.py (see the note above the s3_sectors fixture).
+# Physics input: the S₃ irrep assignment of the [LFVHD] draft (Zeleny-Mora,
+# Mondragón, Valencia-Pérez) — (F1, F2) a doublet and F_S a singlet, for every
+# left- and right-handed species.  Rebuilt here from scratch, deliberately
+# importing no exploratory code (see the note above the s3_sectors fixture).
 #
 # The headline result these pin: O12 depends on the VACUUM alone, so it is the
 # same matrix in every fermion sector — which forces the CKM matrix to be block
@@ -797,8 +797,8 @@ def test_singular_value_relation_needs_mu4_plus_mu5_squared():
 
 
 # --------------------------------------------------------------------------
-# the LFV couplings of research/thdm_s3 notebook 03 §7: which CP-even state
-# couples to which lepton flavours at the exact-S₃ vacuum
+# the LFV couplings: which CP-even state couples to which lepton flavours at
+# the exact-S₃ vacuum
 # --------------------------------------------------------------------------
 
 _ME, _MMU, _MTAU = 0.51099895e-3, 0.1056584, 1.77686
@@ -887,7 +887,7 @@ def test_soft_lepton_mass_matrix_is_an_arrowhead_in_cos_3phi():
     feynlag's-basis M_ℓ (μ₅ = μ₄) at a general vacuum (v₁, v₂) = v₁₂(cos φ, sin φ):
     its doublet block a·1 + b·v₁₂·refl(φ) has φ-only eigenvectors e₊, e₋, and
     the third column projects on them as D(cos 3φ/2, sin 3φ/2).  This is what
-    makes research/thdm_s3/lfv.py's branch enumeration a single cubic, and why
+    makes the lepton-fit branch enumeration a single cubic, and why
     existence depends on φ only through cos 3φ.  At φ = π/3 the e₊ coupling
     vanishes — the electron decoupling of the exact-S₃ vacuum.
     """

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rebuild the report PDFs (report_*.tex -> report_*.pdf) for reading on GitHub.
 #
-# The .tex files are the source; the PDFs are committed (see .gitignore) so the
+# The .tex files are the source; the PDFs are committed (see research/.gitignore) so the
 # reports render in the browser.  Figures are re-extracted from the notebooks'
 # stored outputs first, so a report never quotes a stale plot.
 #
