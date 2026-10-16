@@ -21,6 +21,30 @@
    },
    "stamped": "2026-10-16"
   },
+  "03": {
+   "commit": "feae765",
+   "fingerprint": {
+    "code": "a33b2e10724ad517",
+    "inputs": {
+     "results/viable_points.json": "f94af42dfb0fd425"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "decays": "a86e0b4524372470",
+     "derive": "8fff185522e07f25",
+     "fermions": "01f606e4beb55688",
+     "lfv": "726a4d34c269422e",
+     "model": "b832810ea98fb465",
+     "sm_inputs": "3fd87e73a98e7104"
+    }
+   },
+   "note": "re-executed 2026-10-16 (py3.13, numpy 2.5.3, scipy 1.18.1): every value above 1e-20 agrees to <=2e-11 relative; only round-off-level BRs (~1e-30, analytically zero) moved",
+   "outputs": {
+    "derivations_03.tex": "d46b192a1ba76ce3",
+    "results/decay_benchmarks.json": "57413a0ba2d80216"
+   },
+   "stamped": "2026-10-16"
+  },
   "07": {
    "commit": "a560a73",
    "fingerprint": {
@@ -117,6 +141,13 @@
    },
    "stamped": "2026-10-16",
    "tex": "f590b2ebc21737d6"
+  },
+  "report_scalar_decays.tex": {
+   "notebooks": {
+    "03": "bd7a1bf2a85d5b31"
+   },
+   "stamped": "2026-10-16",
+   "tex": "5fc597dbc5fbdd69"
   },
   "report_scalar_sector.tex": {
    "notebooks": {
