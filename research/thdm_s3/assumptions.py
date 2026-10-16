@@ -11,7 +11,7 @@ Each entry is a dict with these keys:
 - ``id``: a stable key (``A-...``), used by ``review_status.csv``;
 - ``statement``: what is assumed;
 - ``introduced_in``: the pipeline node(s) that make the choice (keys of
-  `PIPELINE`, a string or a list); everything downstream is affected too;
+  `pipeline.PIPELINE`, a string or a list); everything downstream is affected too;
 - ``where``: where to read it (notebook §, NOTES finding);
 - ``affects``: the headline results that depend on it;
 - ``robustness``: what has been done to test it, or ``"untested"``.
@@ -23,25 +23,6 @@ scripts, which have no ledger.
 
 Text in ``$...$`` is maths, rendered on GitHub.
 """
-
-#: notebook/script -> the results files it reads and writes. Edges between nodes
-#: are derived from these: B is downstream of A when B consumes a file A produces.
-#: Update this when a notebook starts reading or writing a results file.
-PIPELINE = {
-    "scan.py": {"consumes": [], "produces": ["viable_points.json"]},
-    "01": {"consumes": ["viable_points.json"], "produces": []},
-    "02": {"consumes": [], "produces": ["quark_soft_fit.json"]},
-    "03": {"consumes": ["viable_points.json"], "produces": ["decay_benchmarks.json"]},
-    "04": {"consumes": [], "produces": []},
-    "scan_soft.py": {"consumes": [], "produces": ["viable_points_soft.json"]},
-    "05": {"consumes": ["viable_points.json", "viable_points_soft.json",
-                        "quark_soft_fit.json"], "produces": []},
-    "06": {"consumes": ["viable_points_soft.json", "decay_benchmarks.json"],
-           "produces": ["soft_decay_benchmarks.json"]},
-    "07": {"consumes": ["viable_points_soft.json"], "produces": ["mu_e_gamma.json"]},
-    "08": {"consumes": ["viable_points_soft.json", "mu_e_gamma.json"],
-           "produces": ["tau_l_gamma.json"]},
-}
 
 ASSUMPTIONS = [
     {

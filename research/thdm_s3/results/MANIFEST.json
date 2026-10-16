@@ -1,0 +1,94 @@
+{
+ "nodes": {
+  "01": {
+   "commit": "a560a73",
+   "fingerprint": {
+    "code": "bff7f612b78c31bb",
+    "inputs": {
+     "results/viable_points.json": "f94af42dfb0fd425"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "constraints": "76c7d23eab05b22e",
+     "derive": "8fff185522e07f25",
+     "model": "b832810ea98fb465",
+     "scan": "3041beec98f5b2c2"
+    }
+   },
+   "note": "baseline 2026-10-16: audit clean (no code/module/input change since outputs were written)",
+   "outputs": {
+    "derivations_01.tex": "af3eecf0b61e63fc"
+   },
+   "stamped": "2026-10-16"
+  },
+  "07": {
+   "commit": "a560a73",
+   "fingerprint": {
+    "code": "77b59b461c51adad",
+    "inputs": {
+     "results/viable_points_soft.json": "d5314296183f02ac"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "decays": "a86e0b4524372470",
+     "derive": "8fff185522e07f25",
+     "fermions": "01f606e4beb55688",
+     "lfv": "726a4d34c269422e",
+     "model": "b832810ea98fb465",
+     "radiative": "db2323d2d9685145",
+     "sm_inputs": "3fd87e73a98e7104",
+     "soft_decays": "8e8d220454dccf1e"
+    }
+   },
+   "note": "baseline 2026-10-16: radiative.py/soft_decays.py changed after 9cade57 (nb08 generalization), but nb08 recomputes mu->e gamma at HEAD and reproduces 610 points, median B=7.721e-10, variants 499/456/675",
+   "outputs": {
+    "derivations_07.tex": "5334fb1e8a11d6c6",
+    "results/mu_e_gamma.json": "0250ba39e51ca1cb"
+   },
+   "stamped": "2026-10-16"
+  },
+  "08": {
+   "commit": "a560a73",
+   "fingerprint": {
+    "code": "465187187de6352f",
+    "inputs": {
+     "results/mu_e_gamma.json": "0250ba39e51ca1cb",
+     "results/viable_points_soft.json": "d5314296183f02ac"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "decays": "a86e0b4524372470",
+     "derive": "8fff185522e07f25",
+     "fermions": "01f606e4beb55688",
+     "lfv": "726a4d34c269422e",
+     "model": "b832810ea98fb465",
+     "radiative": "db2323d2d9685145",
+     "sm_inputs": "3fd87e73a98e7104",
+     "soft_decays": "8e8d220454dccf1e"
+    }
+   },
+   "note": "baseline 2026-10-16: audit clean (no code/module/input change since outputs were written)",
+   "outputs": {
+    "derivations_08.tex": "9e2b2f859b3c00d8",
+    "results/tau_l_gamma.json": "314f6a4af7fb1cf2"
+   },
+   "stamped": "2026-10-16"
+  }
+ },
+ "reports": {
+  "report_mu_e_gamma.tex": {
+   "notebooks": {
+    "07": "fc1eb0205707ee9b"
+   },
+   "stamped": "2026-10-16",
+   "tex": "f590b2ebc21737d6"
+  },
+  "report_scalar_sector.tex": {
+   "notebooks": {
+    "01": "a913091191c7240a"
+   },
+   "stamped": "2026-10-16",
+   "tex": "bca6f265f2af0bd9"
+  }
+ }
+}

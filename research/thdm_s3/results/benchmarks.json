@@ -1,0 +1,8 @@
+{
+ "rules": "see benchmarks.py",
+ "points": {
+  "decoupled": 647,
+  "light H±": 704,
+  "near S₃": 1690
+ }
+}

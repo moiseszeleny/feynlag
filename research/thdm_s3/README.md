@@ -5,7 +5,42 @@ Research project on the S₃-symmetric three-Higgs-doublet model, built end to e
 lepton-flavour-violating Higgs rates. These are findings and may be revised. The running log
 is [`NOTES.md`](NOTES.md).
 
-**Reviewing?** Start with [`CLAIMS.md`](CLAIMS.md). It lists every claim across the notebooks, load-bearing assumptions first. Record review marks in [`review_status.csv`](review_status.csv).
+## How to review, by time available
+
+**30 minutes: what is claimed, and on what assumptions.**
+1. The summary column of the report table below.
+2. [`CLAIMS.md`](CLAIMS.md) §1, the load-bearing assumptions. For each one, ask whether the
+   conclusions it "affects" would survive if it changed.
+3. `python research/thdm_s3/provenance.py check`: are the results you are reading current?
+
+**2 hours: the reasoning.**
+1. The [benchmark cards](BENCHMARKS.md): three points followed through notebooks 05-08.
+   Check one number per card against its notebook.
+2. The reports, in the order of the table. Each figure in a report comes from a notebook's
+   stored output.
+3. [`CLAIMS.md`](CLAIMS.md) §2, the imported results. Open each cited source and check the
+   equation number, the sign conventions and the factors of 2.
+
+**1 day: the algebra.**
+1. Print the `derivations_0N.tex` ledgers and work through each step on paper.
+2. For each derived claim in [`CLAIMS.md`](CLAIMS.md) §3, ask whether its falsifier could
+   really have failed.
+3. Re-run one notebook end to end, then `provenance.py check` and `stamp` it.
+
+Record every verdict in [`review_status.csv`](review_status.csv) (`ok` / `doubt` / `wrong`,
+plus a note), then run `python research/thdm_s3/claims.py`.
+
+## Tools
+
+| tool | what it answers | output |
+|---|---|---|
+| `claims.py` | what is claimed, and what is derived, imported or assumed | [`CLAIMS.md`](CLAIMS.md), [`review_status.csv`](review_status.csv) |
+| `provenance.py` | which results, notebooks and reports are out of date | `check`/`stamp`/`audit` on [`results/MANIFEST.json`](results/MANIFEST.json) |
+| `report_numbers.py` | the headline numbers the reports quote, read from `results/` | `numbers.tex` (run by `build_reports.sh`) |
+| `benchmarks.py` | what one point looks like from end to end | [`BENCHMARKS.md`](BENCHMARKS.md) |
+
+The data flow they share (which notebook reads and writes which file) is
+[`pipeline.py`](pipeline.py). Update it when you add a notebook.
 
 ## Reports
 
@@ -31,5 +66,11 @@ editing a report or re-executing a notebook:
 bash research/thdm_s3/build_reports.sh
 ```
 
-This re-extracts the figures from the notebooks' stored outputs (`extract_figures.py`) and
-compiles each report twice. It fails on any LaTeX error or undefined reference.
+This re-extracts the figures from the notebooks' stored outputs (`extract_figures.py`),
+regenerates `numbers.tex` from `results/*.json` (`report_numbers.py`), and compiles each
+report twice. It fails on any LaTeX error or undefined reference. Quote headline numbers
+through the `numbers.tex` macros (`\nMEGallowed{}`), not by typing them;
+`python research/thdm_s3/report_numbers.py check` lists any number still typed by hand.
+
+After re-executing a notebook, also run `claims.py` and `benchmarks.py`, and record the
+run with `provenance.py stamp <node>`.

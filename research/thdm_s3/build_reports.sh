@@ -10,6 +10,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 python3 extract_figures.py
+# the headline numbers the reports quote, read from results/*.json (numbers.tex)
+python3 report_numbers.py
 
 status=0
 for tex in report_*.tex; do

@@ -263,14 +263,21 @@ def render(entries, notebooks, orphans, ledgerless):
 
 # ---------------------------------------------------------------------- main
 
-def _load_assumptions(project):
-    path = project / "assumptions.py"
+def _load(project, name):
+    """Import ``project/name.py`` by path (it is not an installed module)."""
+    path = project / f"{name}.py"
     if not path.exists():
-        return {}, []
-    spec = importlib.util.spec_from_file_location("_project_assumptions", path)
+        return None
+    spec = importlib.util.spec_from_file_location(f"_project_{name}", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return getattr(mod, "PIPELINE", {}), getattr(mod, "ASSUMPTIONS", [])
+    return mod
+
+
+def _load_assumptions(project):
+    pipe, assum = _load(project, "pipeline"), _load(project, "assumptions")
+    return (getattr(pipe, "PIPELINE", {}) if pipe else {},
+            getattr(assum, "ASSUMPTIONS", []) if assum else [])
 
 
 def build(project):
