@@ -36,6 +36,10 @@ PIPELINE = {
            "produces": ["results/mu_e_gamma.json", "derivations_07.tex"]},
     "08": {"consumes": ["results/viable_points_soft.json", "results/mu_e_gamma.json"],
            "produces": ["results/tau_l_gamma.json", "derivations_08.tex"]},
+    "benchmarks.py": {"consumes": ["results/viable_points_soft.json",
+                                   "results/soft_decay_benchmarks.json",
+                                   "results/mu_e_gamma.json", "results/tau_l_gamma.json"],
+                      "produces": ["results/benchmarks.json"]},
 }
 
 #: report source -> the notebooks whose stored outputs (numbers, figures) it quotes.

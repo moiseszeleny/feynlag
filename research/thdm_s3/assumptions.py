@@ -31,7 +31,7 @@ ASSUMPTIONS = [
                      r"$\lambda\in U(-2,2)^8$.",
         "introduced_in": "scan.py",
         "where": "notebook 01; NOTES finding 5",
-        "affects": "every *fraction* or *count* from the exact scan (1964 of 6e7 points, "
+        "affects": "every *fraction* or *count* from the exact scan (1973 of 6e7 points, "
                    "the 16% with a non-SM scalar below 100 GeV, the 18% h→τμ exclusion). "
                    "Statements of *existence* do not depend on it.",
         "robustness": "untested: no alternative prior has been run",
@@ -42,9 +42,9 @@ ASSUMPTIONS = [
                      r"variables up to $(500\,\mathrm{GeV})^2$.",
         "introduced_in": "scan_soft.py",
         "where": "notebook 05; NOTES finding 11",
-        "affects": "the 2021 soft points and every count built on them (610 MEG II, 2016 "
+        "affects": "the 2028 soft points and every count built on them (618 MEG II, 2023 "
                    "h→ℓℓ′, 5 LFV-excluded), \"decoupling-like\", and \"light scalars do not "
-                   "survive\". Only 15 points have every soft term below $v^2$.",
+                   "survive\". Only 14 points have every soft term below $v^2$.",
         "robustness": "untested: a log-uniform scan of the near-S₃ corner is an open item",
     },
     {
@@ -71,7 +71,7 @@ ASSUMPTIONS = [
     {
         "id": "A-hvv-cut",
         "statement": r"SM-likeness cut on the coupling: the state carrying $g_{hVV}$ sits at "
-                     r"$125\pm3$ GeV with $\kappa^2\ge0.9$, and nothing below 114.4 GeV has "
+                     r"$M_H\pm3=125.20\pm3$ GeV (PDG 2024; 125.0 before 2026-10-17) with $\kappa^2\ge0.9$, and nothing below 114.4 GeV has "
                      r"$\xi^2\ge0.05$ [LEP2003].",
         "introduced_in": ["scan.py", "scan_soft.py"],
         "where": "notebooks 01 and 05; NOTES open questions (hVV entry)",
@@ -86,7 +86,7 @@ ASSUMPTIONS = [
                      r"($\mu_3^\ell$, fit branch) passes the limit: the least-constrained one.",
         "introduced_in": ["06", "07", "08"],
         "where": "notebooks 06-08",
-        "affects": "the per-point counts (5 LFV-excluded, 610 MEG II, 599 with h→ℓℓ′). "
+        "affects": "the per-point counts (5 LFV-excluded, 618 MEG II, 606 with h→ℓℓ′). "
                    "Per-configuration fractions are quoted separately.",
         "robustness": "a deliberate conservative choice; a per-configuration view exists "
                       "in the notebooks",
@@ -100,7 +100,7 @@ ASSUMPTIONS = [
         "affects": r"$R_{\gamma\gamma}$, the quark Barr-Zee terms in μ→eγ and τ→ℓγ, and the "
                    "missing heavy-state widths",
         "robustness": "three variants (no quark Barr-Zee, flipped quark sign, W loop at the "
-                      "HKZ13 value) give 499, 456 and 675 survivors instead of 610",
+                      "HKZ13 value) give 504, 453 and 684 survivors instead of 618",
     },
     {
         "id": "A-missing-diagrams",
@@ -108,7 +108,7 @@ ASSUMPTIONS = [
                      r"(about +6% on the $W$ term) and $H^\pm W\gamma$.",
         "introduced_in": "07",
         "where": "notebook 07 §2.3; NOTES finding 13",
-        "affects": "μ→eγ and τ→ℓγ rates, the 610 count",
+        "affects": "μ→eγ and τ→ℓγ rates, the 618 count",
         "robustness": "only bounded through the W-loop variant above",
     },
     {
@@ -131,5 +131,17 @@ ASSUMPTIONS = [
         "where": "notebook 02 §11; NOTES finding 9 and the kernel note",
         "affects": "any quoted r or φ for the quark vacuum (φ = 53.54° in notebook 05)",
         "robustness": "documented; the CP phase is out of reach (real Yukawas, J = 0)",
+    },
+    {
+        "id": "A-benchmark-tuning",
+        "statement": r"The three benchmarks are scan points tuned to $m_h=M_H=125.20$ GeV exactly "
+                     r"by moving one quartic (the one with the largest $|\partial m_h/\partial\lambda_k|$) "
+                     r"by $\sim10^{-4}$–$10^{-3}$, with $\theta$, $\varphi$ and the free soft terms held fixed.",
+        "introduced_in": "benchmarks.py",
+        "where": "BENCHMARKS.md; benchmarks.py",
+        "affects": "only the benchmark cards; no scan count uses a tuned point",
+        "robustness": "every scan cut is re-checked on each tuned point (an assertion), and the "
+                      "observable code first reproduces notebooks 06-08 at the untuned point "
+                      "(validation gate, max relative deviation ~2e-4)",
     },
 ]

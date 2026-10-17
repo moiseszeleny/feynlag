@@ -1,28 +1,29 @@
 {
  "nodes": {
   "01": {
-   "commit": "a560a73",
+   "commit": "a31198c",
    "fingerprint": {
-    "code": "bff7f612b78c31bb",
+    "code": "bf84af2e2afcb7f0",
     "inputs": {
-     "results/viable_points.json": "f94af42dfb0fd425"
+     "results/viable_points.json": "166218c5caca4a4f"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "constraints": "76c7d23eab05b22e",
+     "constraints": "0a35f6c5060a3eaf",
      "derive": "8fff185522e07f25",
      "model": "b832810ea98fb465",
-     "scan": "3041beec98f5b2c2"
+     "scan": "3041beec98f5b2c2",
+     "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "baseline 2026-10-16: audit clean (no code/module/input change since outputs were written)",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_01.tex": "af3eecf0b61e63fc"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "02": {
-   "commit": "bf0f342",
+   "commit": "a31198c",
    "fingerprint": {
     "code": "5eca93e2a0a4f318",
     "inputs": {},
@@ -34,19 +35,19 @@
      "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "verified 2026-10-16 by an out-of-tree re-run (py3.13, numpy 2.5.3, scipy 1.18.1): selected quark fit identical to 1e-11; stored outputs kept. Env-dependent pin: this env finds 5 exact solutions (extra |r|=5.579), the prose quotes 4",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_02.tex": "dd01c332a43eb463",
     "results/quark_soft_fit.json": "9762e554c97b145c"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "03": {
-   "commit": "feae765",
+   "commit": "a31198c",
    "fingerprint": {
-    "code": "a33b2e10724ad517",
+    "code": "51aff0f3a3723d0d",
     "inputs": {
-     "results/viable_points.json": "f94af42dfb0fd425"
+     "results/viable_points.json": "166218c5caca4a4f"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
@@ -58,63 +59,65 @@
      "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "re-executed 2026-10-16 (py3.13, numpy 2.5.3, scipy 1.18.1): every value above 1e-20 agrees to <=2e-11 relative; only round-off-level BRs (~1e-30, analytically zero) moved",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
-    "derivations_03.tex": "d46b192a1ba76ce3",
-    "results/decay_benchmarks.json": "57413a0ba2d80216"
+    "derivations_03.tex": "061d7a0359d26096",
+    "results/decay_benchmarks.json": "f126be2e25a8f07c"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "04": {
-   "commit": "de92697",
+   "commit": "a31198c",
    "fingerprint": {
     "code": "7a8c2011f07aec85",
     "inputs": {},
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "constraints": "76c7d23eab05b22e",
+     "constraints": "0a35f6c5060a3eaf",
      "derive": "8fff185522e07f25",
-     "model": "b832810ea98fb465"
+     "model": "b832810ea98fb465",
+     "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "re-executed 2026-10-16 (py3.13): text outputs and ledger identical",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_04.tex": "f1e676f5dd4ad58e"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "05": {
-   "commit": "58188b4",
+   "commit": "a31198c",
    "fingerprint": {
-    "code": "99a5065f4634d7a7",
+    "code": "cf6e3321b07d8629",
     "inputs": {
      "results/quark_soft_fit.json": "9762e554c97b145c",
-     "results/viable_points.json": "f94af42dfb0fd425",
-     "results/viable_points_soft.json": "d5314296183f02ac"
+     "results/viable_points.json": "166218c5caca4a4f",
+     "results/viable_points_soft.json": "048451e6599581a0"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "constraints": "76c7d23eab05b22e",
+     "constraints": "0a35f6c5060a3eaf",
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
      "model": "b832810ea98fb465",
      "scan": "3041beec98f5b2c2",
-     "scan_soft": "02ad35809ebdfb29"
+     "scan_soft": "02ad35809ebdfb29",
+     "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "re-executed 2026-10-16 (py3.13): only machine-precision residuals (1e-14..1e-25) differ in text outputs; ledger identical",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_05.tex": "c056e31330aa52e7"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "06": {
-   "commit": "bf0f342",
+   "commit": "a31198c",
    "fingerprint": {
-    "code": "ac1d161a97e076b1",
+    "code": "b3a10b72a774e931",
     "inputs": {
-     "results/decay_benchmarks.json": "57413a0ba2d80216",
-     "results/viable_points_soft.json": "d5314296183f02ac"
+     "results/decay_benchmarks.json": "f126be2e25a8f07c",
+     "results/viable_points_soft.json": "048451e6599581a0"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
@@ -128,19 +131,19 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "verified 2026-10-16 by an out-of-tree re-run (py3.13): all observables agree to <=1.4e-9 relative, counts identical, ledger identical; 161 least-constrained mu3 picks flip sign at exact +-mu3 ties. Env-dependent pin: trilinear round-off 1.3e-13 GeV vs quoted 2e-13 (tol 0.5e-13); stored outputs kept",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_06.tex": "8eab3e57608010b3",
-    "results/soft_decay_benchmarks.json": "2e0a218a13ad9369"
+    "results/soft_decay_benchmarks.json": "0ee4f9779458b197"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "07": {
-   "commit": "a560a73",
+   "commit": "a31198c",
    "fingerprint": {
-    "code": "77b59b461c51adad",
+    "code": "b52221ba195c3243",
     "inputs": {
-     "results/viable_points_soft.json": "d5314296183f02ac"
+     "results/viable_points_soft.json": "048451e6599581a0"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
@@ -154,20 +157,20 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "baseline 2026-10-16: radiative.py/soft_decays.py changed after 9cade57 (nb08 generalization), but nb08 recomputes mu->e gamma at HEAD and reproduces 610 points, median B=7.721e-10, variants 499/456/675",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_07.tex": "5334fb1e8a11d6c6",
-    "results/mu_e_gamma.json": "0250ba39e51ca1cb"
+    "results/mu_e_gamma.json": "6be9aa11f8e115c4"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "08": {
-   "commit": "a560a73",
+   "commit": "a31198c",
    "fingerprint": {
-    "code": "465187187de6352f",
+    "code": "850bbf7caba54041",
     "inputs": {
-     "results/mu_e_gamma.json": "0250ba39e51ca1cb",
-     "results/viable_points_soft.json": "d5314296183f02ac"
+     "results/mu_e_gamma.json": "6be9aa11f8e115c4",
+     "results/viable_points_soft.json": "048451e6599581a0"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
@@ -181,47 +184,78 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "baseline 2026-10-16: audit clean (no code/module/input change since outputs were written)",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
     "derivations_08.tex": "9e2b2f859b3c00d8",
-    "results/tau_l_gamma.json": "314f6a4af7fb1cf2"
+    "results/tau_l_gamma.json": "3e8923892b3d3969"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
+  },
+  "benchmarks.py": {
+   "commit": "a31198c",
+   "fingerprint": {
+    "code": "7e4ce4f18cc9e218",
+    "inputs": {
+     "results/mu_e_gamma.json": "6be9aa11f8e115c4",
+     "results/soft_decay_benchmarks.json": "0ee4f9779458b197",
+     "results/tau_l_gamma.json": "3e8923892b3d3969",
+     "results/viable_points_soft.json": "048451e6599581a0"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "constraints": "0a35f6c5060a3eaf",
+     "decays": "a86e0b4524372470",
+     "fermions": "01f606e4beb55688",
+     "lfv": "726a4d34c269422e",
+     "model": "b832810ea98fb465",
+     "radiative": "db2323d2d9685145",
+     "scan": "3041beec98f5b2c2",
+     "sm_inputs": "3fd87e73a98e7104",
+     "soft_decays": "8e8d220454dccf1e"
+    }
+   },
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "outputs": {
+    "results/benchmarks.json": "1386b14811fb106d"
+   },
+   "stamped": "2026-10-17"
   },
   "scan.py": {
-   "commit": "613ef13",
+   "commit": "a31198c",
    "fingerprint": {
     "code": "3041beec98f5b2c2",
     "inputs": {},
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "constraints": "76c7d23eab05b22e",
-     "model": "b832810ea98fb465"
+     "constraints": "0a35f6c5060a3eaf",
+     "model": "b832810ea98fb465",
+     "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "baseline 2026-10-16: re-run at HEAD (30 and 55 chunks) reproduces the stored JSON byte for byte",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
-    "results/viable_points.json": "f94af42dfb0fd425"
+    "results/viable_points.json": "166218c5caca4a4f"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   },
   "scan_soft.py": {
-   "commit": "613ef13",
+   "commit": "a31198c",
    "fingerprint": {
     "code": "02ad35809ebdfb29",
     "inputs": {},
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "constraints": "76c7d23eab05b22e",
+     "constraints": "0a35f6c5060a3eaf",
      "model": "b832810ea98fb465",
-     "scan": "3041beec98f5b2c2"
+     "scan": "3041beec98f5b2c2",
+     "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "baseline 2026-10-16: re-run at HEAD (30 and 55 chunks) reproduces the stored JSON byte for byte",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
    "outputs": {
-    "results/viable_points_soft.json": "d5314296183f02ac"
+    "results/viable_points_soft.json": "048451e6599581a0"
    },
-   "stamped": "2026-10-16"
+   "stamped": "2026-10-17"
   }
  },
  "reports": {
@@ -229,43 +263,43 @@
    "notebooks": {
     "02": "0f6534b3717748cc"
    },
-   "stamped": "2026-10-16",
+   "stamped": "2026-10-17",
    "tex": "94c6c58bb8b75b41"
   },
   "report_mu_e_gamma.tex": {
    "notebooks": {
-    "07": "fc1eb0205707ee9b"
+    "07": "b1c01c601614894d"
    },
-   "stamped": "2026-10-16",
-   "tex": "f590b2ebc21737d6"
+   "stamped": "2026-10-17",
+   "tex": "d65ac03d3870172f"
   },
   "report_scalar_decays.tex": {
    "notebooks": {
-    "03": "bd7a1bf2a85d5b31"
+    "03": "811874152a1df8ac"
    },
-   "stamped": "2026-10-16",
-   "tex": "5fc597dbc5fbdd69"
+   "stamped": "2026-10-17",
+   "tex": "fa211e830ca5a8fa"
   },
   "report_scalar_sector.tex": {
    "notebooks": {
-    "01": "a913091191c7240a"
+    "01": "baa32220bcdd9a74"
    },
-   "stamped": "2026-10-16",
-   "tex": "bca6f265f2af0bd9"
+   "stamped": "2026-10-17",
+   "tex": "a298d51d2ace4e3d"
   },
   "report_soft_decays.tex": {
    "notebooks": {
-    "06": "0ef3e8e4f054724c"
+    "06": "26b298074b388d32"
    },
-   "stamped": "2026-10-16",
+   "stamped": "2026-10-17",
    "tex": "95b74bcb5518fc74"
   },
   "report_soft_vacuum.tex": {
    "notebooks": {
-    "05": "4e3621fde42619b7"
+    "05": "6da66ad1e05df026"
    },
-   "stamped": "2026-10-16",
-   "tex": "e5686af919dc9273"
+   "stamped": "2026-10-17",
+   "tex": "376c5ca889368bb1"
   }
  }
 }

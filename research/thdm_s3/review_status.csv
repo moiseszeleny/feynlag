@@ -3,12 +3,13 @@ A-prior-exact,todo,,A-prior-exact,"Exact-$S_3$ scan prior: the quartics are samp
 A-prior-soft,todo,,A-prior-soft,"Soft-scan prior: the three free soft terms are signed uniform variables up to $(500\,\math"
 A-local-min,todo,,A-local-min,"The soft scan requires only a local minimum (no tachyons), not the global minimum of the p"
 A-bfb-slice,todo,,A-bfb-slice,The corrected boundedness condition is exact only on the real neutral slice; complex-neutr
-A-hvv-cut,todo,,A-hvv-cut,SM-likeness cut on the coupling: the state carrying $g_{hVV}$ sits at $125\pm3$ GeV with $
+A-hvv-cut,todo,,A-hvv-cut,SM-likeness cut on the coupling: the state carrying $g_{hVV}$ sits at $M_H\pm3=125.20\pm3$
 A-least-constrained,todo,,A-least-constrained,"A scalar point counts as allowed if *any* lepton configuration ($\mu_3^\ell$, fit branch) "
 A-quark-kappa,todo,,A-quark-kappa,The quark couplings point along the vacuum direction: $\kappa_t=\kappa_V$. No quark sector
 A-missing-diagrams,todo,,A-missing-diagrams,"Barr-Zee diagrams not included: [HKZ13] set C, $\phi Z\gamma$ (about +6% on the $W$ term) "
 A-exp-limits,todo,,A-exp-limits,Experimental limits used: MEG II [MEGII25] for μ→eγ; Belle [Belle21] and BaBar [BaBar10] f
 A-quark-fit-r,todo,,A-quark-fit-r,"The quark fit's $r$ (and $V_{\rm abs}$) is an existence proof, not a prediction: 9 paramet"
+A-benchmark-tuning,todo,,A-benchmark-tuning,The three benchmarks are scan points tuned to $m_h=M_H=125.20$ GeV exactly by moving one q
 nb01-bc4b4cba,todo,,nb01 step 1,"The $\sqrt3$ vacuum alignment $v_2=\sqrt3\,v_1$ is forced by the tadpoles"
 nb01-f639da4c,todo,,nb01 step 2,"[DasDey14] Erratum, Phys. Rev. D 91, 039905 (2015) — it corrects Eqs. (9a)–(9c), the tadpo"
 nb01-f541ac28,todo,,nb01 step 3,"The [GomezBock21] $(a\ldots h)\leftrightarrow$ feynlag $\lambda$ dictionary, with $e=-\lam"
