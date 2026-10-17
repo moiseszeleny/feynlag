@@ -1,22 +1,23 @@
 {
  "nodes": {
   "01": {
-   "commit": "a31198c",
+   "commit": "beaf789",
    "fingerprint": {
-    "code": "bf84af2e2afcb7f0",
+    "code": "beafccd7c2fc8009",
     "inputs": {
-     "results/viable_points.json": "166218c5caca4a4f"
+     "results/viable_points.json": "c0724c1488b76738"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
      "constraints": "0a35f6c5060a3eaf",
      "derive": "8fff185522e07f25",
      "model": "b832810ea98fb465",
-     "scan": "3041beec98f5b2c2",
-     "sm_inputs": "3fd87e73a98e7104"
+     "scan": "fb90c5c004294520",
+     "sm_inputs": "3fd87e73a98e7104",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "run_pipeline.py",
    "outputs": {
     "derivations_01.tex": "af3eecf0b61e63fc"
    },
