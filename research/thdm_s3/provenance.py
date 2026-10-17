@@ -259,9 +259,9 @@ def check():
                     f"{f} ({producer[f]})" for f in bad)
                 changed_flag = True
 
-    print(f"{'node':<14}{'status':<17}detail")
+    print(f"{'node':<24}{'status':<17}detail")
     for node in PIPELINE:
-        print(f"{node:<14}{status[node]:<17}{notes[node]}")
+        print(f"{node:<24}{status[node]:<17}{notes[node]}")
 
     print(f"\n{'report':<28}{'status':<17}detail")
     rep_bad = 0

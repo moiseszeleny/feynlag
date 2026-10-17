@@ -1,7 +1,7 @@
 {
  "nodes": {
   "01": {
-   "commit": "beaf789",
+   "commit": "6a17be5",
    "fingerprint": {
     "code": "beafccd7c2fc8009",
     "inputs": {
@@ -17,7 +17,7 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "proposal 6: report text verified identical apart from the cache/ path",
    "outputs": {
     "derivations_01.tex": "af3eecf0b61e63fc"
    },
@@ -44,7 +44,7 @@
    "stamped": "2026-10-17"
   },
   "03": {
-   "commit": "904f627",
+   "commit": "6a17be5",
    "fingerprint": {
     "code": "d1d4c5d74267129d",
     "inputs": {
@@ -61,7 +61,7 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "proposal 6: report text verified identical apart from the cache/ path",
    "outputs": {
     "derivations_03.tex": "061d7a0359d26096",
     "results/decay_benchmarks.json": "99825758cef15ac3"
@@ -88,7 +88,7 @@
    "stamped": "2026-10-17"
   },
   "05": {
-   "commit": "2128ccd",
+   "commit": "6a17be5",
    "fingerprint": {
     "code": "a58aacb93319c464",
     "inputs": {
@@ -108,14 +108,14 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "proposal 6: report text verified identical apart from the cache/ path",
    "outputs": {
     "derivations_05.tex": "c056e31330aa52e7"
    },
    "stamped": "2026-10-17"
   },
   "06": {
-   "commit": "6081071",
+   "commit": "6a17be5",
    "fingerprint": {
     "code": "01b9e09e9a87eb92",
     "inputs": {
@@ -137,7 +137,7 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "proposal 6: report text verified identical apart from the cache/ path",
    "outputs": {
     "derivations_06.tex": "8eab3e57608010b3",
     "results/soft_decay_benchmarks.json": "44006ca5694d39dd"
@@ -145,7 +145,7 @@
    "stamped": "2026-10-17"
   },
   "07": {
-   "commit": "4bdc0d8",
+   "commit": "6a17be5",
    "fingerprint": {
     "code": "692e1a5054770cae",
     "inputs": {
@@ -166,7 +166,7 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "proposal 6: report text verified identical apart from the cache/ path",
    "outputs": {
     "derivations_07.tex": "5334fb1e8a11d6c6",
     "results/mu_e_gamma.json": "fccf4b62d6219e59"
@@ -204,29 +204,30 @@
    "stamped": "2026-10-17"
   },
   "benchmarks.py": {
-   "commit": "76c0740",
+   "commit": "6a17be5",
    "fingerprint": {
-    "code": "7e4ce4f18cc9e218",
+    "code": "d42bee3933820273",
     "inputs": {
-     "results/mu_e_gamma.json": "57de8435976bf7dc",
-     "results/soft_decay_benchmarks.json": "861f50d94af9eb5a",
-     "results/tau_l_gamma.json": "8ab801c80cf2b101",
-     "results/viable_points_soft.json": "048451e6599581a0"
+     "results/mu_e_gamma.json": "fccf4b62d6219e59",
+     "results/soft_decay_benchmarks.json": "44006ca5694d39dd",
+     "results/tau_l_gamma.json": "83eda147906bfba5",
+     "results/viable_points_soft.json": "687b2fd49fea98fd"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
      "constraints": "0a35f6c5060a3eaf",
-     "decays": "a86e0b4524372470",
+     "decays": "cf91e47fbb4d4aef",
      "fermions": "01f606e4beb55688",
-     "lfv": "726a4d34c269422e",
+     "lfv": "9a836f89e55f6851",
      "model": "b832810ea98fb465",
      "radiative": "db2323d2d9685145",
-     "scan": "3041beec98f5b2c2",
+     "scan": "fb90c5c004294520",
      "sm_inputs": "3fd87e73a98e7104",
-     "soft_decays": "8e8d220454dccf1e"
+     "soft_decays": "458cf33b9e027cc3",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17); re-executed in tree with data-driven labels; every check passes",
+   "note": "run_pipeline.py",
    "outputs": {
     "results/benchmarks.json": "1386b14811fb106d"
    },
@@ -357,38 +358,38 @@
   },
   "report_mu_e_gamma.tex": {
    "notebooks": {
-    "07": "66c28752627a84cb"
+    "07": "b79bdb9e488b890d"
    },
    "stamped": "2026-10-17",
    "tex": "d65ac03d3870172f"
   },
   "report_scalar_decays.tex": {
    "notebooks": {
-    "03": "811874152a1df8ac"
+    "03": "dfdbdc91b80bffe2"
    },
    "stamped": "2026-10-17",
    "tex": "fa211e830ca5a8fa"
   },
   "report_scalar_sector.tex": {
    "notebooks": {
-    "01": "baa32220bcdd9a74"
+    "01": "f4ea196aa89392df"
    },
    "stamped": "2026-10-17",
-   "tex": "a298d51d2ace4e3d"
+   "tex": "6da88ad9fbf44c1c"
   },
   "report_soft_decays.tex": {
    "notebooks": {
-    "06": "083dce01547e13c4"
+    "06": "adb41b7dd28b19e2"
    },
    "stamped": "2026-10-17",
    "tex": "95b74bcb5518fc74"
   },
   "report_soft_vacuum.tex": {
    "notebooks": {
-    "05": "16c8fe717eca2c71"
+    "05": "304a48e69a0da4ec"
    },
    "stamped": "2026-10-17",
-   "tex": "376c5ca889368bb1"
+   "tex": "2d74cd1d7fa98787"
   }
  }
 }

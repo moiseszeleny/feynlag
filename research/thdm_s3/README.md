@@ -73,13 +73,18 @@ run yet. Regenerate it first:
 
 ```bash
 python research/thdm_s3/run_pipeline.py --dry-run   # what would run, and why
-python research/thdm_s3/run_pipeline.py             # WALLTIME
+python research/thdm_s3/run_pipeline.py             # ~1 h from an empty cache/
 ```
 
 It runs the scans, the compute scripts and the notebooks in `pipeline.py` order, re-running
 only what is stale or missing, stamps each node in `results/MANIFEST.json`, and ends by
 comparing each regenerated cache file with the hash its committed summary records
 ("reproduced" means byte-identical per-point data).
+
+Measured from an empty `cache/` (2026-10-17, py3.13, numpy 2.5.3): 57 min in all. The two
+scans take 4 and 6 min, the three compute scripts 5, 13 and 21 min, and every notebook now runs
+in at most about 3 min (06; 07 and 08 went from ~13 and ~20 min to under one). All six cache
+files came out byte-identical to the per-point data the committed results were built from.
 
 The `.tex` files are the source; the PDFs are committed so they read on GitHub. After
 editing a report or re-executing a notebook:
