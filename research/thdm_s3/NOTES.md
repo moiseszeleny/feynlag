@@ -10,7 +10,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | file | what it is |
 |---|---|
 | `model.py` | the reusable build — algebra only. `build_model()` (with `soft=True` for soft S₃ breaking), the three mass matrices, the geometric rotation, the lambdified spectrum, the quartic potential + its numerical boundedness scan. Lifts the tutorial's notebook-local §6–§8 into importable form. |
-| `scan.py` | the parameter sweep at scan size — the cuts of notebook 01 in a chunked loop, sole writer of `results/viable_points.json`. |
+| `scan.py` | the parameter sweep at scan size — the cuts of notebook 01 in a chunked loop, sole writer of `cache/viable_points.json` and its summary `results/viable_points.json`. |
 | `constraints.py` | numpy-vectorized boundedness-from-below + tree-unitarity conditions, quoted from [DasDey14] — **plus** the corrected neutral-direction condition derived in finding 4 below. |
 | `fermions.py` | the S₃ fermion sectors — basis map to [LFVHD], the five Yukawa structures, mass-matrix extraction, the two-stage diagonalization, the $G_k$/$Q_i$ LFV couplings. |
 | `paper_lfvhd/LFVHD_3HDMS3.tex` | the draft this work checks against; **patched** (findings 6–8). |
@@ -22,7 +22,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `03_scalar_decays.ipynb` | physical basis, gauge couplings, VSS + loop γγ, and the LFV rates. **Done.** |
 | `04_bfb_conditions.ipynb` | the [BotoRomaoSilva22] BFB method read and executed: their $V_N/V_{CB}/V_G$ split, copositivity, the lower-bound strategy — then applied to our $S_3$ potential. **Done.** |
 | `derivations_04.tex` | printable appendix emitted by notebook 04 §8. |
-| `scan_soft.py` | the parameter sweep in the **soft-broken** vacuum — notebook 01's cuts over λ, (θ, φ) and the three free soft quadratics; sole writer of `results/viable_points_soft.json`. |
+| `scan_soft.py` | the parameter sweep in the **soft-broken** vacuum — notebook 01's cuts over λ, (θ, φ) and the three free soft quadratics; sole writer of `cache/viable_points_soft.json` and its summary `results/viable_points_soft.json`. |
 | `05_soft_scalar_scan.ipynb` | the soft-broken vacuum: released tadpoles, the φ fundamental domain, the general-vacuum spectrum, and the scan against notebook 01. **Done.** |
 | `derivations_05.tex` | printable appendix emitted by notebook 05 §7. |
 | `lfv.py` | charged-lepton LFV couplings at any vacuum: per-doublet $G_k$ read off the Lagrangian (`lepton_g_function`), the draft's analytic inversion at the alignment, and the exact arrowhead-cubic enumeration of every lepton-fit branch off it (`lepton_branches`, `branch_kind`). Shared by notebooks 03 and 06. |
@@ -32,10 +32,10 @@ pedagogical walk-through). This directory is where the open questions go.
 | `radiative.py` | $\ell_i\to\ell_j\gamma$ dipole amplitudes (μ→eγ, τ→μγ, τ→eγ; the decaying and final lepton are arguments), numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$W$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
 | `07_mu_to_e_gamma.ipynb` | μ→eγ on the 2028 soft points: couplings of every scalar checked against the extractor, each amplitude piece against an independent source, the exact-S₃ zero, the scan against MEG II. **Done.** |
 | `derivations_07.tex` | printable appendix emitted by notebook 07. |
-| `results/mu_e_gamma.json` | per soft point: the least-constrained (μ₃, branch) configuration and its breakdown, plus scan summaries. Written by notebook 07. |
+| `results/mu_e_gamma.json` | scan summaries; the per-soft-point least-constrained (μ₃, branch) configuration and its breakdown are in `cache/mu_e_gamma.json`. Written by notebook 07. |
 | `08_tau_to_l_gamma.ipynb` | τ→μγ and τ→eγ: the index generalization checked against notebook 07, [HKZ13] and [OST16]; the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed); the soft scan against Belle/BaBar and h→τℓ. **Done.** |
 | `derivations_08.tex` | printable appendix emitted by notebook 08. |
-| `results/tau_l_gamma.json` | per soft point: the least-constrained configuration of each τ channel and the counts allowed by each limit; exact-vacuum and scan summaries. Written by notebook 08. |
+| `results/tau_l_gamma.json` | exact-vacuum and scan summaries; the per-soft-point least-constrained configuration of each τ channel and the counts allowed by each limit are in `cache/tau_l_gamma.json`. Written by notebook 08. |
 | `report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
 | `report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
 | `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
@@ -53,12 +53,16 @@ pedagogical walk-through). This directory is where the open questions go.
 | `report_numbers.py` | writes `numbers.tex`, the headline numbers as LaTeX macros read from `results/*.json`; the reports `\input` it. `check` lists numbers still typed by hand. Run by `build_reports.sh`. |
 | `benchmarks.py` | picks three soft points by fixed rules (decoupled, light H±, near S₃) and writes `BENCHMARKS.md`, one card per point from the stored results; the chosen indices go to `results/benchmarks.json`. |
 | `CLAIMS.md` | generated; the place to start a manual review. |
+| `store.py` | the results/cache split: `write` puts a payload in full in `cache/<name>.json` and its summary (no `points`, plus `points_sha256`) in `results/<name>.json`; `points`/`full`/`summary` read them back; `save_raw`/`load_raw` pickle the compute scripts' raw loop output. |
+| `compute_soft_decays.py`, `compute_mu_e_gamma.py`, `compute_tau_l_gamma.py` | the per-point loops of notebooks 06, 07 and 08 (both of 08's), moved verbatim; each pickles its raw output to `cache/<name>_scan.pkl`, which the notebook loads into the same variables. |
+| `run_pipeline.py` | regenerates `cache/` and every stale node in `pipeline.py` order, stamps them, and compares each cache file with its summary's hash. Run it first on a fresh clone. |
+| `cache/` | gitignored, regenerable: the per-point JSONs and the compute scripts' pickles. |
 | `review_status.csv` | review marks per claim id (`todo`/`ok`/`doubt`/`wrong` + note). Edit this, not `CLAIMS.md`. A ledger claim's id hashes its text, so an edited claim resets to `todo` with a note, and a removed one stays listed as an orphaned mark. |
-| `results/viable_points.json` | every point surviving the scan's cuts (1973 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
+| `results/viable_points.json` | the exact scan's summary (cut flow, thresholds, counts); the points are in `cache/viable_points.json`: every point surviving the scan's cuts (1973 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
-| `results/viable_points_soft.json` | 2028 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
-| `results/decay_benchmarks.json` | per-point δ and VV couplings, plus the LFV branching-ratio distribution per (state, channel, $\mu_3$) and a 200-entry sample. |
-| `results/soft_decay_benchmarks.json` | per soft point: SM-like index and $\kappa_V$, $R_{\gamma\gamma}$, $hH^+H^-$ couplings, VSS widths, the least-constrained lepton configuration; plus LFV summaries by branch kind and misalignment. Written by notebook 06. |
+| `results/viable_points_soft.json` | the soft scan's summary; the points are in `cache/viable_points_soft.json`: 2028 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
+| `results/decay_benchmarks.json` | the LFV branching-ratio distribution per (state, channel, $\mu_3$) and a 200-entry sample; the per-point δ and VV couplings are in `cache/decay_benchmarks.json`. |
+| `results/soft_decay_benchmarks.json` | LFV summaries by branch kind and misalignment; in `cache/soft_decay_benchmarks.json`, per soft point: SM-like index and $\kappa_V$, $R_{\gamma\gamma}$, $hH^+H^-$ couplings, VSS widths, the least-constrained lepton configuration. Written by notebook 06. |
 
 Notebooks import `model.py` from their own directory; from the repo root use
 `sys.path.insert(0, "research/thdm_s3")`.

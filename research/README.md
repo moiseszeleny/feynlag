@@ -60,6 +60,11 @@ research/<project>/
   cache/            # heavy intermediates — gitignored, never committed
 ```
 
+When a result has a large per-point part (a scan's surviving points, one row
+per configuration), commit only its summary to `results/`, with the hash of the
+full file, and keep the full file in `cache/` behind a script that regenerates
+it. `thdm_s3/store.py` and `thdm_s3/run_pipeline.py` are a worked example.
+
 `research/` is deliberately **not** added to `[tool.setuptools.packages.find]` —
 it is not library code and is not installed. Notebooks sit beside their
 `model.py` and import it directly (`from model import build_model`), which works
