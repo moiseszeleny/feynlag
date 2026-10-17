@@ -45,9 +45,7 @@ References
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field as _field
-from pathlib import Path
 
 import sympy as sp
 
@@ -56,6 +54,7 @@ from feynlag import (Dmu, ExternalParameter, Lagrangian, Model, Rotation,
                      weinberg_rotation)
 
 import fermions as F
+import store
 from model import build_model, cp_even_angle, rotation
 
 __all__ = [
@@ -286,9 +285,9 @@ def register_lepton_basis(dm: DecayModel, O):
 # benchmark points
 # --------------------------------------------------------------------------
 
-def load_points(path="results/viable_points.json"):
-    """The viable benchmark points of `01_scalar_parameter_space.ipynb`."""
-    return json.loads(Path(path).read_text())["points"]
+def load_points(name="viable_points"):
+    """The viable points of the exact-S₃ scan (``cache/viable_points.json``, see `store`)."""
+    return store.points(name)
 
 
 def point_substitution(dm: DecayModel, point):

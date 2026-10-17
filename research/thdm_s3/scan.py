@@ -4,9 +4,10 @@
 scan over one 2-million-point sample, which is what its narrative and its
 cut-flow figure are built on.  This module is the same scan at scan size: it
 sweeps many such samples in sequence and is the **sole writer** of
-``results/viable_points.json``.  The split exists so the notebook keeps showing
-one sample it can narrate while the cached file is swept over many; nothing here
-is derived, it is the notebook's own cuts in a loop.
+``cache/viable_points.json`` (summary: ``results/viable_points.json``).  The
+split exists so the notebook keeps showing one sample it can narrate while the
+cached file is swept over many; nothing here is derived, it is the notebook's
+own cuts in a loop.
 
 **Chunk 0 is the notebook's sample, exactly.**  It draws from
 ``default_rng(20260729)`` in the notebook's order (the eight λ's, then θ), so a
@@ -49,11 +50,11 @@ See `constraints.py` for [DasDey14], [GomezBock21] and [LEP2003].
 from __future__ import annotations
 
 import argparse
-import json
 import time
-from pathlib import Path
 
 import numpy as np
+
+import store
 
 from constraints import (KAPPA2_MIN, M_LEP_ZH, XI2_LEP_FLOOR, lep_neutral_mask,
                          sm_like_cut, strict_bfb_mask, unitarity_mask)
@@ -161,8 +162,9 @@ def scan_chunk(m, chunk: int, n: int = CHUNK_SIZE, backstop: bool = True):
     return records, counts
 
 
-def run(chunks: int, out: Path, n: int = CHUNK_SIZE):
-    """Sweep ``chunks`` samples and write the JSON.  Returns the payload."""
+def run(chunks: int, name: str, n: int = CHUNK_SIZE):
+    """Sweep ``chunks`` samples and write them via `store` (points to ``cache/``,
+    summary to ``results/``).  Returns the payload."""
     m = build_model()
     records, per_chunk, totals = [], [], {k: 0 for k in CUT_LABELS}
     t0 = time.time()
@@ -212,8 +214,7 @@ def run(chunks: int, out: Path, n: int = CHUNK_SIZE):
         "cut_flow_per_chunk": per_chunk,
         "points": records,
     }
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2))
+    out = store.write(name, payload, indent=2)
     print("\nwrote %s: %d points from %d samples in %.1f min"
           % (out, len(records), chunks * n, (time.time() - t0) / 60))
     return payload
@@ -225,9 +226,10 @@ def main():
                     help="samples of --size to sweep (default 30, 60M points)")
     ap.add_argument("--size", type=int, default=CHUNK_SIZE,
                     help="points per chunk (default 2,000,000 -- the notebook's)")
-    ap.add_argument("--out", type=Path, default=Path("results/viable_points.json"))
+    ap.add_argument("--name", default="viable_points",
+                    help="writes cache/NAME.json and its summary results/NAME.json")
     args = ap.parse_args()
-    run(args.chunks, args.out, args.size)
+    run(args.chunks, args.name, args.size)
 
 
 if __name__ == "__main__":
