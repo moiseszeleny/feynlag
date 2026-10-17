@@ -223,6 +223,30 @@
    },
    "stamped": "2026-10-17"
   },
+  "compute_soft_decays.py": {
+   "commit": "f6dbef0",
+   "fingerprint": {
+    "code": "692c485235f1f858",
+    "inputs": {
+     "results/viable_points_soft.json": "687b2fd49fea98fd"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "fermions": "01f606e4beb55688",
+     "lfv": "9a836f89e55f6851",
+     "model": "b832810ea98fb465",
+     "radiative": "db2323d2d9685145",
+     "sm_inputs": "3fd87e73a98e7104",
+     "soft_decays": "458cf33b9e027cc3",
+     "store": "38eea841c5274cdc"
+    }
+   },
+   "note": "run_pipeline.py",
+   "outputs": {
+    "cache/soft_decays_scan.pkl": "4870744c33253140"
+   },
+   "stamped": "2026-10-17"
+  },
   "scan.py": {
    "commit": "619b3bf",
    "fingerprint": {
