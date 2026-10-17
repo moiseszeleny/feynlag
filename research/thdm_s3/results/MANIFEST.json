@@ -44,26 +44,27 @@
    "stamped": "2026-10-17"
   },
   "03": {
-   "commit": "a31198c",
+   "commit": "904f627",
    "fingerprint": {
-    "code": "51aff0f3a3723d0d",
+    "code": "d1d4c5d74267129d",
     "inputs": {
-     "results/viable_points.json": "166218c5caca4a4f"
+     "results/viable_points.json": "c0724c1488b76738"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "decays": "a86e0b4524372470",
+     "decays": "cf91e47fbb4d4aef",
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
-     "lfv": "726a4d34c269422e",
+     "lfv": "9a836f89e55f6851",
      "model": "b832810ea98fb465",
-     "sm_inputs": "3fd87e73a98e7104"
+     "sm_inputs": "3fd87e73a98e7104",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "run_pipeline.py",
    "outputs": {
     "derivations_03.tex": "061d7a0359d26096",
-    "results/decay_benchmarks.json": "f126be2e25a8f07c"
+    "results/decay_benchmarks.json": "99825758cef15ac3"
    },
    "stamped": "2026-10-17"
   },
