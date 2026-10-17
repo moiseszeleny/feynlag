@@ -6,8 +6,9 @@
 equations for (μ0², μ1², mD1²), and a general vacuum (θ, φ) is a stationary point
 for any values of the other three soft terms (mD2², mS1², mS2²).  This module is
 the same cut flow as `scan.py` over that larger space, and the sole writer of
-``results/viable_points_soft.json``.  `05_soft_scalar_scan.ipynb` derives what
-changes and runs chunk 0 of this scan itself.
+``cache/viable_points_soft.json`` (summary: ``results/viable_points_soft.json``).
+`05_soft_scalar_scan.ipynb` derives what changes and runs chunk 0 of this scan
+itself.
 
 What carries over unchanged, and why:
 
@@ -57,11 +58,11 @@ See `constraints.py` for [DasDey14], [GomezBock21] and [LEP2003].
 from __future__ import annotations
 
 import argparse
-import json
 import time
-from pathlib import Path
 
 import numpy as np
+
+import store
 
 from constraints import (KAPPA2_MIN, M_LEP_ZH, XI2_LEP_FLOOR, lep_neutral_mask,
                          sm_like_cut, strict_bfb_mask, unitarity_mask)
@@ -189,8 +190,9 @@ def scan_chunk(ms, m_exact, chunk: int, n: int = CHUNK_SIZE, backstop: bool = Tr
     return records, counts
 
 
-def run(chunks: int, out: Path, n: int = CHUNK_SIZE):
-    """Sweep ``chunks`` samples and write the JSON.  Returns the payload."""
+def run(chunks: int, name: str, n: int = CHUNK_SIZE):
+    """Sweep ``chunks`` samples and write them via `store` (points to ``cache/``,
+    summary to ``results/``).  Returns the payload."""
     ms = build_model(soft=True, soft_solve_for="mD1sq")
     m_exact = build_model()
     records, per_chunk, totals = [], [], {k: 0 for k in CUT_LABELS}
@@ -247,8 +249,7 @@ def run(chunks: int, out: Path, n: int = CHUNK_SIZE):
         "cut_flow_per_chunk": per_chunk,
         "points": records,
     }
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2))
+    out = store.write(name, payload, indent=2)
     print("\nwrote %s: %d points from %d samples in %.1f min"
           % (out, len(records), chunks * n, (time.time() - t0) / 60))
     return payload
@@ -260,9 +261,10 @@ def main():
                     help="samples of --size to sweep (default 55, ~2000 survivors)")
     ap.add_argument("--size", type=int, default=CHUNK_SIZE,
                     help="points per chunk (default 2,000,000)")
-    ap.add_argument("--out", type=Path, default=Path("results/viable_points_soft.json"))
+    ap.add_argument("--name", default="viable_points_soft",
+                    help="writes cache/NAME.json and its summary results/NAME.json")
     args = ap.parse_args()
-    run(args.chunks, args.out, args.size)
+    run(args.chunks, args.name, args.size)
 
 
 if __name__ == "__main__":

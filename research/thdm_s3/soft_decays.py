@@ -2,7 +2,7 @@
 
 Notebook 03 computed these observables on the exact-S₃ vacuum, where the
 CP-even sector is one angle δ on top of the geometric rotation and h₀ is
-gauge-phobic.  The soft-broken points of `results/viable_points_soft.json`
+gauge-phobic.  The soft-broken points of `cache/viable_points_soft.json`
 (notebook 05) have none of that structure: the vacuum (θ, φ) is general, the
 CP-even 3×3 is fully mixed, and the CP-odd and charged 2×2 blocks are no longer
 diagonal.  This module recomputes every observable **numerically per point**,

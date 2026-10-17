@@ -24,6 +24,13 @@ Reports (`pipeline.REPORTS`) quote stored notebook outputs, so a report is
 flagged when a notebook it quotes has stale results, or has been re-run since
 the report was last checked against it.
 
+Per-point data lives in the gitignored ``cache/`` (see `store.py`).  A missing
+cache file is not staleness: a fresh clone has none.  ``check`` lists it as
+"cache missing" with the hint to run ``run_pipeline.py``, and does not count it
+as needing attention.  ``check`` also flags any ``results/*.json`` over
+`MAX_RESULT_KB`, the size `research/README.md` asks committed results to stay
+under.
+
 Usage (from anywhere)::
 
     python research/thdm_s3/provenance.py check            # the default
@@ -50,6 +57,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 MANIFEST = HERE / "results" / "MANIFEST.json"
+#: committed results files should stay under this (research/README.md)
+MAX_RESULT_KB = 100
 
 
 def _load_pipeline():
@@ -147,7 +156,10 @@ def load_manifest():
         "nodes": {}, "reports": {}}
 
 
-def stamp(nodes, note=""):
+def stamp(nodes, note="", reports=True):
+    """Record ``nodes`` as current.  With ``reports``, also mark every report that
+    quotes one of them as checked against it (`run_pipeline.py` passes False:
+    re-reading a report is a person's job)."""
     man = load_manifest()
     when = _dt.date.today().isoformat()
     for node in nodes:
@@ -155,7 +167,7 @@ def stamp(nodes, note=""):
                               "stamped": when, "commit": _git_head(), "note": note}
     # a report is "checked" against the notebooks it quotes as they stand now
     for rep, nbs in REPORTS.items():
-        if any(nb in nodes for nb in nbs):
+        if reports and any(nb in nodes for nb in nbs):
             man["reports"][rep] = {"tex": _file_hash(rep),
                                    "notebooks": {nb: _sha(node_file(nb).read_bytes())
                                                  for nb in nbs},
@@ -166,16 +178,39 @@ def stamp(nodes, note=""):
 
 # ---------------------------------------------------------------- check
 
+def _is_cache(path):
+    return path.startswith("cache/")
+
+
+def _missing_cache(node):
+    """The cache files a node consumes or produces that are not on disk."""
+    io = PIPELINE[node]
+    return [f for f in io["consumes"] + io["produces"]
+            if _is_cache(f) and not (HERE / f).exists()]
+
+
 def _diff(old, new):
-    """Human-readable list of what changed between two fingerprints."""
+    """Human-readable list of what changed between two fingerprints.
+
+    An input that is a missing cache file is not a change: see `_missing_cache`.
+    """
     changes = []
     if old["code"] != new["code"]:
         changes.append("its code")
     for kind in ("modules", "inputs"):
         for k in sorted(set(old[kind]) | set(new[kind])):
+            if kind == "inputs" and _is_cache(k) and new[kind].get(k) == "missing":
+                continue
             if old[kind].get(k) != new[kind].get(k):
                 changes.append(f"{k}{'.py' if kind == 'modules' else ''}")
     return changes
+
+
+def oversized():
+    """Committed-size violations: ``results/*.json`` over `MAX_RESULT_KB`."""
+    return [(f.relative_to(HERE).as_posix(), f.stat().st_size / 1024)
+            for f in sorted((HERE / "results").glob("*.json"))
+            if f.stat().st_size > MAX_RESULT_KB * 1024]
 
 
 def _producer():
@@ -192,13 +227,18 @@ def check():
             continue
         now = fingerprint(node)
         changed = _diff(rec["fingerprint"], now)
-        edited = [f for f, h in outputs(node).items() if rec["outputs"].get(f) != h]
+        edited = [f for f, h in outputs(node).items() if rec["outputs"].get(f) != h
+                  and not (_is_cache(f) and h == "missing")]
         if changed:
             status[node], notes[node] = "stale", "changed: " + ", ".join(changed)
         elif edited:
             status[node], notes[node] = "output edited", ", ".join(edited)
         else:
             status[node], notes[node] = "ok", ""
+        missing = _missing_cache(node)
+        if missing:
+            notes[node] = (notes[node] + "; " if notes[node] else "") + \
+                "cache missing: " + ", ".join(missing)
         if rec["fingerprint"]["library"] != now["library"]:
             notes[node] = (notes[node] + "; " if notes[node] else "") + \
                 "warning: feynlag changed since this run"
@@ -236,7 +276,15 @@ def check():
         rep_bad += bool(why)
         print(f"{rep:<28}{'re-check' if why else 'ok':<17}{'; '.join(why)}")
 
-    bad = sum(s != "ok" for s in status.values()) + rep_bad
+    big = oversized()
+    for f, kb in big:
+        print(f"\n{f} is {kb:.0f} kB, over the {MAX_RESULT_KB} kB committed-results limit: "
+              "move its per-point data to cache/ (store.write)")
+    if any(_missing_cache(n) for n in PIPELINE):
+        print("\ncache/ is incomplete (normal on a fresh clone): "
+              "regenerate it with `python research/thdm_s3/run_pipeline.py`")
+
+    bad = sum(s != "ok" for s in status.values()) + rep_bad + len(big)
     print(f"\n{bad} item(s) need attention" if bad else "\neverything current")
     return 1 if bad else 0
 
