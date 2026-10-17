@@ -277,6 +277,33 @@
    },
    "stamped": "2026-10-17"
   },
+  "compute_tau_l_gamma.py": {
+   "commit": "558169d",
+   "fingerprint": {
+    "code": "17fff744012969d5",
+    "inputs": {
+     "results/viable_points.json": "c0724c1488b76738",
+     "results/viable_points_soft.json": "687b2fd49fea98fd"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "compute_mu_e_gamma": "9a74fa892fd92678",
+     "decays": "cf91e47fbb4d4aef",
+     "fermions": "01f606e4beb55688",
+     "lfv": "9a836f89e55f6851",
+     "model": "b832810ea98fb465",
+     "radiative": "db2323d2d9685145",
+     "sm_inputs": "3fd87e73a98e7104",
+     "soft_decays": "458cf33b9e027cc3",
+     "store": "38eea841c5274cdc"
+    }
+   },
+   "note": "run_pipeline.py",
+   "outputs": {
+    "cache/tau_l_gamma_scan.pkl": "cf41c8f74f92b6e4"
+   },
+   "stamped": "2026-10-17"
+  },
   "scan.py": {
    "commit": "619b3bf",
    "fingerprint": {
