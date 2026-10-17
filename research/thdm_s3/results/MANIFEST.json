@@ -115,29 +115,32 @@
    "stamped": "2026-10-17"
   },
   "06": {
-   "commit": "76c0740",
+   "commit": "6081071",
    "fingerprint": {
-    "code": "01d7f8ddfa0ba74e",
+    "code": "01b9e09e9a87eb92",
     "inputs": {
-     "results/decay_benchmarks.json": "f126be2e25a8f07c",
-     "results/viable_points_soft.json": "048451e6599581a0"
+     "cache/soft_decays_scan.pkl": "4870744c33253140",
+     "results/decay_benchmarks.json": "99825758cef15ac3",
+     "results/viable_points.json": "c0724c1488b76738",
+     "results/viable_points_soft.json": "687b2fd49fea98fd"
     },
     "library": "a01f0dcaa5e08609",
     "modules": {
-     "decays": "a86e0b4524372470",
+     "decays": "cf91e47fbb4d4aef",
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
-     "lfv": "726a4d34c269422e",
+     "lfv": "9a836f89e55f6851",
      "model": "b832810ea98fb465",
      "radiative": "db2323d2d9685145",
      "sm_inputs": "3fd87e73a98e7104",
-     "soft_decays": "8e8d220454dccf1e"
+     "soft_decays": "458cf33b9e027cc3",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17); re-executed in tree with data-driven labels; every check passes",
+   "note": "run_pipeline.py",
    "outputs": {
     "derivations_06.tex": "8eab3e57608010b3",
-    "results/soft_decay_benchmarks.json": "861f50d94af9eb5a"
+    "results/soft_decay_benchmarks.json": "44006ca5694d39dd"
    },
    "stamped": "2026-10-17"
   },
