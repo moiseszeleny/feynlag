@@ -415,7 +415,7 @@ $$c_L=\sum_f\frac{\tfrac12I_1(t_f)(m_jY_{jf}Y^*_{if}+m_iY^*_{fj}Y_{fi})+I_2(t_f)
 #### `nb08-4add94d5` · ☐ todo · nb08 §3–4
 **Residual $\mathbb Z_2$: $\tau\to e\gamma=0$, $\tau\to\mu\gamma\neq0$ at the exact vacuum**
 
-- check: $\mathcal B(\tau\to e\gamma)<10^{-24}$ at 1964 exact points $\times$ 60 values of $\mu_3$
+- check: $\mathcal B(\tau\to e\gamma)<10^{-24}$ at 1973 exact points $\times$ 60 values of $\mu_3$
 - check: 3 odd states without $\tau\mu$, 4 even states without $e$ couplings, at every evaluation
 - check: $\mathcal B(\tau\to e\gamma)\propto(60^\circ-\varphi)^2$ off the alignment
 - check: all three channels identical at the S$_3$ image (20 points)

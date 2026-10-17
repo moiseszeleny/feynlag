@@ -112,9 +112,9 @@
    "stamped": "2026-10-17"
   },
   "06": {
-   "commit": "a31198c",
+   "commit": "76c0740",
    "fingerprint": {
-    "code": "b3a10b72a774e931",
+    "code": "01d7f8ddfa0ba74e",
     "inputs": {
      "results/decay_benchmarks.json": "f126be2e25a8f07c",
      "results/viable_points_soft.json": "048451e6599581a0"
@@ -131,17 +131,17 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17); re-executed in tree with data-driven labels; every check passes",
    "outputs": {
     "derivations_06.tex": "8eab3e57608010b3",
-    "results/soft_decay_benchmarks.json": "0ee4f9779458b197"
+    "results/soft_decay_benchmarks.json": "861f50d94af9eb5a"
    },
    "stamped": "2026-10-17"
   },
   "07": {
-   "commit": "a31198c",
+   "commit": "76c0740",
    "fingerprint": {
-    "code": "b52221ba195c3243",
+    "code": "fac6e2180b2b3386",
     "inputs": {
      "results/viable_points_soft.json": "048451e6599581a0"
     },
@@ -157,19 +157,19 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17); re-executed in tree with data-driven labels; every check passes",
    "outputs": {
     "derivations_07.tex": "5334fb1e8a11d6c6",
-    "results/mu_e_gamma.json": "6be9aa11f8e115c4"
+    "results/mu_e_gamma.json": "57de8435976bf7dc"
    },
    "stamped": "2026-10-17"
   },
   "08": {
-   "commit": "a31198c",
+   "commit": "76c0740",
    "fingerprint": {
-    "code": "850bbf7caba54041",
+    "code": "8f6f2d685fb099c4",
     "inputs": {
-     "results/mu_e_gamma.json": "6be9aa11f8e115c4",
+     "results/mu_e_gamma.json": "57de8435976bf7dc",
      "results/viable_points_soft.json": "048451e6599581a0"
     },
     "library": "a01f0dcaa5e08609",
@@ -184,21 +184,21 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17); re-executed in tree with data-driven labels; every check passes",
    "outputs": {
-    "derivations_08.tex": "9e2b2f859b3c00d8",
-    "results/tau_l_gamma.json": "3e8923892b3d3969"
+    "derivations_08.tex": "2b48501380fd0cb7",
+    "results/tau_l_gamma.json": "8ab801c80cf2b101"
    },
    "stamped": "2026-10-17"
   },
   "benchmarks.py": {
-   "commit": "a31198c",
+   "commit": "76c0740",
    "fingerprint": {
     "code": "7e4ce4f18cc9e218",
     "inputs": {
-     "results/mu_e_gamma.json": "6be9aa11f8e115c4",
-     "results/soft_decay_benchmarks.json": "0ee4f9779458b197",
-     "results/tau_l_gamma.json": "3e8923892b3d3969",
+     "results/mu_e_gamma.json": "57de8435976bf7dc",
+     "results/soft_decay_benchmarks.json": "861f50d94af9eb5a",
+     "results/tau_l_gamma.json": "8ab801c80cf2b101",
      "results/viable_points_soft.json": "048451e6599581a0"
     },
     "library": "a01f0dcaa5e08609",
@@ -214,7 +214,7 @@
      "soft_decays": "8e8d220454dccf1e"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "re-centred on M_H = 125.20 GeV (2026-10-17); re-executed in tree with data-driven labels; every check passes",
    "outputs": {
     "results/benchmarks.json": "1386b14811fb106d"
    },
@@ -268,7 +268,7 @@
   },
   "report_mu_e_gamma.tex": {
    "notebooks": {
-    "07": "b1c01c601614894d"
+    "07": "66c28752627a84cb"
    },
    "stamped": "2026-10-17",
    "tex": "d65ac03d3870172f"
@@ -289,7 +289,7 @@
   },
   "report_soft_decays.tex": {
    "notebooks": {
-    "06": "26b298074b388d32"
+    "06": "083dce01547e13c4"
    },
    "stamped": "2026-10-17",
    "tex": "95b74bcb5518fc74"
