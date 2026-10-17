@@ -79,6 +79,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from sm_inputs import M_H   # the window centre: one definition, PDG 2024
+
 #: Tree-unitarity bound on each S-matrix eigenvalue, [DasDey14] Eq. (36).
 UNITARITY_BOUND = 16.0 * np.pi
 
@@ -304,8 +306,16 @@ M_LEP_ZH = 114.4
 XI2_LEP_FLOOR = 0.05
 
 
-def sm_like_cut(xi2, masses, m_ref=125.0, window=3.0, kappa2_min=KAPPA2_MIN):
+#: Half-width of the SM-like mass window: a stand-in for the theory uncertainty
+#: of a tree-level mass, centred on the measured `M_H`.
+M_H_WINDOW = 3.0
+
+
+def sm_like_cut(xi2, masses, m_ref=M_H, window=M_H_WINDOW, kappa2_min=KAPPA2_MIN):
     """(N,) boolean: the hVV-carrying CP-even state sits at ``m_ref ± window``.
+
+    The window is centred on the measured Higgs mass (`sm_inputs.M_H`, PDG
+    2024); before 2026-10-17 it was centred on 125.0 GeV.
 
     ``xi2`` and ``masses`` are dicts of (N,) arrays over the CP-even states, as
     `model.hvv_function` and `model.spectrum_function` return them.  The carrier
