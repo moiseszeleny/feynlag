@@ -1,5 +1,5 @@
 {
- "description": "3HDM-S3 decay observables at the 2021 soft-broken viable points of viable_points_soft.json: SM-like LFV rates (tau mu, tau e, e mu) over the mu_3 grid and every lepton branch (kind = which lepton the e+ diagonal entry A grows into; 'e' is the draft's branch), R_gammagamma with both charged Higgses (kappa_t = kappa_V assumed), and the VSS widths A_a -> Z h_SM, H+_a -> W+ h_SM in GeV.",
+ "description": "3HDM-S3 decay observables at the 2028 soft-broken viable points of viable_points_soft.json: SM-like LFV rates (tau mu, tau e, e mu) over the mu_3 grid and every lepton branch (kind = which lepton the e+ diagonal entry A grows into; 'e' is the draft's branch), R_gammagamma with both charged Higgses (kappa_t = kappa_V assumed), and the VSS widths A_a -> Z h_SM, H+_a -> W+ h_SM in GeV.",
  "conventions": {
   "gamma_h_total_GeV": 0.0041,
   "m_h_GeV": 125.2,
