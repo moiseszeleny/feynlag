@@ -242,21 +242,22 @@
    "stamped": "2026-10-17"
   },
   "scan_soft.py": {
-   "commit": "a31198c",
+   "commit": "6f9e346",
    "fingerprint": {
-    "code": "02ad35809ebdfb29",
+    "code": "7ad4f6485a25ea58",
     "inputs": {},
     "library": "a01f0dcaa5e08609",
     "modules": {
      "constraints": "0a35f6c5060a3eaf",
      "model": "b832810ea98fb465",
-     "scan": "3041beec98f5b2c2",
-     "sm_inputs": "3fd87e73a98e7104"
+     "scan": "fb90c5c004294520",
+     "sm_inputs": "3fd87e73a98e7104",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "run_pipeline.py",
    "outputs": {
-    "results/viable_points_soft.json": "048451e6599581a0"
+    "results/viable_points_soft.json": "687b2fd49fea98fd"
    },
    "stamped": "2026-10-17"
   }
