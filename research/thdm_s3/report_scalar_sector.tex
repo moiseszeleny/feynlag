@@ -69,8 +69,8 @@ unitarity removes \emph{no} points that boundedness has not already removed
 (\S\ref{sec:scan}).
 
 \item \textbf{The 125~GeV condition is now a coupling cut, not a mass coincidence.} The state
-carrying the $hVV$ coupling must sit at $125\pm3$~GeV, and light, appreciably coupled
-neutral states are vetoed. This keeps 64 of the 322 points a mass-only cut would keep. Over
+carrying the $hVV$ coupling must sit at $125.20\pm3$~GeV, and light, appreciably coupled
+neutral states are vetoed. This keeps 64 of the 313 points a mass-only cut would keep. Over
 $\nExactSample$ samples, \nExactPoints{} points survive (\S\ref{sec:scan}, \S\ref{sec:region}).
 \end{enumerate}
 
@@ -253,7 +253,7 @@ finding artefacts, and the sampling is not missing violations at this resolution
 Condition \eqref{eq:ft} is exact on the \emph{real neutral} slice only. Complex-neutral and
 charged directions are not covered analytically; the notebook handles them with a numerical
 backstop over $40\,000$ directions in the full 12-dimensional field space. Over the full
-$\nExactSample$-point scan it removes 23 of the 1987 points that pass every other cut (none of
+$\nExactSample$-point scan it removes 23 of the 1996 points that pass every other cut (none of
 the 64 in the two-million-point sample of \S\ref{sec:scan}). The residual gap is therefore
 real but small once the other cuts are applied. Doing this properly --- separate analytic BFB-n and BFB-c
 conditions --- is what \cite{BotoRomaoSilva22} does for $U(1)\times U(1)$,
@@ -303,14 +303,14 @@ $+$ corrected BFB \eqref{eq:ft} & $103\,465$ & $90.5\%$\\
 $+$ tree unitarity              & $103\,465$ & $100.0\%$\\
 $+$ no tachyons                 & $7\,608$   & $7.35\%$\\
 $+$ $m_{H^\pm}>80$~GeV \cite{LEPHpm13} & $6\,890$   & $90.6\%$\\
-$+$ $hVV$ carrier at $125\pm3$~GeV, $\kappa^2\ge0.9$ & $64$ & $0.93\%$\\
+$+$ $hVV$ carrier at $125.20\pm3$~GeV, $\kappa^2\ge0.9$ & $64$ & $0.93\%$\\
 $+$ LEP neutral veto \cite{LEP2003} & $64$ & $100.0\%$\\
 $+$ 12-dimensional BFB backstop  & $64$      & $100.0\%$\\
 \bottomrule
 \end{tabular}
 \end{center}
-{\small A mass-only ``one CP-even state at $125\pm3$~GeV'' cut, which this report originally
-used, would keep 322 points at the sixth row. The sample is chunk~0 of the cached scan
+{\small A mass-only ``one CP-even state at $125.20\pm3$~GeV'' cut, which this report originally
+used, would keep 313 points at the sixth row. The sample is chunk~0 of the cached scan
 (\texttt{scan.py}). Swept over 30 such samples ($\nExactSample$ points) the same cuts leave
 \textbf{\nExactPoints{}} points (\texttt{results/viable\_points.json}), and chunk~0 reproduces this
 table point for point.\par}
@@ -349,13 +349,13 @@ The theory-allowed spectra cluster below a TeV, consistent with \cite{DasDey14}'
 conclusion that many new scalars must be light.
 
 \paragraph{The collider cuts.} The scan originally applied a mass-only condition (one
-CP-even state at $125\pm3$~GeV) and no bound at all on the neutral states. Both gaps are now
+CP-even state at $125.20\pm3$~GeV) and no bound at all on the neutral states. Both gaps are now
 closed with the $hVV$ couplings, which follow from the same CP-even block as the masses:
 \begin{itemize}\itemsep1pt
 \item \textbf{SM-like at 125~GeV}: the state carrying the largest $hVV$ coupling must sit at
-$125\pm3$~GeV with $\kappa^2\ge0.9$ of the SM strength. Over the points that pass the mass
+$125.20\pm3$~GeV with $\kappa^2\ge0.9$ of the SM strength. Over the points that pass the mass
 condition, only a minority put the coupling on the 125~GeV state, so the mass-only cut was
-too loose by a factor of five (322 against 64).
+too loose by a factor of five (313 against 64).
 \item \textbf{LEP neutral veto}: no CP-even state below 114.4~GeV may have
 $\xi^2\ge0.05$, a step approximation of \cite{LEP2003} Fig.~10. The approximation carries no
 weight. $h_0$ is gauge-phobic exactly, for any mixing, and the other two states share the SM

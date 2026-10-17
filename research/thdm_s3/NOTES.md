@@ -27,10 +27,10 @@ pedagogical walk-through). This directory is where the open questions go.
 | `derivations_05.tex` | printable appendix emitted by notebook 05 §7. |
 | `lfv.py` | charged-lepton LFV couplings at any vacuum: per-doublet $G_k$ read off the Lagrangian (`lepton_g_function`), the draft's analytic inversion at the alignment, and the exact arrowhead-cubic enumeration of every lepton-fit branch off it (`lepton_branches`, `branch_kind`). Shared by notebooks 03 and 06. |
 | `soft_decays.py` | per-point numeric decay machinery for the soft-broken vacuum: rotations rebuilt from the stored inputs, the $hH^+H^-$ cubic tensor, VSS overlaps and widths, $R_{\gamma\gamma}$, LFV over every lepton branch, the S₃-image map, and the radiative decays (`lfv_radiative` for any $\ell_i\to\ell_j\gamma$, `radiative_lfv_all` for the three channels at once). |
-| `06_soft_decays.ipynb` | decays and LFV on the 2021 soft points, validated against the extractor, the exact-S₃ limit and the S₃ image. **Done.** |
+| `06_soft_decays.ipynb` | decays and LFV on the 2028 soft points, validated against the extractor, the exact-S₃ limit and the S₃ image. **Done.** |
 | `derivations_06.tex` | printable appendix emitted by notebook 06. |
 | `radiative.py` | $\ell_i\to\ell_j\gamma$ dipole amplitudes (μ→eγ, τ→μγ, τ→eγ; the decaying and final lepton are arguments), numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$W$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
-| `07_mu_to_e_gamma.ipynb` | μ→eγ on the 2021 soft points: couplings of every scalar checked against the extractor, each amplitude piece against an independent source, the exact-S₃ zero, the scan against MEG II. **Done.** |
+| `07_mu_to_e_gamma.ipynb` | μ→eγ on the 2028 soft points: couplings of every scalar checked against the extractor, each amplitude piece against an independent source, the exact-S₃ zero, the scan against MEG II. **Done.** |
 | `derivations_07.tex` | printable appendix emitted by notebook 07. |
 | `results/mu_e_gamma.json` | per soft point: the least-constrained (μ₃, branch) configuration and its breakdown, plus scan summaries. Written by notebook 07. |
 | `08_tau_to_l_gamma.ipynb` | τ→μγ and τ→eγ: the index generalization checked against notebook 07, [HKZ13] and [OST16]; the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed); the soft scan against Belle/BaBar and h→τℓ. **Done.** |
@@ -58,9 +58,9 @@ pedagogical walk-through). This directory is where the open questions go.
 | `benchmarks.py` | picks three soft points by fixed rules (decoupled, light H±, near S₃) and writes `BENCHMARKS.md`, one card per point from the stored results; the chosen indices go to `results/benchmarks.json`. |
 | `CLAIMS.md` | generated; the place to start a manual review. |
 | `review_status.csv` | review marks per claim id (`todo`/`ok`/`doubt`/`wrong` + note). Edit this, not `CLAIMS.md`. A ledger claim's id hashes its text, so an edited claim resets to `todo` with a note, and a removed one stays listed as an orphaned mark. |
-| `results/viable_points.json` | every point surviving the scan's cuts (1964 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
+| `results/viable_points.json` | every point surviving the scan's cuts (1973 from 60M samples), each tagged with its CP-even states' $hVV$ coupling² (`hvv_squared`) and its δ; written by `scan.py`. |
 | `results/quark_soft_fit.json` | soft-breaking quark benchmark (masses + Cabibbo angle). |
-| `results/viable_points_soft.json` | 2021 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
+| `results/viable_points_soft.json` | 2028 soft-broken points from 110M samples, each with its (θ, φ), both draft-basis ratios, all four soft terms, the mass-ordered spectrum, hVV couplings² and the 3×3 CP-even mixing; written by `scan_soft.py`. |
 | `results/decay_benchmarks.json` | per-point δ and VV couplings, plus the LFV branching-ratio distribution per (state, channel, $\mu_3$) and a 200-entry sample. |
 | `results/soft_decay_benchmarks.json` | per soft point: SM-like index and $\kappa_V$, $R_{\gamma\gamma}$, $hH^+H^-$ couplings, VSS widths, the least-constrained lepton configuration; plus LFV summaries by branch kind and misalignment. Written by notebook 06. |
 
@@ -169,6 +169,12 @@ half-integer power λ₄ introduces is exactly what invalidates it.
 
 ## Findings
 
+> **2026-10-17: the SM-like mass window is now centred on $M_H=125.20$ GeV** (PDG 2024,
+> `sm_inputs.M_H`), not 125.0. Both scans and notebooks 01, 03–08 were re-run, and every number
+> below was updated to the new point sets: exact 1964 → 1973 points, soft 2021 → 2028, MEG II
+> keeps 618 (was 610). No conclusion changed. The benchmarks in `BENCHMARKS.md` are tuned to
+> $m_h=125.20$ exactly.
+
 ### 1. The tutorial benchmark sits at the wrong electroweak scale
 
 `examples/THDM_S3_Tutorial.ipynb` picks $(v_1,v_2,v_S)=(200,115,80)$ GeV
@@ -263,7 +269,7 @@ slice (0 disagreements). Reproduced in `01_scalar_parameter_space.ipynb` §5.3�
 Still only *necessary* overall — it covers the real neutral slice, not
 complex-neutral or charged directions. So the notebook also runs
 `model.numeric_bfb_min` over the full 12-dimensional space as an empirical
-backstop on the quoted benchmark points; it removes a further 3 of 322 (§8),
+backstop; on the full scan it removes a further 23 of the 1996 points that pass every other cut (§8),
 confirming the residual gap is real but small once the other cuts are applied.
 
 **Resolved.** The [DasDey14] Erratum (Phys. Rev. D 91, 039905, 2015 — never posted
@@ -451,7 +457,7 @@ $\tau\mu=0$ exactly (derived in notebook 03 §7.2, checked at every point and ev
 $\mu_3$). Results:
 - **SM-like state:** $\mathcal B(h\to\tau\mu)$ exceeds [CMS21]'s $0.15\%$ in **18%** of
   entries. This bounds $\mu_3^\ell$, not the scalar sector: the fraction runs
-  0.3% → 6.4% → 48% across $\mu_3=0.5,\,0.9,\,1.4$, and the median point sits a
+  0.3% → 6.3% → 48% across $\mu_3=0.5,\,0.9,\,1.4$, and the median point sits a
   factor ~9 below the limit.
 - **$h_0$:** its $e\tau$ and $e\mu$ rate ratios to $\Gamma_h^{\rm SM}$ are large (medians
   $5\times10^{-3}$, $5\times10^{-2}$). The 125 GeV limits ([CMS21], [CMS23]) do not apply to
@@ -476,7 +482,7 @@ So the exact-S₃ vacuum ties the quark and lepton flavour structures together: 
 9 and 10 are the same first-generation decoupling.
 
 **Library work this required** (both in `src/`, pinned by the main suite):
-`VSS` decays ($A\to Zh$, $H^\pm\to W^\pm h$ — open at 1947 of the 1964 benchmark
+`VSS` decays ($A\to Zh$, $H^\pm\to W^\pm h$ — open at 1955 of the 1973 benchmark
 points and gauge-strength, so omitting them would have made heavy-state BRs wrong rather
 than merely incomplete), and the spin-0 form factor `A_zero` plus a general
 `higgs_diphoton_amplitude` so a charged Higgs can run in the $\gamma\gamma$ loop.
@@ -506,7 +512,7 @@ full 3×3 with no gauge-phobic state (hVV sum rule to 1e-15). Brute-force mpmath
 diagonalization agrees in all three sectors, and the aligned zero-soft slice
 reproduces notebook 01 to 1e-10.
 
-**Scan: 2021 points from 1.1×10⁸** (`results/viable_points_soft.json`, ~5 min).
+**Scan: 2028 points from 1.1×10⁸** (`results/viable_points_soft.json`, ~5 min).
 - The quartic cuts are identical to notebook 01's (5.15%).
 - No tachyons passes 2.5× more often.
 - The 125 GeV coupling cut is where the soft space dies.
@@ -524,11 +530,11 @@ reproduces notebook 01 to 1e-10.
 - **Survivors pile up at both residual-Z₂ edges of φ.** At φ → 0 this is the
   decoupling tail: the solved $m_{D1}^2\propto1/(v_1v_2)$ blows up, and all 34
   points with a state above 5 TeV sit at φ < 7°. At φ → π/3 the breaking is
-  moderate (median 3.5v² within 10°). The quark-fit vacuum lies in the populated
+  moderate (median 3.4v² within 10°). The quark-fit vacuum lies in the populated
   upper range (203 points within ±2°).
 
 **Caveats.** The near-S₃ corner is barely populated under a uniform prior in $m^2$
-(15 points with every soft term below v²). Only a *local* minimum is required.
+(14 points with every soft term below v²). Only a *local* minimum is required.
 Notebook 03's decays/LFV are not redone, because its δ assumes the aligned 2×2
 block. All three are open items.
 
@@ -544,7 +550,7 @@ rotations from the stored inputs and computes its couplings numerically:
 At a non-aligned point all 27 trilinears match feynlag's extractor to $2\times10^{-13}$ GeV,
 the 18 VSS couplings match to $10^{-17}$, and the closed-form VSS width equals the engine's.
 The φ = π/3, zero-soft slice reproduces corrected notebook 03. The S₃ image vacuum gives
-identical observables to $10^{-12}$, once its $m_{D1}^2$ is re-solved rather than read
+identical observables to $10^{-11}$, once its $m_{D1}^2$ is re-solved rather than read
 rounded from the JSON.
 
 **The lepton fit is an arrowhead cubic, and the vacuum restricts it.** In feynlag's basis
@@ -567,8 +573,8 @@ This is the alignment limit, and it holds however large the soft breaking is.
 
 **Rates.** All three channels are on in the soft vacuum. Over every (point, $\mu_3$, branch)
 the SM-like medians are about $10^{-5}$ (τμ, τe) and $3\times10^{-6}$ (eμ). The fractions
-over the limits are 2.9%, 1.9% and **18.3%**: $e\mu$ against [CMS23] is the binding channel.
-Only **5 of 2021** scalar points have no lepton configuration under all three limits, so
+over the limits are 2.9%, 1.9% and **18.2%**: $e\mu$ against [CMS23] is the binding channel.
+Only **5 of 2028** scalar points have no lepton configuration under all three limits, so
 LFV again bounds the lepton dial, not the scalar sector.
 
 **γγ and VSS.**
@@ -576,7 +582,7 @@ LFV again bounds the lepton dial, not the scalar sector.
   0.8 all have a light $H^\pm$ (< 310 GeV) interfering destructively with the $W$, and the
   charged loop decouples to $\kappa_V^2$ above 1.5 TeV. The top coupling is assumed equal to
   $\kappa_V$.
-- $A_{1,2}\to Zh$ and $H^\pm_{1,2}\to W^\pm h$ are open almost everywhere (median 20–80 MeV).
+- $A_{1,2}\to Zh$ and $H^\pm_{1,2}\to W^\pm h$ are open almost everywhere (median 20–75 MeV).
   Their couplings to the SM-like state obey $\sum_a|O_{ak}|^2=1-\kappa_V^2$ exactly.
 
 ### 13. μ→eγ: zero at the exact vacuum, the binding LFV constraint in the soft one (notebook 07)
@@ -605,11 +611,11 @@ dipole is forbidden to all orders, even though those scalars carry $e\mu$ coupli
 alignment $\mathcal B\propto(60^\circ-\varphi)^2$, and 0.1° already reaches the MEG II limit.
 
 **Soft vacuum: it constrains the scalar sector.**
-- 415 464 (point, μ₃, branch) configurations; median $\mathcal B=7.7\times10^{-10}$.
+- 417 992 (point, μ₃, branch) configurations; median $\mathcal B=7.6\times10^{-10}$.
 - 2.5% pass MEG II ($1.5\times10^{-13}$ [MEGII25]), against 80% for the Higgs LFV limits.
   Per configuration, μ→eγ is a median $9\times10^4$ times more restrictive than $h\to e\mu$.
-- **610 of 2021 points** keep a MEG-allowed lepton configuration (599 with the h→ℓℓ′
-  limits too). The h→ℓℓ′ limits alone keep 2016.
+- **618 of 2028 points** keep a MEG-allowed lepton configuration (606 with the h→ℓℓ′
+  limits too). The h→ℓℓ′ limits alone keep 2023.
 - The Barr–Zee $W$ loop through the SM-like Higgs dominates (largest piece in 92% of
   configurations). Survivors are more aligned, with median $1-\kappa_V^2=8\times10^{-4}$
   against $2.4\times10^{-3}$.
@@ -617,7 +623,7 @@ alignment $\mathcal B\propto(60^\circ-\varphi)^2$, and 0.1° already reaches the
   free soft terms break the $\mathbb Z_2$ whatever φ is.
 
 **Robust to the soft spots.** With no quark Barr–Zee, the quark sign flipped, or the $W$
-loop at [HKZ13]'s value, 499, 456 and 675 points survive.
+loop at [HKZ13]'s value, 504, 453 and 684 points survive.
 
 **Not included:** [HKZ13] set C, the $\phi Z\gamma$ (+6% on the $W$ term) and $H^\pm W\gamma$
 Barr–Zee diagrams. The quark couplings are an ansatz (along $\hat v$).
@@ -640,23 +646,23 @@ For an SM-like Higgs, $h\to\tau\mu$ is ~12× stronger in the coupling than τ→
 the $e\mu$ sector.
 
 **Exact S₃: τ→eγ ≡ 0, τ→μγ allowed.** The residual $\mathbb Z_2$ makes τ→eγ, which has one odd
-lepton, round-off at all 1964 × 60 exact configurations. Off alignment it grows as
+lepton, round-off at all 1973 × 60 exact configurations. Off alignment it grows as
 $(60^\circ-\varphi)^2$. τ→μγ goes through the four even states (the three odd ones, h₀, one $A$
 and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
-- Belle [Belle21] excludes 0.76% of exact configurations, against 18.5% for $h\to\tau\mu$.
-- That exclusion is **not a subset** of the Higgs one: 485 configurations at 20 points are
+- Belle [Belle21] excludes 0.72% of exact configurations, against 18.5% for $h\to\tau\mu$.
+- That exclusion is **not a subset** of the Higgs one: 460 configurations at 20 points are
   τ→μγ-excluded and $h\to\tau\mu$-allowed. All of them are one-loop dominated and have a light
   non-SM neutral even scalar (6.7–223 GeV).
 - No exact point loses its whole μ₃ range.
 
 **Soft vacuum: nothing beyond MEG II.**
-- Median $\mathcal B=2.3\times10^{-12}$ in both channels.
-- 0.021% (τμ) and 0.034% (τe) of configurations exceed the limits.
-- The point counts stay at 610, and 599 with h→ℓℓ′, also under all three variants.
+- Median $\mathcal B=2.2\times10^{-12}$ (τμ) and $2.3\times10^{-12}$ (τe).
+- 0.020% (τμ) and 0.029% (τe) of configurations exceed the limits.
+- The point counts stay at 618, and 606 with h→ℓℓ′, also under all three variants.
 - τ→μγ is a median $9\times10^{-3}$ as restrictive as $h\to\tau\mu$.
 - The $W$ Barr–Zee term dominates here too (93%).
-- **Belle II prediction:** where every limit holds, $\mathcal B(\tau\to\ell\gamma)\le4\times10^{-10}$,
-  about 20× below the 50 ab⁻¹ reach [BelleII22]. A τ→ℓγ signal would exclude the soft vacuum.
+- **Belle II prediction:** where every limit holds, $\mathcal B(\tau\to\mu\gamma)\le4.8\times10^{-10}$ and
+  $\mathcal B(\tau\to e\gamma)\le3.9\times10^{-10}$, about 15× and 23× below the 50 ab⁻¹ reach [BelleII22]. A τ→ℓγ signal would exclude the soft vacuum.
 
 ## Open questions / next
 
@@ -687,7 +693,7 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - ~~Soft breaking and the scalar spectrum.~~ **Done** — finding 11,
   `05_soft_scalar_scan.ipynb`, `scan_soft.py`.
 - **The near-S₃ corner of the soft scan.** A uniform prior in $m^2$ leaves only 15
-  of 2021 points with every soft term below $v^2$ (finding 11). Whether the exact
+  of 2028 points with every soft term below $v^2$ (finding 11). Whether the exact
   scan's light gauge-phobic scalars reappear continuously as the breaking shrinks
   needs a targeted scan: log-uniform soft terms and φ near π/3.
 - **Global minimum in the soft-broken vacuum.** `scan_soft.py` requires only a
@@ -729,12 +735,12 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
   `model.hvv_function` gives every CP-even state's $hVV$ coupling² alongside its
   mass (validated against brute-force diagonalization of the un-rotated matrix),
   so `constraints.sm_like_cut`/`lep_neutral_mask` cut on the **coupling**: the
-  state carrying $g_{hVV}$ must sit at $125\pm3$ GeV with $\kappa^2\ge0.9$, and
+  state carrying $g_{hVV}$ must sit at $125.20\pm3$ GeV ($M_H$, PDG 2024) with $\kappa^2\ge0.9$, and
   nothing below 114.4 GeV may have $\xi^2\ge0.05$ ([LEP2003]). A light $h_0$ passes
   on the physics — $g_{h_0VV}=0$ exactly — not on an exemption. Because the two
   non-phobic states share the SM strength, the $\kappa^2$ threshold already implies
   the LEP one, so the result is unchanged for any floor in $[0.01,0.10]$: the step
-  approximation of [LEP2003] Fig. 10 carries no weight. 2M → 322 under the old
+  approximation of [LEP2003] Fig. 10 carries no weight. 2M → 313 under the old
   mass-only cut, 64 under this one.
 - The scan samples λ uniformly, which is inefficient given the shape of the
   viable region. A targeted sampler would resolve its boundary far better.
