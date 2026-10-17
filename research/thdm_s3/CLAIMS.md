@@ -227,7 +227,7 @@ $$\sqrt{v_1^2+v_2^2} = 2\,|v_2| \iff |v_1| = \sqrt3\,|v_2|\ \text{(draft basis)}
 **Soft $S_3$ breaking reproduces the six quark masses and $|V_{us}|$, $|V_{cb}|$, $|V_{ub}|$ simultaneously (an existence result, not a prediction)**
 
 - check: all nine targets reproduced at a fit cost below $10^{-20}$
-- check: 4 distinct exact solutions found; the one kept is selected by a stated rule, |r| closest to sqrt3
+- check: at least four distinct exact solutions found (the count depends on the numpy/scipy version); the one kept is selected by a stated rule, |r| closest to sqrt3
 - check: $|V_{us}|$ vanishes exactly at $r=\sqrt3$ and grows linearly away from it
 - falsified by: no exact solution for $r\neq\sqrt3$, or one reproducing $|V_{us}|$ at $r=\sqrt3$
 - notebook feeds: nb05

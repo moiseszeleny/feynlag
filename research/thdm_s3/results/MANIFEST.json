@@ -23,9 +23,9 @@
    "stamped": "2026-10-17"
   },
   "02": {
-   "commit": "a31198c",
+   "commit": "940bf73",
    "fingerprint": {
-    "code": "5eca93e2a0a4f318",
+    "code": "1e93906c5a533186",
     "inputs": {},
     "library": "a01f0dcaa5e08609",
     "modules": {
@@ -35,10 +35,10 @@
      "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "re-executed 2026-10-17 in tree; nb02 now checks at least 4 exact quark-fit solutions (5 found here, selected fit unchanged)",
    "outputs": {
-    "derivations_02.tex": "dd01c332a43eb463",
-    "results/quark_soft_fit.json": "9762e554c97b145c"
+    "derivations_02.tex": "39f98897ce200856",
+    "results/quark_soft_fit.json": "b2c5f3c722d159bc"
    },
    "stamped": "2026-10-17"
   },
@@ -86,11 +86,11 @@
    "stamped": "2026-10-17"
   },
   "05": {
-   "commit": "a31198c",
+   "commit": "940bf73",
    "fingerprint": {
     "code": "cf6e3321b07d8629",
     "inputs": {
-     "results/quark_soft_fit.json": "9762e554c97b145c",
+     "results/quark_soft_fit.json": "b2c5f3c722d159bc",
      "results/viable_points.json": "166218c5caca4a4f",
      "results/viable_points_soft.json": "048451e6599581a0"
     },
@@ -105,7 +105,7 @@
      "sm_inputs": "3fd87e73a98e7104"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "re-executed 2026-10-17 in tree; nb02 now checks at least 4 exact quark-fit solutions (5 found here, selected fit unchanged)",
    "outputs": {
     "derivations_05.tex": "c056e31330aa52e7"
    },
@@ -261,10 +261,10 @@
  "reports": {
   "report_fermion_sector.tex": {
    "notebooks": {
-    "02": "0f6534b3717748cc"
+    "02": "ab799baa2efc016b"
    },
    "stamped": "2026-10-17",
-   "tex": "94c6c58bb8b75b41"
+   "tex": "d5cfdbad8829069d"
   },
   "report_mu_e_gamma.tex": {
    "notebooks": {
@@ -296,7 +296,7 @@
   },
   "report_soft_vacuum.tex": {
    "notebooks": {
-    "05": "6da66ad1e05df026"
+    "05": "16c8fe717eca2c71"
    },
    "stamped": "2026-10-17",
    "tex": "376c5ca889368bb1"
