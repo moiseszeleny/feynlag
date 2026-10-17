@@ -1,0 +1,57 @@
+id,status,note,source,claim
+A-prior-exact,todo,,A-prior-exact,"Exact-$S_3$ scan prior: the quartics are sampled uniformly, $\lambda\in U(-2,2)^8$."
+A-prior-soft,todo,,A-prior-soft,"Soft-scan prior: the three free soft terms are signed uniform variables up to $(500\,\math"
+A-local-min,todo,,A-local-min,"The soft scan requires only a local minimum (no tachyons), not the global minimum of the p"
+A-bfb-slice,todo,,A-bfb-slice,The corrected boundedness condition is exact only on the real neutral slice; complex-neutr
+A-hvv-cut,todo,,A-hvv-cut,SM-likeness cut on the coupling: the state carrying $g_{hVV}$ sits at $M_H\pm3=125.20\pm3$
+A-least-constrained,todo,,A-least-constrained,"A scalar point counts as allowed if *any* lepton configuration ($\mu_3^\ell$, fit branch) "
+A-quark-kappa,todo,,A-quark-kappa,The quark couplings point along the vacuum direction: $\kappa_t=\kappa_V$. No quark sector
+A-missing-diagrams,todo,,A-missing-diagrams,"Barr-Zee diagrams not included: [HKZ13] set C, $\phi Z\gamma$ (about +6% on the $W$ term) "
+A-exp-limits,todo,,A-exp-limits,Experimental limits used: MEG II [MEGII25] for μ→eγ; Belle [Belle21] and BaBar [BaBar10] f
+A-quark-fit-r,todo,,A-quark-fit-r,"The quark fit's $r$ (and $V_{\rm abs}$) is an existence proof, not a prediction: 9 paramet"
+A-benchmark-tuning,todo,,A-benchmark-tuning,The three benchmarks are scan points tuned to $m_h=M_H=125.20$ GeV exactly by moving one q
+nb01-bc4b4cba,todo,,nb01 step 1,"The $\sqrt3$ vacuum alignment $v_2=\sqrt3\,v_1$ is forced by the tadpoles"
+nb01-f639da4c,todo,,nb01 step 2,"[DasDey14] Erratum, Phys. Rev. D 91, 039905 (2015) — it corrects Eqs. (9a)–(9c), the tadpo"
+nb01-f541ac28,todo,,nb01 step 3,"The [GomezBock21] $(a\ldots h)\leftrightarrow$ feynlag $\lambda$ dictionary, with $e=-\lam"
+nb01-03358e65,todo,,nb01 step 4,"The real neutral slice, and the absence of $\lambda_2$"
+nb01-bf68e2d9,todo,,nb01 step 5,[DasDey14] Eqs. (4a)–(4g) boundedness conditions
+nb01-c4b6f04e,todo,,nb01 step 6,The exact boundedness condition on the real neutral slice
+nb01-2867b450,todo,,nb01 step 7,The $hVV$ couplings are the CP-even block overlaps with the vacuum direction; $h_0$ is exa
+nb02-45a4ad6a,todo,,nb02 step 1,The draft's $S_3$ doublet basis is feynlag's reflected at $\pi/6$; the Yukawa coupling dic
+nb02-a252108b,todo,,nb02 step 2,"The $\mu\leftrightarrow Y$ dictionary, and the draft's factor $\sqrt2$"
+nb02-696edba0,todo,,nb02 step 3,"$(\sigma_1-\sigma_2)^2 = (\rho-\mu_3)^2 + 4(\mu_4+\mu_5)^2$, not $+16\mu_4\mu_5$"
+nb02-43a8bb6c,todo,,nb02 step 4,The first generation decouples iff $r=v_1/v_2=\sqrt3$ — the $\mathbb{Z}_2$-preserving vacu
+nb02-a8ac3203,todo,,nb02 step 5,"Soft $S_3$ breaking reproduces the six quark masses and $|V_{us}|$, $|V_{cb}|$, $|V_{ub}|$"
+nb02-626df118,todo,,nb02 step 6,The $S_3$ lepton assignment and its five Yukawa structures
+nb03-2ec2ce08,todo,,nb03 step 1,"$h_0$ is gauge-phobic exactly, and the $VV$ couplings obey a sum rule"
+nb03-0a7d9834,todo,,nb03 step 2,"The draft's Scenario-C relations hold exactly, for all $\delta$"
+nb03-358dea76,todo,,nb03 step 3,$\mathrm{lepton\_mus}(\mu_3)$ inverts the notebook-02 §5 relations
+nb03-bc0c817a,todo,,nb03 step 4,"At the exact-$S_3$ vacuum $h_{1,2}$ give only $\tau\mu$, and $h_0$ only $e\tau$, $e\mu$"
+nb03-ae053410,todo,,nb03 step 5,"The one-loop form factors $A_{1/2}$, $A_1$, $A_0$ and the LFV width formula"
+nb04-1010d11a,todo,,nb04 step 1,"BFB-n is copositivity of $A$, and the closed-form $3\times3$ test is reliable where direct"
+nb04-eae0231f,todo,,nb04 step 2,"The lower-bound strategy: $V_4\ge V_N+V_{CB}^{\rm lower}+V_G^{\rm lower}$, reducing BFB to"
+nb04-a3f061eb,todo,,nb04 step 3,Our $V_4$ decomposes exactly into their $V_N+V_{CB}+V_G$ **plus** a remainder $\propto\lam
+nb04-f59728a3,todo,,nb04 step 4,On the $\lambda_4=0$ slice the two tests are strictly ordered: their sufficient condition 
+nb04-2fb22b39,todo,,nb04 step 5,[BotoRomaoSilva22]'s decomposition $V_4=V_N+V_{CB}+V_G$ and the bound $0\le z_{ij}\le r_ir
+nb05-f1ed50e4,todo,,nb05 step 1,"The soft-broken tadpoles fix $(\mu_0^2,\mu_1^2,m_{D1}^2)$ for a general vacuum"
+nb05-c2be6b04,todo,,nb05 step 2,For a general vacuum $R$ still isolates both Goldstones; the CP-even sector is a full $3\t
+nb05-e0d04835,todo,,nb05 step 3,"$\varphi\in(0,\pi/3)$ is a fundamental domain: $\varphi\to2\pi/3-\varphi$ with $P$ on both"
+nb05-ce257c37,todo,,nb05 step 4,The draft-basis vacuum ratio is $r=-\cot(\varphi-\pi/6)$
+nb05-f3da2cf9,todo,,nb05 step 5,Soft terms need not be small: they renormalize only in proportion to themselves
+nb06-c28a9f39,todo,,nb06 step 1,"Soft-vacuum couplings from numeric tensors: $g_{hH^+H^-}=-T\cdot R_{\rm even}R_CR_C$, $g_{"
+nb06-3a5f537e,todo,,nb06 step 2,Off the alignment the charged-lepton fit ($\mu_5=\mu_4$) is one cubic per eigenvalue-sign 
+nb06-6ac16896,todo,,nb06 step 3,"The coupling of the vacuum direction is $\mathrm{diag}(m_\ell)/v$ at any vacuum, so SM-lik"
+nb06-d617fbcf,todo,,nb06 step 4,Exact-S$_3$ limit and S$_3$ image of the soft-vacuum decay machinery
+nb06-081540ab,todo,,nb06 step 5,"The LFV width, the diphoton form factors, the CMS limits"
+nb07-4a6634e0,todo,,nb07 step 1,Lepton couplings of every physical scalar
+nb07-f304e4fb,todo,,nb07 step 2,"One-loop neutral dipole in closed form, exact in $m_f/m_\phi$"
+nb07-a0a2fef1,todo,,nb07 step 3,Charged one loop $=-\tfrac12\times$ neutral non-flip
+nb07-a8d4137b,todo,,nb07 step 4,Barr–Zee fermion and $W$ terms
+nb07-488d6264,todo,,nb07 step 5,Barr–Zee $H^\pm$ term and the sign $\lambda=-g/v$
+nb07-dbe0adfe,todo,,nb07 step 6,Assembly and BR normalization
+nb07-e23b2c5e,todo,,nb07 step 7,$\mu\to e\gamma$ vanishes at the exact-S$_3$ vacuum (residual $\mathbb Z_2$)
+nb07-6d96cb76,todo,,nb07 step 8,Quark couplings along the vacuum direction
+nb08-e6d8a698,todo,,nb08 step 1,"$\ell_i\to\ell_j\gamma$ amplitudes for general $(i,j)$"
+nb08-f5b82283,todo,,nb08 step 2,$\mathcal B(\tau\to\ell\gamma)=48\pi^3\alpha(|A_L|^2+|A_R|^2)/G_F^2\times\mathcal B(\tau\t
+nb08-4add94d5,todo,,nb08 step 3,"Residual $\mathbb Z_2$: $\tau\to e\gamma=0$, $\tau\to\mu\gamma\neq0$ at the exact vacuum"
+nb08-6d96cb76,todo,,nb08 step 4,Quark couplings along the vacuum direction

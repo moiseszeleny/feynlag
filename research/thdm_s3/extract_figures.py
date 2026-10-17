@@ -46,8 +46,8 @@ FIGURES = {
     "softdec_mu3_existence": (NB06, 14, "Where a charged-lepton fit exists"),
     "softdec_lfv": (NB06, 18, "LFV needs a non-vacuum admixture"),
     "softdec_gammagamma": (NB06, 20, "in the soft-broken vacuum"),
-    "meg_scan": (NB07, 35, "over the soft scan (2021 points"),
-    "tau_l_gamma_scan": (NB08, 30, "over the soft scan (2021 points"),
+    "meg_scan": (NB07, 35, "over the soft scan ("),
+    "tau_l_gamma_scan": (NB08, 30, "over the soft scan ("),
 }
 
 

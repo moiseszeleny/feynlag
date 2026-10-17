@@ -40,6 +40,15 @@ exploratory work cannot satisfy.
    too: verify the source, then add an inline `[Tag]` plus a `## References`
    list. Each project's `NOTES.md` carries its reference list.
 
+6. **Nothing outside `research/` refers to it.** No path, comment, docstring,
+   notebook cell or config line in the library, tests, examples, docs or repo
+   config may point at a file in here. Rule 4 extended from imports to every
+   kind of reference: the rest of the repo must read as complete without the
+   workbench. Configuration that only research needs lives here too, for
+   example ignore patterns in `research/.gitignore`. When a result graduates
+   (rule 3), it moves out as self-contained content, not as a pointer back.
+   Check with `python research/check_isolation.py`.
+
 ## Layout of a project
 
 ```
