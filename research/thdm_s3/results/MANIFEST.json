@@ -174,9 +174,9 @@
    "stamped": "2026-10-18"
   },
   "08": {
-   "commit": "b789b04",
+   "commit": "1287db7",
    "fingerprint": {
-    "code": "c5dcbfbf765c27dd",
+    "code": "89e3ac96b7235503",
     "inputs": {
      "cache/tau_l_gamma_scan.pkl": "cf41c8f74f92b6e4",
      "results/mu_e_gamma.json": "8fbd11a8d978225c",
@@ -196,7 +196,7 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-run after mu_e_gamma summary gained a key: outputs unchanged",
+   "note": "Belle II projection reference -> Snowmass22; outputs unchanged",
    "outputs": {
     "derivations_08.tex": "2b48501380fd0cb7",
     "results/tau_l_gamma.json": "83eda147906bfba5"
@@ -393,7 +393,7 @@
   },
   "report_tau_l_gamma.tex": {
    "notebooks": {
-    "08": "2bfe2795808ce4b4"
+    "08": "1fefadb04d573bf8"
    },
    "stamped": "2026-10-18",
    "tex": "bbb68ed1aa5f6ec1"

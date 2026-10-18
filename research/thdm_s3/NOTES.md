@@ -663,7 +663,7 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - τ→μγ is a median $9\times10^{-3}$ as restrictive as $h\to\tau\mu$.
 - The $W$ Barr–Zee term dominates here too (93%).
 - **Belle II prediction:** where every limit holds, $\mathcal B(\tau\to\mu\gamma)\le4.8\times10^{-10}$ and
-  $\mathcal B(\tau\to e\gamma)\le3.9\times10^{-10}$, about 15× and 23× below the 50 ab⁻¹ reach [BelleII22]. A τ→ℓγ signal would exclude the soft vacuum.
+  $\mathcal B(\tau\to e\gamma)\le3.9\times10^{-10}$, about 15× and 23× below the 50 ab⁻¹ reach [Snowmass22]. A τ→ℓγ signal would exclude the soft vacuum.
 
 ## Open questions / next
 
@@ -857,9 +857,9 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - **[BaBar10]** BaBar Collaboration, *"Searches for lepton flavor violation in the decays
   τ±→e±γ and τ±→μ±γ"*, Phys. Rev. Lett. **104**, 021802 (2010),
   [arXiv:0908.2381](https://arxiv.org/abs/0908.2381). $\mathcal B(\tau\to e\gamma)<3.3\times10^{-8}$ (90% CL).
-- **[BelleII22]** Belle II, *"Searches for lepton flavor violation in tau decays at Belle II"*,
-  [arXiv:2209.11639](https://arxiv.org/abs/2209.11639). Expected 50 ab⁻¹ limits $6.9\times10^{-9}$
-  (μγ), $9.0\times10^{-9}$ (eγ).
+- **[Snowmass22]** S. Banerjee *et al.*, *"Snowmass 2021 White Paper: Charged lepton flavor violation
+  in the tau sector"*, [arXiv:2203.14919](https://arxiv.org/abs/2203.14919), Table 1: expected Belle II
+  limits at 50 ab⁻¹, $6.9\times10^{-9}$ (μγ) and $9.0\times10^{-9}$ (eγ).
 - **[MEGII25]** MEG II Collaboration, *"New limit on the μ⁺→e⁺γ decay with the MEG II
   experiment"* (2025), [arXiv:2504.15711](https://arxiv.org/abs/2504.15711).
   $\mathcal B(\mu^+\to e^+\gamma)<1.5\times10^{-13}$ at 90% CL.
