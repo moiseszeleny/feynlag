@@ -192,8 +192,25 @@ def reconcile(entries, marks):
 _BADGE = {"todo": "☐ todo", "ok": "✅ ok", "doubt": "❓ doubt", "wrong": "❌ wrong"}
 
 
+_INLINE_MATH = re.compile(r"(?<!\$)\$(?!\$)([^$]+?)\$(?!\$)")
+_NESTED_BOLD = re.compile(r"\*\*(.+?)\*\*")
+
+
+def _gh_math(text):
+    r"""Make prose render on GitHub: inline ``$x$`` becomes ``$`x`$``.
+
+    GitHub only recognizes a bare ``$...$`` when nothing but whitespace touches
+    its outer side, so ``exact-$S_3$``, ``S$_3$`` or ``$\mathbb{Z}_2$-preserving``
+    stay raw text (and their ``_`` turn into italics).  The ``$`...`$`` form is
+    parsed as a code span first and survives any neighbour.  A ``**x**`` inside a
+    claim that `render` bolds as a whole becomes ``*x*``.
+    """
+    text = _NESTED_BOLD.sub(r"*\1*", str(text))
+    return _INLINE_MATH.sub(lambda m: f"$`{m.group(1)}`$", text)
+
+
 def _cell(s):
-    return str(s).replace("|", "\\|").replace("\n", " ")
+    return _gh_math(s).replace("|", "\\|").replace("\n", " ")
 
 
 def render(entries, notebooks, orphans, ledgerless):
@@ -236,18 +253,18 @@ def render(entries, notebooks, orphans, ledgerless):
                              (3, "derived", "Derived here")):
         out += ["", f"## {num}. {title}", ""]
         for e in (e for e in entries if e["kind"] == kind):
-            out.append(f"#### `{e['id']}` · {_BADGE[e['status']]} · {e['where']}")
-            out.append(f"**{e['claim']}**")
+            out.append(f"#### `{e['id']}` · {_BADGE[e['status']]} · {_gh_math(e['where'])}")
+            out.append(f"**{_gh_math(e['claim'])}**")
             if e["statement"]:
                 out += ["", f"$${e['statement']}$$"]
             out.append("")
-            out += [f"- check: {c}" for c in e["checks"]] or ["- check: *none recorded*"]
+            out += [f"- check: {_gh_math(c)}" for c in e["checks"]] or ["- check: *none recorded*"]
             if e["falsified_by"]:
-                out.append(f"- falsified by: {e['falsified_by']}")
+                out.append(f"- falsified by: {_gh_math(e['falsified_by'])}")
             if e["downstream"]:
                 out.append(f"- notebook feeds: {e['downstream']}")
             if e["note"]:
-                out.append(f"- review note: {e['note']}")
+                out.append(f"- review note: {_gh_math(e['note'])}")
             out.append("")
 
     if orphans:

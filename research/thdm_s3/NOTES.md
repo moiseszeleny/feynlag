@@ -12,7 +12,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `model.py` | the reusable build — algebra only. `build_model()` (with `soft=True` for soft S₃ breaking), the three mass matrices, the geometric rotation, the lambdified spectrum, the quartic potential + its numerical boundedness scan. Lifts the tutorial's notebook-local §6–§8 into importable form. |
 | `scan.py` | the parameter sweep at scan size — the cuts of notebook 01 in a chunked loop, sole writer of `cache/viable_points.json` and its summary `results/viable_points.json`. |
 | `constraints.py` | numpy-vectorized boundedness-from-below + tree-unitarity conditions, quoted from [DasDey14] — **plus** the corrected neutral-direction condition derived in finding 4 below. |
-| `fermions.py` | the S₃ fermion sectors — basis map to [LFVHD], the five Yukawa structures, mass-matrix extraction, the two-stage diagonalization, the $G_k$/$Q_i$ LFV couplings. |
+| `fermions.py` | the S₃ fermion sectors — basis map to [LFVHD], the five Yukawa structures, mass-matrix extraction, the two-stage diagonalization, the $`G_k`$/$`Q_i`$ LFV couplings. |
 | `paper_lfvhd/LFVHD_3HDMS3.tex` | the draft this work checks against; **patched** (findings 6–8). |
 | `01_scalar_parameter_space.ipynb` | scalar parameter space under theory constraints. **Done.** |
 | `02_s3_fermion_sector.ipynb` | lepton + quark Yukawa sectors, the draft's derivations, the CKM obstruction, soft breaking. **Done.** |
@@ -29,7 +29,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `soft_decays.py` | per-point numeric decay machinery for the soft-broken vacuum: rotations rebuilt from the stored inputs, the $hH^+H^-$ cubic tensor, VSS overlaps and widths, $R_{\gamma\gamma}$, LFV over every lepton branch, the S₃-image map, and the radiative decays (`lfv_radiative` for any $\ell_i\to\ell_j\gamma$, `radiative_lfv_all` for the three channels at once). |
 | `06_soft_decays.ipynb` | decays and LFV on the 2028 soft points, validated against the extractor, the exact-S₃ limit and the S₃ image. **Done.** |
 | `derivations_06.tex` | printable appendix emitted by notebook 06. |
-| `radiative.py` | $\ell_i\to\ell_j\gamma$ dipole amplitudes (μ→eγ, τ→μγ, τ→eγ; the decaying and final lepton are arguments), numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$W$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
+| `radiative.py` | $\ell_i\to\ell_j\gamma$ dipole amplitudes (μ→eγ, τ→μγ, τ→eγ; the decaying and final lepton are arguments), numerics only: the one-loop neutral (closed form of [HKZ13] Eq. (A3), exact in $m_f/m_\phi$) and charged ([OST16] Eq. (32)) terms, Barr–Zee fermion/$`W`$ ([OST16] Eq. (20)) and $H^\pm$ (built from [Ilisie15]) terms, and the BR. |
 | `07_mu_to_e_gamma.ipynb` | μ→eγ on the 2028 soft points: couplings of every scalar checked against the extractor, each amplitude piece against an independent source, the exact-S₃ zero, the scan against MEG II. **Done.** |
 | `derivations_07.tex` | printable appendix emitted by notebook 07. |
 | `results/mu_e_gamma.json` | scan summaries; the per-soft-point least-constrained (μ₃, branch) configuration and its breakdown are in `cache/mu_e_gamma.json`. Written by notebook 07. |
@@ -49,7 +49,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `assumptions.py` | the load-bearing assumptions the ledgers do not record (scan priors, local minimum, cuts, κ_t = κ_V, missing diagrams, experimental limits). New notebooks should record their choices in their own ledger as `obtained="assumed"` instead. |
 | `pipeline.py` | `PIPELINE`, the notebook/script → results-file map (consumes/produces), and `REPORTS`, report → notebooks quoted. Shared by `claims.py` and `provenance.py`; update it when a notebook starts reading or writing a file. |
 | `provenance.py` | staleness: fingerprints each node (code cells, transitively imported local modules, consumed results, feynlag) into `results/MANIFEST.json`. `check` lists stale / upstream-stale nodes and reports that need re-checking; `stamp <node>` after a re-run; `audit` reads git history for what changed since each node's outputs were written. |
-| `results/MANIFEST.json` | provenance record; `provenance.py check` reads it. **Baseline 2026-10-16, every node current.** `scan.py`/`scan_soft.py` re-run at HEAD give byte-identical JSON. 01 and 08 had no change since their run. 07 is reproduced by 08 at HEAD. 03, 04 and 05 were re-executed at HEAD (py3.13, numpy 2.5.3, scipy 1.18.1): only machine-precision residuals moved, plus round-off-level BRs (~1e-30) that are analytically zero. Since 2026-10-17 every node is re-executed in this environment. The two checks that used to pin environment-dependent numbers are now robust: nb02 requires *at least* 4 exact quark-fit solutions (4 in the original environment, 5 with numpy 2.5.3 / scipy 1.18.1, an extra one at $|r|=5.579$; the selected fit is identical), and nb06 pins the trilinear round-off's decade ($10^{-13}$ GeV). |
+| `results/MANIFEST.json` | provenance record; `provenance.py check` reads it. **Baseline 2026-10-16, every node current.** `scan.py`/`scan_soft.py` re-run at HEAD give byte-identical JSON. 01 and 08 had no change since their run. 07 is reproduced by 08 at HEAD. 03, 04 and 05 were re-executed at HEAD (py3.13, numpy 2.5.3, scipy 1.18.1): only machine-precision residuals moved, plus round-off-level BRs (~1e-30) that are analytically zero. Since 2026-10-17 every node is re-executed in this environment. The two checks that used to pin environment-dependent numbers are now robust: nb02 requires *at least* 4 exact quark-fit solutions (4 in the original environment, 5 with numpy 2.5.3 / scipy 1.18.1, an extra one at $`\|r\|=5.579`$; the selected fit is identical), and nb06 pins the trilinear round-off's decade ($10^{-13}$ GeV). |
 | `report_numbers.py` | writes `numbers.tex`, the headline numbers as LaTeX macros read from `results/*.json`; the reports `\input` it. `check` lists numbers still typed by hand. Run by `build_reports.sh`. |
 | `benchmarks.py` | picks three soft points by fixed rules (decoupled, light H±, near S₃) and writes `BENCHMARKS.md`, one card per point from the stored results; the chosen indices go to `results/benchmarks.json`. |
 | `CLAIMS.md` | generated; the place to start a manual review. |
@@ -466,7 +466,7 @@ $\mu_3$). Results:
   does not have.
 
 **Superseded readings.**
-- "$h_0$ exceeds the $\tau\mu$ limit in 81%; $\mathcal B(h\to\tau e)$ is zero to
+- "$`h_0`$ exceeds the $\tau\mu$ limit in 81%; $\mathcal B(h\to\tau e)$ is zero to
   machine precision for every state". Notebook 03 built $M_\ell$ with the alignment's
   $\sqrt3$ typed in, so `g_matrices` put every doublet Yukawa on $G_1$ ($G_2=0$, the trap
   notebook 02 §7 warns about), and it paired draft-basis $G_k$ with a feynlag-basis $R_S$.
@@ -821,7 +821,7 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
   elements. Independently re-derived in finding 9. (This is very likely the
   `Das:2015sca` key cited by the draft, though its `.bib` is not in the repo.)
 - **[BabuWuXu23]** K. S. Babu, Y. Wu, S. Xu, *"Fermion Masses, Neutrino Mixing
-  and Higgs-Mediated Flavor Violation in 3HDM with $S_3$ Permutation
+  and Higgs-Mediated Flavor Violation in 3HDM with $`S_3`$ Permutation
   Symmetry"*, [arXiv:2312.15828](https://arxiv.org/abs/2312.15828) (2023).
   An alternative published S₃-3HDM Yukawa treatment; not used — the draft
   supplied the assignment instead.
@@ -837,7 +837,7 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - **[OST16]** Y. Omura, E. Senaha, K. Tobe, *"τ- and μ-physics in a general two Higgs
   doublet model with μ−τ flavor violation"*, Phys. Rev. D **94**, 055019 (2016),
   [arXiv:1511.08880](https://arxiv.org/abs/1511.08880). The μ→eγ amplitude, its
-  normalization and the Barr–Zee fermion/$W$ terms (Eqs. (20), (28)–(33)); used in
+  normalization and the Barr–Zee fermion/$`W`$ terms (Eqs. (20), (28)–(33)); used in
   finding 13. Its Eq. (30) has a non-flip-term typo (notebook 07 §2.1).
 - **[HKZ13]** R. Harnik, J. Kopp, J. Zupan, *"Flavor violating Higgs decays"*, JHEP **03**
   (2013) 026, [arXiv:1209.1397](https://arxiv.org/abs/1209.1397). Eq. (A3) the exact one
@@ -863,7 +863,7 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
   experiment"* (2025), [arXiv:2504.15711](https://arxiv.org/abs/2504.15711).
   $\mathcal B(\mu^+\to e^+\gamma)<1.5\times10^{-13}$ at 90% CL.
 - **[Yildirim26]** E. Yildirim, *"Double SM-like Higgs Production at future
-  $e^+e^-$ colliders in the 3-Higgs Doublet Model under the $S_3$ symmetry"*,
+  $`e^+e^-`$ colliders in the 3-Higgs Doublet Model under the $`S_3`$ symmetry"*,
   [arXiv:2604.24421](https://arxiv.org/abs/2604.24421) (2026). Applies
   perturbative unitarity, vacuum stability and LHC/Tevatron data to this same
   model; a cross-check target for the constraint implementation.
