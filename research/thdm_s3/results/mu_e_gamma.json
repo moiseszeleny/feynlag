@@ -30,6 +30,7 @@
   "n_points_allowed_meg": 618,
   "n_points_allowed_both": 606,
   "median_br": 7.587e-10,
+  "median_meg_over_hemu_ratio": 91410.0,
   "largest_piece_share": {
    "1loop_neutral": 0.01854,
    "1loop_charged": 0.0,
@@ -46,5 +47,5 @@
  },
  "points_cache": "cache/mu_e_gamma.json",
  "n_points_cached": 2028,
- "points_sha256": "57de8435976bf7dcd3c43d13c301aee1aae5801ef300626e6a43c7383658c0eb"
+ "points_sha256": "cb7214874f475af4fa345319afa0d9334228b9ee4d8e23b674c7dcbc0c830fb0"
 }

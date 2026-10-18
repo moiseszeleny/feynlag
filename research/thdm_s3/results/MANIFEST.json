@@ -145,9 +145,9 @@
    "stamped": "2026-10-17"
   },
   "07": {
-   "commit": "6a17be5",
+   "commit": "b789b04",
    "fingerprint": {
-    "code": "692e1a5054770cae",
+    "code": "5c15205f2699db5e",
     "inputs": {
      "cache/mu_e_gamma_scan.pkl": "d96823304964f763",
      "results/viable_points.json": "c0724c1488b76738",
@@ -166,20 +166,20 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "proposal 6: report text verified identical apart from the cache/ path",
+   "note": "summary gains median_meg_over_hemu_ratio; report_mu_e_gamma re-checked",
    "outputs": {
     "derivations_07.tex": "5334fb1e8a11d6c6",
-    "results/mu_e_gamma.json": "fccf4b62d6219e59"
+    "results/mu_e_gamma.json": "8fbd11a8d978225c"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-10-18"
   },
   "08": {
-   "commit": "b8ac96d",
+   "commit": "b789b04",
    "fingerprint": {
     "code": "c5dcbfbf765c27dd",
     "inputs": {
      "cache/tau_l_gamma_scan.pkl": "cf41c8f74f92b6e4",
-     "results/mu_e_gamma.json": "fccf4b62d6219e59",
+     "results/mu_e_gamma.json": "8fbd11a8d978225c",
      "results/viable_points.json": "c0724c1488b76738",
      "results/viable_points_soft.json": "687b2fd49fea98fd"
     },
@@ -196,7 +196,7 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "report_tau_l_gamma.tex written against this run",
+   "note": "re-run after mu_e_gamma summary gained a key: outputs unchanged",
    "outputs": {
     "derivations_08.tex": "2b48501380fd0cb7",
     "results/tau_l_gamma.json": "83eda147906bfba5"
@@ -204,11 +204,11 @@
    "stamped": "2026-10-18"
   },
   "benchmarks.py": {
-   "commit": "6a17be5",
+   "commit": "b789b04",
    "fingerprint": {
     "code": "d42bee3933820273",
     "inputs": {
-     "results/mu_e_gamma.json": "fccf4b62d6219e59",
+     "results/mu_e_gamma.json": "8fbd11a8d978225c",
      "results/soft_decay_benchmarks.json": "44006ca5694d39dd",
      "results/tau_l_gamma.json": "83eda147906bfba5",
      "results/viable_points_soft.json": "687b2fd49fea98fd"
@@ -227,11 +227,11 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "re-run after mu_e_gamma summary gained a key: outputs unchanged",
    "outputs": {
     "results/benchmarks.json": "1386b14811fb106d"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-10-18"
   },
   "compute_mu_e_gamma.py": {
    "commit": "c01b24d",
@@ -358,10 +358,10 @@
   },
   "report_mu_e_gamma.tex": {
    "notebooks": {
-    "07": "b79bdb9e488b890d"
+    "07": "4fdb4aadaeba7477"
    },
-   "stamped": "2026-10-17",
-   "tex": "d65ac03d3870172f"
+   "stamped": "2026-10-18",
+   "tex": "e1071395735fe151"
   },
   "report_scalar_decays.tex": {
    "notebooks": {
@@ -393,7 +393,7 @@
   },
   "report_tau_l_gamma.tex": {
    "notebooks": {
-    "08": "8439eb9e25f62cba"
+    "08": "2bfe2795808ce4b4"
    },
    "stamped": "2026-10-18",
    "tex": "bbb68ed1aa5f6ec1"
