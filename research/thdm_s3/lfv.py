@@ -289,7 +289,7 @@ def q_matrices(G, O, mixing):
 
     ``mixing[j, i]`` is state i's component along the real neutral field of
     doublet j (feynlag's (H₁, H₂, H_S) order) — `decays.DecayModel.RS` at the
-    alignment, ``cp_even_mixing`` of `results/viable_points_soft.json` away from it.
+    alignment, ``cp_even_mixing`` of `cache/viable_points_soft.json` away from it.
     """
     Gt = [O.T @ g @ O for g in G]
     mixing = np.asarray(mixing, dtype=float)

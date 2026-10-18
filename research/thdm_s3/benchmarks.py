@@ -5,7 +5,7 @@ looks like from end to end: its inputs, its spectrum, its couplings, and how it
 fares against each limit. This script writes one card per benchmark to
 ``BENCHMARKS.md`` and the tuned records to ``results/benchmarks.json``.
 
-**1. Pick** three points of ``results/viable_points_soft.json`` by fixed rules,
+**1. Pick** three points of ``cache/viable_points_soft.json`` by fixed rules,
 among the *clean* points: SM-like mass within 0.3 GeV of `sm_inputs.M_H`, and the
 SM-like state is the lightest scalar.
 
@@ -48,6 +48,7 @@ import decays as D  # noqa: E402
 import lfv  # noqa: E402
 import radiative as RD  # noqa: E402
 import soft_decays as S  # noqa: E402
+import store  # noqa: E402
 from constraints import (lep_neutral_mask, sm_like_cut, strict_bfb_mask,  # noqa: E402
                          unitarity_mask)
 from model import (SOFT_CP_EVEN_KEYS, SOFT_SPECTRUM_KEYS, V_EW, build_model,  # noqa: E402
@@ -74,7 +75,8 @@ W_HKZ = _w_hkz()
 
 
 def _load(name):
-    return json.loads((RES / name).read_text())
+    """The full payload (points included) of ``name`` from ``cache/``, see `store`."""
+    return store.full(name.removesuffix(".json"))
 
 
 # ----------------------------------------------------------------------- pick
@@ -365,7 +367,7 @@ def main():
     pts = scan["points"]
     for name, other in (("soft_decay_benchmarks", dec), ("mu_e_gamma", meg), ("tau_l_gamma", tau)):
         if len(other["points"]) != len(pts):
-            raise AssertionError(f"{name}.json is not aligned with the soft scan; re-run its notebook")
+            raise AssertionError(f"{name}.json is not aligned with the soft scan; regenerate with run_pipeline.py")
     rules, n_clean, n_allowed = select(pts, meg["points"])
     T = S.build_tools()
     tuner = Tuner()

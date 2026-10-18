@@ -95,7 +95,8 @@ ASSUMPTIONS = [
         "id": "A-quark-kappa",
         "statement": r"The quark couplings point along the vacuum direction: "
                      r"$\kappa_t=\kappa_V$. No quark sector is built per soft point.",
-        "introduced_in": ["06", "07", "08"],
+        "introduced_in": ["06", "07", "08", "compute_soft_decays.py", "compute_mu_e_gamma.py",
+                          "compute_tau_l_gamma.py"],
         "where": "notebook 06 (R_γγ); notebooks 07-08 (Barr-Zee); ledger 07 #8 and 08 #4",
         "affects": r"$R_{\gamma\gamma}$, the quark Barr-Zee terms in μ→eγ and τ→ℓγ, and the "
                    "missing heavy-state widths",
@@ -106,7 +107,7 @@ ASSUMPTIONS = [
         "id": "A-missing-diagrams",
         "statement": r"Barr-Zee diagrams not included: [HKZ13] set C, $\phi Z\gamma$ "
                      r"(about +6% on the $W$ term) and $H^\pm W\gamma$.",
-        "introduced_in": "07",
+        "introduced_in": ["07", "compute_mu_e_gamma.py", "compute_tau_l_gamma.py"],
         "where": "notebook 07 §2.3; NOTES finding 13",
         "affects": "μ→eγ and τ→ℓγ rates, the 618 count",
         "robustness": "only bounded through the W-loop variant above",

@@ -38,9 +38,18 @@ plus a note), then run `python research/thdm_s3/claims.py`.
 | `provenance.py` | which results, notebooks and reports are out of date | `check`/`stamp`/`audit` on [`results/MANIFEST.json`](results/MANIFEST.json) |
 | `report_numbers.py` | the headline numbers the reports quote, read from `results/` | `numbers.tex` (run by `build_reports.sh`) |
 | `benchmarks.py` | what one point looks like from end to end | [`BENCHMARKS.md`](BENCHMARKS.md) |
+| `run_pipeline.py` | regenerates `cache/` and whatever is out of date, in order | the per-point data in `cache/` |
 
 The data flow they share (which notebook reads and writes which file) is
 [`pipeline.py`](pipeline.py). Update it when you add a notebook.
+
+**Where the data lives.** `results/` holds small committed summaries: counts, cut flows,
+conventions. The per-point data (the scan points, one row per lepton configuration) lives in
+the gitignored `cache/`, and each summary records the SHA-256 of its cache file
+(`points_sha256`). [`store.py`](store.py) is the only code that knows the split. The heavy
+per-point loops of notebooks 06-08 run in `compute_soft_decays.py`, `compute_mu_e_gamma.py`
+and `compute_tau_l_gamma.py`; the notebooks load their output and keep the narrative, the
+validations and the figures.
 
 ## Reports
 
@@ -58,6 +67,24 @@ Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness me
 report yet. Each notebook also emits a printable derivation ledger, `derivations_0N.tex`.
 
 ## Rebuilding
+
+**On a fresh clone `cache/` is empty**, so the notebooks that read per-point data cannot
+run yet. Regenerate it first:
+
+```bash
+python research/thdm_s3/run_pipeline.py --dry-run   # what would run, and why
+python research/thdm_s3/run_pipeline.py             # ~1 h from an empty cache/
+```
+
+It runs the scans, the compute scripts and the notebooks in `pipeline.py` order, re-running
+only what is stale or missing, stamps each node in `results/MANIFEST.json`, and ends by
+comparing each regenerated cache file with the hash its committed summary records
+("reproduced" means byte-identical per-point data).
+
+Measured from an empty `cache/` (2026-10-17, py3.13, numpy 2.5.3): 57 min in all. The two
+scans take 4 and 6 min, the three compute scripts 5, 13 and 21 min, and every notebook now runs
+in at most about 3 min (06; 07 and 08 went from ~13 and ~20 min to under one). All six cache
+files came out byte-identical to the per-point data the committed results were built from.
 
 The `.tex` files are the source; the PDFs are committed so they read on GitHub. After
 editing a report or re-executing a notebook:
