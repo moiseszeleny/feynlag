@@ -22,7 +22,7 @@ is [`NOTES.md`](NOTES.md).
    equation number, the sign conventions and the factors of 2.
 
 **1 day: the algebra.**
-1. Print the `derivations_0N.tex` ledgers and work through each step on paper.
+1. Print the [derivation ledgers](#derivation-ledgers) (`derivations_0N.pdf`) and work through each step on paper.
 2. For each derived claim in [`CLAIMS.md`](CLAIMS.md) §3, ask whether its falsifier could
    really have failed.
 3. Re-run one notebook end to end, then `provenance.py check` and `stamp` it.
@@ -64,7 +64,24 @@ validations and the figures.
 | τ→μγ, τ→eγ (no report yet) | [08](08_tau_to_l_gamma.ipynb) | At the exact vacuum τ→eγ vanishes but τ→μγ is allowed, and Belle excludes a light-scalar corner that h→τμ misses; in the soft vacuum both τ modes are ~10⁻¹² and remove no point beyond MEG II. |
 
 Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness method) has no
-report yet. Each notebook also emits a printable derivation ledger, `derivations_0N.tex`.
+report yet.
+
+## Derivation ledgers
+
+Each notebook emits a printable ledger of its derivations, `derivations_0N.tex`: every
+step, how it was obtained (derived, imported, assumed), its independent checks and what
+would falsify it. [`CLAIMS.md`](CLAIMS.md) is built from the same ledgers.
+
+| ledger | notebook |
+|---|---|
+| [01](derivations_01.pdf) | scalar parameter space: the λ dictionary, and boundedness from below |
+| [02](derivations_02.pdf) | the S₃ fermion sector |
+| [03](derivations_03.pdf) | scalar decays and LFV rates |
+| [04](derivations_04.pdf) | BFB conditions: the Boto–Romão–Silva method |
+| [05](derivations_05.pdf) | scalar parameter space in the soft-broken vacuum |
+| [06](derivations_06.pdf) | decays and LFV rates in the soft-broken vacuum |
+| [07](derivations_07.pdf) | the radiative decay of the muon in the soft-broken vacuum |
+| [08](derivations_08.pdf) | the radiative decays of the tau in the soft-broken vacuum |
 
 ## Rebuilding
 
@@ -95,7 +112,7 @@ bash research/thdm_s3/build_reports.sh
 
 This re-extracts the figures from the notebooks' stored outputs (`extract_figures.py`),
 regenerates `numbers.tex` from `results/*.json` (`report_numbers.py`), and compiles each
-report twice. It fails on any LaTeX error or undefined reference. Quote headline numbers
+report and each derivation ledger twice. It fails on any LaTeX error or undefined reference. Quote headline numbers
 through the `numbers.tex` macros (`\nMEGallowed{}`), not by typing them;
 `python research/thdm_s3/report_numbers.py check` lists any number still typed by hand.
 
