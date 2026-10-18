@@ -67,4 +67,5 @@ REPORTS = {
     "report_soft_vacuum.tex": ["05"],
     "report_soft_decays.tex": ["06"],
     "report_mu_e_gamma.tex": ["07"],
+    "report_tau_l_gamma.tex": ["08"],
 }

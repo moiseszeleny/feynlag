@@ -42,7 +42,8 @@ pedagogical walk-through). This directory is where the open questions go.
 | `report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
 | `report_soft_decays.tex` | report on notebook 06: the arrowhead lepton fit, SM-like LFV from the non-vacuum admixture, $R_{\gamma\gamma}$ and VSS in the soft vacuum. |
 | `report_mu_e_gamma.tex` | report on notebook 07: the exact-vacuum zero (residual $\mathbb Z_2$), the amplitude checks, the scan against MEG II and its robustness. |
-| `build_reports.sh` | rebuilds the six `report_*.pdf` (figures first, then pdflatex ×2) and the eight `derivations_0N.pdf`; the PDFs are committed so they render on GitHub. |
+| `report_tau_l_gamma.tex` | report on notebook 08: the $`\ell_i\to\ell_j\gamma`$ generalization checks, the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed, Belle's light-scalar corner), and the soft scan (no point removed beyond MEG II). |
+| `build_reports.sh` | rebuilds the seven `report_*.pdf` (figures first, then pdflatex ×2) and the eight `derivations_0N.pdf`; the PDFs are committed so they render on GitHub. |
 | `README.md` | the folder's GitHub landing page: the report index. |
 | `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
 | `claims.py` | builds `CLAIMS.md`, the review register: every `derivations_*.tex` ledger step plus the curated assumptions, ordered assumed → imported → derived. Picks up a new notebook's ledger with no change. Run `python research/thdm_s3/claims.py` after re-executing a notebook. |

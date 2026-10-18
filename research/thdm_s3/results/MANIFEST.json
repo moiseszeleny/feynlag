@@ -174,7 +174,7 @@
    "stamped": "2026-10-17"
   },
   "08": {
-   "commit": "964ef14",
+   "commit": "b8ac96d",
    "fingerprint": {
     "code": "c5dcbfbf765c27dd",
     "inputs": {
@@ -196,12 +196,12 @@
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "run_pipeline.py",
+   "note": "report_tau_l_gamma.tex written against this run",
    "outputs": {
     "derivations_08.tex": "2b48501380fd0cb7",
     "results/tau_l_gamma.json": "83eda147906bfba5"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-10-18"
   },
   "benchmarks.py": {
    "commit": "6a17be5",
@@ -390,6 +390,13 @@
    },
    "stamped": "2026-10-17",
    "tex": "2d74cd1d7fa98787"
+  },
+  "report_tau_l_gamma.tex": {
+   "notebooks": {
+    "08": "8439eb9e25f62cba"
+   },
+   "stamped": "2026-10-18",
+   "tex": "bbb68ed1aa5f6ec1"
   }
  }
 }

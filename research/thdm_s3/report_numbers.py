@@ -54,6 +54,17 @@ def pct(x):
     return rf"{100 * x:.2f}\%"
 
 
+def pct1(x):
+    return rf"{100 * x:.1f}\%"
+
+
+def pct2(x):
+    """A percentage to two significant figures: 0.000201 → 0.020\\%."""
+    p = 100 * x
+    digits = max(0, 1 - int(math.floor(math.log10(abs(p))))) if p else 0
+    return rf"{p:.{digits}f}\%"
+
+
 #: macro -> (results file, key path, formatter, what it is)
 NUMBERS = {
     "nExactPoints": ("viable_points.json", "n_points", count,
@@ -83,6 +94,35 @@ NUMBERS = {
                     count, "MEG II survivors with the quark couplings' sign flipped"),
     "nMEGwHKZ": ("mu_e_gamma.json", "summary/n_points_allowed_meg_variants/w_hkz",
                  count, "MEG II survivors with the W loop at the HKZ13 value"),
+    "nTauConfigs": ("tau_l_gamma.json", "summary/n_configurations", count,
+                    "(point, mu3, branch) configurations in the tau scan"),
+    "nExactEvals": ("tau_l_gamma.json", "summary/exact/n_evaluations", count,
+                    "(exact point, mu3) evaluations at the exact-S3 vacuum"),
+    "fExactOverBelle": ("tau_l_gamma.json", "summary/exact/frac_over_belle", pct2,
+                        "exact-vacuum evaluations over the Belle tau->mu gamma limit"),
+    "fExactOverCMS": ("tau_l_gamma.json", "summary/exact/frac_over_cms_taumu", pct1,
+                      "exact-vacuum evaluations over the CMS h->tau mu limit"),
+    "nExactBelleNotCMS": ("tau_l_gamma.json", "summary/exact/n_over_belle_under_cms", count,
+                          "exact-vacuum evaluations over Belle but under CMS h->tau mu"),
+    "fSoftOverBelle": ("tau_l_gamma.json", "summary/frac_configurations_over_limit/tau_mu",
+                       pct2, "soft configurations over the Belle tau->mu gamma limit"),
+    "fSoftOverBaBar": ("tau_l_gamma.json", "summary/frac_configurations_over_limit/tau_e",
+                       pct2, "soft configurations over the BaBar tau->e gamma limit"),
+    "nTauBothAllowed": ("tau_l_gamma.json", "summary/n_points_allowed/tau_both", count,
+                        "soft points with a configuration under both tau limits"),
+    "nAllRadAllowed": ("tau_l_gamma.json", "summary/n_points_allowed/all_rad", count,
+                       "soft points under all three radiative limits"),
+    "nAllRadHAllowed": ("tau_l_gamma.json", "summary/n_points_allowed/all_rad_h", count,
+                        "soft points under all three radiative and the h->ll' limits"),
+    "nRadNoQuark": ("tau_l_gamma.json",
+                    "summary/n_points_allowed_all_radiative_variants/no_quark", count,
+                    "all-radiative survivors without the quark Barr-Zee term"),
+    "nRadTopFlip": ("tau_l_gamma.json",
+                    "summary/n_points_allowed_all_radiative_variants/top_flip", count,
+                    "all-radiative survivors with the quark couplings' sign flipped"),
+    "nRadwHKZ": ("tau_l_gamma.json",
+                 "summary/n_points_allowed_all_radiative_variants/w_hkz", count,
+                 "all-radiative survivors with the W loop at the HKZ13 value"),
 }
 
 
