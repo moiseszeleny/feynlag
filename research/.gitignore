@@ -4,11 +4,12 @@
 # heavy scan intermediates; small results/*.json artifacts ARE committed
 **/cache/
 
-# LaTeX build products of the generated derivation appendices (the .tex the
-# notebooks emit IS committed; the PDF and friends are rebuilt on demand)
+# LaTeX build products (the .tex sources are committed; aux/log are rebuilt)
 *.pdf
-# ...except the report PDFs: those are deliverables, committed so they read on GitHub
+# ...except the deliverables, committed so they read on GitHub: the reports and
+# the derivation ledgers the notebooks emit (build_reports.sh builds both)
 !report_*.pdf
+!derivations_*.pdf
 *.aux
 *.out
 *.synctex.gz

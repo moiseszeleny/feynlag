@@ -18,7 +18,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `02_s3_fermion_sector.ipynb` | lepton + quark Yukawa sectors, the draft's derivations, the CKM obstruction, soft breaking. **Done.** |
 | `decays.py` | the physical basis registered on the `Model` at general δ, the electroweak kinetic sector, the lepton mass basis, and the benchmark-point loaders. |
 | `derive.py` | the by-hand derivation vocabulary — `show`, `coefficients_of`, `rows`, `check_homogeneous/limit/invariant`, `hand_slice`, `falsify`, and the `Ledger` that emits the summary table and the printable LaTeX appendix. Renders sympy as typeset maths under a notebook kernel, aligned text outside one. |
-| `derivations_01.tex` | printable appendix emitted by notebook 01 §5.6 — the algebra typeset for checking on paper (`pdflatex derivations_01.tex`). |
+| `derivations_01.tex` | printable appendix emitted by notebook 01 §5.6 — the algebra typeset for checking on paper (`pdflatex derivations_01.tex`); its PDF, like every ledger's, is committed. |
 | `03_scalar_decays.ipynb` | physical basis, gauge couplings, VSS + loop γγ, and the LFV rates. **Done.** |
 | `04_bfb_conditions.ipynb` | the [BotoRomaoSilva22] BFB method read and executed: their $V_N/V_{CB}/V_G$ split, copositivity, the lower-bound strategy — then applied to our $S_3$ potential. **Done.** |
 | `derivations_04.tex` | printable appendix emitted by notebook 04 §8. |
@@ -42,7 +42,8 @@ pedagogical walk-through). This directory is where the open questions go.
 | `report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
 | `report_soft_decays.tex` | report on notebook 06: the arrowhead lepton fit, SM-like LFV from the non-vacuum admixture, $R_{\gamma\gamma}$ and VSS in the soft vacuum. |
 | `report_mu_e_gamma.tex` | report on notebook 07: the exact-vacuum zero (residual $\mathbb Z_2$), the amplitude checks, the scan against MEG II and its robustness. |
-| `build_reports.sh` | rebuilds the six `report_*.pdf` (figures first, then pdflatex ×2); the PDFs are committed so they render on GitHub. |
+| `report_tau_l_gamma.tex` | report on notebook 08: the $`\ell_i\to\ell_j\gamma`$ generalization checks, the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed, Belle's light-scalar corner), and the soft scan (no point removed beyond MEG II). |
+| `build_reports.sh` | rebuilds the seven `report_*.pdf` (figures first, then pdflatex ×2) and the eight `derivations_0N.pdf`; the PDFs are committed so they render on GitHub. |
 | `README.md` | the folder's GitHub landing page: the report index. |
 | `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
 | `claims.py` | builds `CLAIMS.md`, the review register: every `derivations_*.tex` ledger step plus the curated assumptions, ordered assumed → imported → derived. Picks up a new notebook's ledger with no change. Run `python research/thdm_s3/claims.py` after re-executing a notebook. |
@@ -662,7 +663,7 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - τ→μγ is a median $9\times10^{-3}$ as restrictive as $h\to\tau\mu$.
 - The $W$ Barr–Zee term dominates here too (93%).
 - **Belle II prediction:** where every limit holds, $\mathcal B(\tau\to\mu\gamma)\le4.8\times10^{-10}$ and
-  $\mathcal B(\tau\to e\gamma)\le3.9\times10^{-10}$, about 15× and 23× below the 50 ab⁻¹ reach [BelleII22]. A τ→ℓγ signal would exclude the soft vacuum.
+  $\mathcal B(\tau\to e\gamma)\le3.9\times10^{-10}$, about 15× and 23× below the 50 ab⁻¹ reach [Snowmass22]. A τ→ℓγ signal would exclude the soft vacuum.
 
 ## Open questions / next
 
@@ -856,9 +857,9 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - **[BaBar10]** BaBar Collaboration, *"Searches for lepton flavor violation in the decays
   τ±→e±γ and τ±→μ±γ"*, Phys. Rev. Lett. **104**, 021802 (2010),
   [arXiv:0908.2381](https://arxiv.org/abs/0908.2381). $\mathcal B(\tau\to e\gamma)<3.3\times10^{-8}$ (90% CL).
-- **[BelleII22]** Belle II, *"Searches for lepton flavor violation in tau decays at Belle II"*,
-  [arXiv:2209.11639](https://arxiv.org/abs/2209.11639). Expected 50 ab⁻¹ limits $6.9\times10^{-9}$
-  (μγ), $9.0\times10^{-9}$ (eγ).
+- **[Snowmass22]** S. Banerjee *et al.*, *"Snowmass 2021 White Paper: Charged lepton flavor violation
+  in the tau sector"*, [arXiv:2203.14919](https://arxiv.org/abs/2203.14919), Table 1: expected Belle II
+  limits at 50 ab⁻¹, $6.9\times10^{-9}$ (μγ) and $9.0\times10^{-9}$ (eγ).
 - **[MEGII25]** MEG II Collaboration, *"New limit on the μ⁺→e⁺γ decay with the MEG II
   experiment"* (2025), [arXiv:2504.15711](https://arxiv.org/abs/2504.15711).
   $\mathcal B(\mu^+\to e^+\gamma)<1.5\times10^{-13}$ at 90% CL.

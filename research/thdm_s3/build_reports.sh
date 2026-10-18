@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Rebuild the report PDFs (report_*.tex -> report_*.pdf) for reading on GitHub.
+# Rebuild the report PDFs (report_*.tex -> report_*.pdf) and the derivation-ledger
+# PDFs (derivations_0N.tex, emitted by the notebooks) for reading on GitHub.
 #
-# The .tex files are the source; the PDFs are committed (see research/.gitignore) so the
-# reports render in the browser.  Figures are re-extracted from the notebooks'
+# The .tex files are the source; the PDFs are committed (see research/.gitignore) so they
+# render in the browser.  Figures are re-extracted from the notebooks'
 # stored outputs first, so a report never quotes a stale plot.
 #
 # Run from anywhere:  bash research/thdm_s3/build_reports.sh
@@ -14,7 +15,7 @@ python3 extract_figures.py
 python3 report_numbers.py
 
 status=0
-for tex in report_*.tex; do
+for tex in report_*.tex derivations_*.tex; do
     name="${tex%.tex}"
     # twice, so cross-references and citations resolve
     for _ in 1 2; do
