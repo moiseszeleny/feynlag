@@ -21,24 +21,25 @@ Every claim the project makes, ordered for manual review. Regenerate with `pytho
 | nb06 | 0 | 1 | 4 | 0/5 | 0 |
 | nb07 | 1 | 3 | 4 | 0/8 | 0 |
 | nb08 | 1 | 1 | 2 | 0/4 | 0 |
+| nb09 | 0 | 1 | 7 | 0/8 | 0 |
 
 ## 1. Load-bearing assumptions
 
 | id | status | assumption | where | affects | robustness |
 |---|---|---|---|---|---|
-| `A-prior-exact` | ☐ todo | Exact-$`S_3`$ scan prior: the quartics are sampled uniformly, $`\lambda\in U(-2,2)^8`$. | notebook 01; NOTES finding 5 · from scan.py | every *fraction* or *count* from the exact scan (1973 of 6e7 points, the 16% with a non-SM scalar below 100 GeV, the 18% h→τμ exclusion). Statements of *existence* do not depend on it. · downstream: nb01, nb03, nb05, nb06, nb07, nb08, benchmarks.py, compute_tau_l_gamma.py | untested: no alternative prior has been run |
-| `A-prior-soft` | ☐ todo | Soft-scan prior: the three free soft terms are signed uniform variables up to $`(500\,\mathrm{GeV})^2`$. | notebook 05; NOTES finding 11 · from scan_soft.py | the 2028 soft points and every count built on them (618 MEG II, 2023 h→ℓℓ′, 5 LFV-excluded), "decoupling-like", and "light scalars do not survive". Only 14 points have every soft term below $`v^2`$. · downstream: nb05, nb06, nb07, nb08, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | untested: a log-uniform scan of the near-S₃ corner is an open item |
-| `A-local-min` | ☐ todo | The soft scan requires only a local minimum (no tachyons), not the global minimum of the potential. | NOTES finding 11 (Caveats); open questions · from scan_soft.py | the soft point set: some points may sit in a metastable vacuum · downstream: nb05, nb06, nb07, nb08, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | untested: a multi-start minimization of the survivors is an open item |
-| `A-bfb-slice` | ☐ todo | The corrected boundedness condition is exact only on the real neutral slice; complex-neutral and charged directions are covered numerically, not analytically. | notebook 01 §5.3-§5.5, §8; notebook 04; NOTES finding 4 · from scan.py, scan_soft.py | both point sets (the soft terms do not touch the quartics, so the same cut is inherited) · downstream: nb01, nb03, nb05, nb06, nb07, nb08, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | the full 12-dimensional numeric BFB removes a further 3 of 322 on the benchmark points: real but small |
-| `A-hvv-cut` | ☐ todo | SM-likeness cut on the coupling: the state carrying $`g_{hVV}`$ sits at $`M_H\pm3=125.20\pm3`$ GeV (PDG 2024; 125.0 before 2026-10-17) with $`\kappa^2\ge0.9`$, and nothing below 114.4 GeV has $`\xi^2\ge0.05`$ [LEP2003]. | notebooks 01 and 05; NOTES open questions (hVV entry) · from scan.py, scan_soft.py | both point sets; in the soft scan this is the cut where most of the parameter space dies · downstream: nb01, nb03, nb05, nb06, nb07, nb08, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | the result is unchanged for any LEP floor in [0.01, 0.10]; the $`\kappa^2\ge0.9`$ threshold itself has not been varied |
-| `A-least-constrained` | ☐ todo | A scalar point counts as allowed if *any* lepton configuration ($`\mu_3^\ell`$, fit branch) passes the limit: the least-constrained one. | notebooks 06-08 · from nb06, nb07, nb08 | the per-point counts (5 LFV-excluded, 618 MEG II, 606 with h→ℓℓ′). Per-configuration fractions are quoted separately. · downstream: benchmarks.py | a deliberate conservative choice; a per-configuration view exists in the notebooks |
-| `A-quark-kappa` | ☐ todo | The quark couplings point along the vacuum direction: $`\kappa_t=\kappa_V`$. No quark sector is built per soft point. | notebook 06 (R_γγ); notebooks 07-08 (Barr-Zee); ledger 07 #8 and 08 #4 · from nb06, nb07, nb08, compute_soft_decays.py, compute_mu_e_gamma.py, compute_tau_l_gamma.py | $`R_{\gamma\gamma}`$, the quark Barr-Zee terms in μ→eγ and τ→ℓγ, and the missing heavy-state widths · downstream: benchmarks.py | three variants (no quark Barr-Zee, flipped quark sign, W loop at the HKZ13 value) give 504, 453 and 684 survivors instead of 618 |
-| `A-missing-diagrams` | ☐ todo | Barr-Zee diagrams not included: [HKZ13] set C, $`\phi Z\gamma`$ (about +6% on the $`W`$ term) and $`H^\pm W\gamma`$. | notebook 07 §2.3; NOTES finding 13 · from nb07, compute_mu_e_gamma.py, compute_tau_l_gamma.py | μ→eγ and τ→ℓγ rates, the 618 count · downstream: nb08, benchmarks.py | only bounded through the W-loop variant above |
-| `A-exp-limits` | ☐ todo | Experimental limits used: MEG II [MEGII25] for μ→eγ; Belle [Belle21] and BaBar [BaBar10] for τ→ℓγ; CMS [CMS21], [CMS23] for h→ℓℓ′; LEP [LEP2003] for light neutral scalars. | NOTES References · from nb03, nb06, nb07, nb08 | every exclusion count · downstream: benchmarks.py | review item: check each value, its year and confidence level against the cited source |
+| `A-prior-exact` | ☐ todo | Exact-$`S_3`$ scan prior: the quartics are sampled uniformly, $`\lambda\in U(-2,2)^8`$. | notebook 01; NOTES finding 5 · from scan.py | every *fraction* or *count* from the exact scan (1973 of 6e7 points, the 16% with a non-SM scalar below 100 GeV, the 18% h→τμ exclusion). Statements of *existence* do not depend on it. · downstream: nb01, nb03, nb05, nb06, nb07, nb08, nb09, benchmarks.py, compute_tau_l_gamma.py | untested: no alternative prior has been run |
+| `A-prior-soft` | ☐ todo | Soft-scan prior: the three free soft terms are signed uniform variables up to $`(500\,\mathrm{GeV})^2`$. | notebook 05; NOTES finding 11 · from scan_soft.py | the 2028 soft points and every count built on them (618 MEG II, 2023 h→ℓℓ′, 5 LFV-excluded), "decoupling-like", and "light scalars do not survive". Only 14 points have every soft term below $`v^2`$. · downstream: nb05, nb06, nb07, nb08, nb09, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | untested: a log-uniform scan of the near-S₃ corner is an open item |
+| `A-local-min` | ☐ todo | The soft scan requires only a local minimum (no tachyons), not the global minimum of the potential. | NOTES finding 11 (Caveats); open questions · from scan_soft.py | the soft point set: some points may sit in a metastable vacuum · downstream: nb05, nb06, nb07, nb08, nb09, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | untested: a multi-start minimization of the survivors is an open item |
+| `A-bfb-slice` | ☐ todo | The corrected boundedness condition is exact only on the real neutral slice; complex-neutral and charged directions are covered numerically, not analytically. | notebook 01 §5.3-§5.5, §8; notebook 04; NOTES finding 4 · from scan.py, scan_soft.py | both point sets (the soft terms do not touch the quartics, so the same cut is inherited) · downstream: nb01, nb03, nb05, nb06, nb07, nb08, nb09, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | the full 12-dimensional numeric BFB removes a further 3 of 322 on the benchmark points: real but small |
+| `A-hvv-cut` | ☐ todo | SM-likeness cut on the coupling: the state carrying $`g_{hVV}`$ sits at $`M_H\pm3=125.20\pm3`$ GeV (PDG 2024; 125.0 before 2026-10-17) with $`\kappa^2\ge0.9`$, and nothing below 114.4 GeV has $`\xi^2\ge0.05`$ [LEP2003]. | notebooks 01 and 05; NOTES open questions (hVV entry) · from scan.py, scan_soft.py | both point sets; in the soft scan this is the cut where most of the parameter space dies · downstream: nb01, nb03, nb05, nb06, nb07, nb08, nb09, benchmarks.py, compute_mu_e_gamma.py, compute_soft_decays.py, compute_tau_l_gamma.py | the result is unchanged for any LEP floor in [0.01, 0.10]; the $`\kappa^2\ge0.9`$ threshold itself has not been varied |
+| `A-least-constrained` | ☐ todo | A scalar point counts as allowed if *any* lepton configuration ($`\mu_3^\ell`$, fit branch) passes the limit: the least-constrained one. | notebooks 06-08 · from nb06, nb07, nb08 | the per-point counts (5 LFV-excluded, 618 MEG II, 606 with h→ℓℓ′). Per-configuration fractions are quoted separately. · downstream: nb09, benchmarks.py | a deliberate conservative choice; a per-configuration view exists in the notebooks |
+| `A-quark-kappa` | ☐ todo | The quark couplings point along the vacuum direction: $`\kappa_t=\kappa_V`$. No quark sector is built per soft point. | notebook 06 (R_γγ); notebooks 07-08 (Barr-Zee); ledger 07 #8 and 08 #4 · from nb06, nb07, nb08, compute_soft_decays.py, compute_mu_e_gamma.py, compute_tau_l_gamma.py | $`R_{\gamma\gamma}`$, the quark Barr-Zee terms in μ→eγ and τ→ℓγ, and the missing heavy-state widths · downstream: nb09, benchmarks.py | three variants (no quark Barr-Zee, flipped quark sign, W loop at the HKZ13 value) give 504, 453 and 684 survivors instead of 618 |
+| `A-missing-diagrams` | ☐ todo | Barr-Zee diagrams not included: [HKZ13] set C, $`\phi Z\gamma`$ (about +6% on the $`W`$ term) and $`H^\pm W\gamma`$. | notebook 07 §2.3; NOTES finding 13 · from nb07, compute_mu_e_gamma.py, compute_tau_l_gamma.py | μ→eγ and τ→ℓγ rates, the 618 count · downstream: nb08, nb09, benchmarks.py | only bounded through the W-loop variant above |
+| `A-exp-limits` | ☐ todo | Experimental limits used: MEG II [MEGII25] for μ→eγ; Belle [Belle21] and BaBar [BaBar10] for τ→ℓγ; CMS [CMS21], [CMS23] for h→ℓℓ′; LEP [LEP2003] for light neutral scalars. | NOTES References · from nb03, nb06, nb07, nb08 | every exclusion count · downstream: nb09, benchmarks.py | review item: check each value, its year and confidence level against the cited source |
 | `A-quark-fit-r` | ☐ todo | The quark fit's $`r`$ (and $`V_{\rm abs}`$) is an existence proof, not a prediction: 9 parameters against 9 targets gives several exact branches, and the one found depends on the restart seed and numpy/scipy version. | notebook 02 §11; NOTES finding 9 and the kernel note · from nb02 | any quoted r or φ for the quark vacuum (φ = 53.54° in notebook 05) · downstream: nb05 | documented; the CP phase is out of reach (real Yukawas, J = 0) |
 | `A-benchmark-tuning` | ☐ todo | The three benchmarks are scan points tuned to $`m_h=M_H=125.20`$ GeV exactly by moving one quartic (the one with the largest $`\|\partial m_h/\partial\lambda_k\|`$) by $`\sim10^{-4}`$–$`10^{-3}`$, with $`\theta`$, $`\varphi`$ and the free soft terms held fixed. | BENCHMARKS.md; benchmarks.py · from benchmarks.py | only the benchmark cards; no scan count uses a tuned point | every scan cut is re-checked on each tuned point (an assertion), and the observable code first reproduces notebooks 06-08 at the untuned point (validation gate, max relative deviation ~2e-4) |
-| `nb07-6d96cb76` | ☐ todo | Quark couplings along the vacuum direction | nb07 §5 | nb07 and downstream: nb08, benchmarks.py | same ansatz as notebook 06's $`\kappa_t=\kappa_V`$ |
-| `nb08-6d96cb76` | ☐ todo | Quark couplings along the vacuum direction | nb08 §5 | nb08 and downstream: benchmarks.py | same ansatz as notebooks 06 and 07; three variants bound its effect |
+| `nb07-6d96cb76` | ☐ todo | Quark couplings along the vacuum direction | nb07 §5 | nb07 and downstream: nb08, nb09, benchmarks.py | same ansatz as notebook 06's $`\kappa_t=\kappa_V`$ |
+| `nb08-6d96cb76` | ☐ todo | Quark couplings along the vacuum direction | nb08 §5 | nb08 and downstream: nb09, benchmarks.py | same ansatz as notebooks 06 and 07; three variants bound its effect |
 
 ## 2. Imported from the literature
 
@@ -109,21 +110,21 @@ $$\hat\lambda_{ij}=\lambda_{ij}+\min(0,\lambda'_{ij})-|\bar\lambda_{ij}|,\qquad 
 **Charged one loop $`=-\tfrac12\times`$ neutral non-flip**
 
 - check: the [Lavoura03] (40)/(41) and [OST16] (32) ratios agree independently
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb07-a8d4137b` · ☐ todo · nb07 §2.3 ([OST16], [HKZ13], [Ilisie15])
 **Barr–Zee fermion and $`W`$ terms**
 
 - check: top term = [HKZ13] (14) to 1 percent
 - check: $`W`$ bracket = [Ilisie15] $`F^{(3)}`$ to 1 percent; [HKZ13]'s 0.11 is 14 percent lower (set C, not implemented)
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb07-dbe0adfe` · ☐ todo · nb07 §2.5
 **Assembly and BR normalization**
 
 - check: the [HKZ13] $`\mu\to e\gamma`$ bound is reproduced after the $`W`$-term rescaling
 - falsified by: a factor-2 normalization error (falsify run)
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb08-f5b82283` · ☐ todo · nb08 §2 ([OST16] (17))
 **$`\mathcal B(\tau\to\ell\gamma)=48\pi^3\alpha(|A_L|^2+|A_R|^2)/G_F^2\times\mathcal B(\tau\to\ell\nu\bar\nu)`$**
@@ -131,7 +132,14 @@ $$\hat\lambda_{ij}=\lambda_{ij}+\min(0,\lambda'_{ij})-|\bar\lambda_{ij}|,\qquad 
 - check: equals the [HKZ13] lifetime normalization to below 1 percent
 - check: reproduces both [HKZ13] $`\tau`$ bounds with their $`W`$ number
 - falsified by: the two-loop pieces with the wrong relative sign (falsify run)
-- notebook feeds: benchmarks.py
+- notebook feeds: nb09, benchmarks.py
+
+#### `nb09-32f41460` · ☐ todo · nb09 §7
+**NuFIT 6.0 / PDG oscillation inputs (normal ordering)**
+
+- check: $`\theta_{12}`$, $`\sin^2\theta_{13}`$, $`\theta_{23}`$ and $`\Delta m^2_{21}`$ checked against web-search excerpts of [NuFIT6] and [PDG]
+- check: $`\Delta m^2_{31}=2.5\times10^{-3}`$ eV$`^2`$ is an order-of-magnitude input, not a quoted best fit
+- falsified by: the published Table 1 differing from these inputs beyond their uncertainties
 
 
 ## 3. Derived here
@@ -373,7 +381,7 @@ $$Q(\hat v)=\frac1v\sum_kv_k\,O^{\mathsf T}G_kO=\frac{\mathrm{diag}(m_\ell)}{v}$
 - check: Goldstone couplings flavour-diagonal at every soft vacuum
 - check: all 7 states agree with feynlag's extractor at a non-aligned point
 - falsified by: a missing $`\sqrt2`$ on the charged coupling (falsify run)
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb07-f304e4fb` · ☐ todo · nb07 §2.1
 **One-loop neutral dipole in closed form, exact in $`m_f/m_\phi`$**
@@ -383,14 +391,14 @@ $$c_L=\sum_f\frac{\tfrac12I_1(t_f)(m_eY_{ef}Y^*_{\mu f}+m_\mu Y^*_{fe}Y_{f\mu})+
 - check: equals [HKZ13] (A3) with external masses kept, to $`10^{-4}`$, at a heavy and a light scalar
 - check: $`t\to0`$ gives the [OST16]/[HKZ13] logs; [OST16] (30)'s $`m_i/m_\mu`$ on the non-flip term is a typo
 - falsified by: the [OST16] (30) non-flip factor (falsify run)
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb07-488d6264` · ☐ todo · nb07 §2.4
 **Barr–Zee $`H^\pm`$ term and the sign $`\lambda=-g/v`$**
 
 - check: low-energy theorem: the [Ilisie15] vertices against feynlag's diphoton amplitude
 - falsified by: $`\lambda=+g/v`$ (falsify run)
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb07-e23b2c5e` · ☐ todo · nb07 §3–4
 **$`\mu\to e\gamma`$ vanishes at the exact-S$`_3`$ vacuum (residual $`\mathbb Z_2`$)**
@@ -398,7 +406,7 @@ $$c_L=\sum_f\frac{\tfrac12I_1(t_f)(m_eY_{ef}Y^*_{\mu f}+m_\mu Y^*_{fe}Y_{f\mu})+
 - check: $`\mathcal B<10^{-24}`$ (round-off) at 40 exact points $`\times`$ 3 values of $`\mu_3`$
 - check: $`\mathcal B\propto(60^\circ-\varphi)^2`$ off the alignment
 - check: identical at the S$`_3`$ image (30 points, all configurations)
-- notebook feeds: nb08, benchmarks.py
+- notebook feeds: nb08, nb09, benchmarks.py
 
 #### `nb08-e6d8a698` · ☐ todo · nb08 §1
 **$`\ell_i\to\ell_j\gamma`$ amplitudes for general $`(i,j)`$**
@@ -410,7 +418,7 @@ $$c_L=\sum_f\frac{\tfrac12I_1(t_f)(m_jY_{jf}Y^*_{if}+m_iY^*_{fj}Y_{fi})+I_2(t_f)
 - check: [HKZ13] (A3) with external masses kept, for $`\tau\to\mu\gamma`$, at 700 and 25 GeV
 - check: [OST16] (19), the explicit $`\tau\to\mu\gamma`$ one loop
 - falsified by: an $`m_\tau/m_\mu`$ flip factor carried over from $`\mu\to e\gamma`$ (falsify run)
-- notebook feeds: benchmarks.py
+- notebook feeds: nb09, benchmarks.py
 
 #### `nb08-4add94d5` · ☐ todo · nb08 §3–4
 **Residual $`\mathbb Z_2`$: $`\tau\to e\gamma=0`$, $`\tau\to\mu\gamma\neq0`$ at the exact vacuum**
@@ -419,4 +427,67 @@ $$c_L=\sum_f\frac{\tfrac12I_1(t_f)(m_jY_{jf}Y^*_{if}+m_iY^*_{fj}Y_{fi})+I_2(t_f)
 - check: 3 odd states without $`\tau\mu`$, 4 even states without $`e`$ couplings, at every evaluation
 - check: $`\mathcal B(\tau\to e\gamma)\propto(60^\circ-\varphi)^2`$ off the alignment
 - check: all three channels identical at the S$`_3`$ image (20 points)
-- notebook feeds: benchmarks.py
+- notebook feeds: nb09, benchmarks.py
+
+#### `nb09-4eb3ee33` · ☐ todo · nb09 §1
+**The residual $`\mathbb Z_2`$ of the aligned vacuum is the S$`_3`$ reflection $`ab`$ about the vacuum direction**
+
+- check: found by testing all six S$`_3`$ elements on the aligned vacuum: exactly one non-identity element fixes it
+- check: the potential is invariant under it (direct substitution)
+- check: each soft pair splits into one $`\mathbb Z_2`$-even and one $`\mathbb Z_2`$-odd combination
+- falsified by: a $`\mathbb Z_2`$-odd soft combination passing the invariance check (falsify run)
+
+#### `nb09-1663a312` · ☐ todo · nb09 §2
+**Parities of the physical states: $`e`$, $`h_0`$, one $`A`$ and one $`H^\pm`$ are odd; $`\mu`$, $`\tau`$ and the other four scalars even**
+
+- check: rotation columns tested as $`G`$-eigenvectors: (vacuum, in-plane, out-of-plane) = (+, ?, +)
+- check: $`G^{\mathsf T}M_\ell G=M_\ell`$ symbolically; the odd eigenvalue equals $`m_e`$ at a fitted point to $`10^{-9}`$
+- falsified by: a mass eigenstate that is not a G-eigenvector (z2.parity raises)
+
+#### `nb09-76864212` · ☐ todo · nb09 §3–4
+**Selection rule: an amplitude whose external states multiply to $`-1`$ vanishes to all orders**
+
+$$\prod_i P_i=-1\ \Rightarrow\ \mathcal A=0:\quad \mu\to e\gamma,\ \tau\to e\gamma,\ \mu\to3e,\ \mu N\to eN,\ h_{\rm even}\to e\ell,\ h_{\rm odd}\to\tau\mu \text{ forbidden}$$
+
+- check: every odd-parity scalar-lepton coupling < 1e-14 over 594 exact (point, mu3) evaluations, parities read per eigenvector
+- check: allowed off-diagonal couplings all non-zero (the test is not vacuous)
+- check: notebook 08's B(tau -> e gamma) is round-off at all 118 380 exact evaluations
+- falsified by: a non-zero coupling with odd total parity at any exact point
+
+#### `nb09-6d4cd149` · ☐ todo · nb09 §5–6
+**Exact S$`_3`$ forces a single non-zero entry in the PMNS electron row: no solar or reactor mixing**
+
+$$G^{\mathsf T}m_DG=m_D,\ G^{\mathsf T}M_RG=M_R\ \Rightarrow\ [G,m_\nu]=0\ \Rightarrow\ |U_{ei}|=\delta_{i,\rm odd}$$
+
+- check: [G, m_nu] = 0 symbolically, for all five Yukawas and M, M_S
+- check: electron row single-entry to 1e-12 for 200 random S3-invariant sectors
+- check: the lepton analogue of V_us = 0 at exact S3 (notebook 02, finding 9)
+- falsified by: one Z2-odd Majorana entry gives two non-zero electron-row entries (falsify run)
+
+#### `nb09-49cb5871` · ☐ todo · nb09 §7–8
+**A $`\mathbb Z_2`$-odd soft breaking of $`M_R`$ alone reproduces the oscillation data**
+
+- check: exact fit of 5 oscillation observables with m1 = 1 meV, from 80 random starts at M = 1e14 GeV
+- check: a penalized search keeps the fit exact down to |eps|/M = 5e-4
+- check: only the two Z2-odd Majorana directions are switched on; Yukawas, potential and vacuum untouched
+- check: with them off the electron row is single-entry (section 6), so they are necessary
+- falsified by: no exact fit with only the Z2-odd Majorana directions
+
+#### `nb09-8abe4fb0` · ☐ todo · nb09 §9
+**Charged-scalar dipole function for a neutral fermion of any mass**
+
+$$f(t)=\int_0^1\frac{x^2(1-x)}{x+(1-x)t}dx=\frac{1-6t+3t^2+2t^3-6t^2\ln t}{6(1-t)^4}$$
+
+- check: closed form = Feynman-parameter integral to 1e-8
+- check: f(0) reproduces radiative.one_loop_charged exactly
+- check: f -> 1/(3t): a heavy neutrino decouples
+- falsified by: a massless limit differing from notebook 07's validated charged loop
+
+#### `nb09-bf4cd28f` · ☐ todo · nb09 §9
+**The $`M_R`$ breaking leaks into $`\mu\to e\gamma`$ only through $`m_\nu/M_R`$-suppressed neutrino loops**
+
+- check: H+-N loops computed on the fit benchmark (point 0 of notebook 01, mu3 = 1 GeV) for M = 1e3 ... 1e14 GeV
+- check: W-N loops bounded with an O(1) loop function
+- check: generic fit: both below 1e-30; the smallest-breaking benchmark (mixing enhanced ~1e3 by a cancellation in m_nu): below 1e-19
+- check: MEG II limit 1.5e-13
+- falsified by: a seesaw scale at which either piece reaches the MEG II sensitivity
