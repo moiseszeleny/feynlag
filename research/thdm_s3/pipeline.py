@@ -61,11 +61,11 @@ PIPELINE = {
 
 #: report source -> the notebooks whose stored outputs (numbers, figures) it quotes.
 REPORTS = {
-    "report_scalar_sector.tex": ["01"],
-    "report_fermion_sector.tex": ["02"],
-    "report_scalar_decays.tex": ["03"],
-    "report_soft_vacuum.tex": ["05"],
-    "report_soft_decays.tex": ["06"],
-    "report_mu_e_gamma.tex": ["07"],
-    "report_tau_l_gamma.tex": ["08"],
+    "reports/report_scalar_sector.tex": ["01"],
+    "reports/report_fermion_sector.tex": ["02"],
+    "reports/report_scalar_decays.tex": ["03"],
+    "reports/report_soft_vacuum.tex": ["05"],
+    "reports/report_soft_decays.tex": ["06"],
+    "reports/report_mu_e_gamma.tex": ["07"],
+    "reports/report_tau_l_gamma.tex": ["08"],
 }

@@ -263,7 +263,7 @@ def check():
     for node in PIPELINE:
         print(f"{node:<24}{status[node]:<17}{notes[node]}")
 
-    print(f"\n{'report':<28}{'status':<17}detail")
+    print(f"\n{'report':<36}{'status':<17}detail")
     rep_bad = 0
     for rep, nbs in REPORTS.items():
         rec = man["reports"].get(rep)
@@ -274,7 +274,7 @@ def check():
             why += [f"nb{nb} re-run since report was checked" for nb in nbs
                     if rec["notebooks"].get(nb) != _sha(node_file(nb).read_bytes())]
         rep_bad += bool(why)
-        print(f"{rep:<28}{'re-check' if why else 'ok':<17}{'; '.join(why)}")
+        print(f"{rep:<36}{'re-check' if why else 'ok':<17}{'; '.join(why)}")
 
     big = oversized()
     for f, kb in big:

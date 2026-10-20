@@ -1,4 +1,4 @@
-"""Write ``numbers.tex``: the headline numbers the reports quote, read from the results.
+"""Write ``reports/numbers.tex``: the headline numbers the reports quote, read from the results.
 
 A report that types "610 of 2021" by hand goes stale the moment a notebook is
 re-run, and three commits on this branch have fixed exactly that. Instead, the
@@ -12,7 +12,7 @@ values literally, so new hand-typed copies are caught (citation years, such as
 
 Usage (from anywhere)::
 
-    python research/thdm_s3/report_numbers.py           # write numbers.tex
+    python research/thdm_s3/report_numbers.py           # write reports/numbers.tex
     python research/thdm_s3/report_numbers.py check     # also list literal copies
 
 To add a number: add a `NUMBERS` entry, rebuild, and use the macro in the report.
@@ -29,6 +29,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+REPORTS = HERE / "reports"
 
 
 def _get(doc, path):
@@ -145,8 +146,8 @@ def write():
              "% Use as \\macro{} in text; the sample sizes belong in maths mode."]
     for macro, (fname, path, _, what) in NUMBERS.items():
         lines.append(f"\\newcommand{{\\{macro}}}{{{vals[macro]}}}  % {what} ({fname}: {path})")
-    (HERE / "numbers.tex").write_text("\n".join(lines) + "\n")
-    print(f"wrote numbers.tex ({len(vals)} numbers)")
+    (REPORTS / "numbers.tex").write_text("\n".join(lines) + "\n")
+    print(f"wrote reports/numbers.tex ({len(vals)} numbers)")
     return vals
 
 
@@ -156,7 +157,7 @@ _CITATION_YEAR = re.compile(r"\(\d{4}\)|\\textbf\{\d+\},\s*\d+")
 def literal_copies(vals):
     """Report lines that still type a macro's value by hand."""
     hits = []
-    for tex in sorted(HERE.glob("report_*.tex")):
+    for tex in sorted(REPORTS.glob("report_*.tex")):
         for n, line in enumerate(tex.read_text().splitlines(), 1):
             text = _CITATION_YEAR.sub("", re.split(r"(?<!\\)%", line)[0])
             for macro, v in vals.items():

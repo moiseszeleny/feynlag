@@ -36,22 +36,22 @@ pedagogical walk-through). This directory is where the open questions go.
 | `08_tau_to_l_gamma.ipynb` | τ→μγ and τ→eγ: the index generalization checked against notebook 07, [HKZ13] and [OST16]; the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed); the soft scan against Belle/BaBar and h→τℓ. **Done.** |
 | `derivations_08.tex` | printable appendix emitted by notebook 08. |
 | `results/tau_l_gamma.json` | exact-vacuum and scan summaries; the per-soft-point least-constrained configuration of each τ channel and the counts allowed by each limit are in `cache/tau_l_gamma.json`. Written by notebook 08. |
-| `report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
-| `report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
-| `report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
-| `report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
-| `report_soft_decays.tex` | report on notebook 06: the arrowhead lepton fit, SM-like LFV from the non-vacuum admixture, $R_{\gamma\gamma}$ and VSS in the soft vacuum. |
-| `report_mu_e_gamma.tex` | report on notebook 07: the exact-vacuum zero (residual $\mathbb Z_2$), the amplitude checks, the scan against MEG II and its robustness. |
-| `report_tau_l_gamma.tex` | report on notebook 08: the $`\ell_i\to\ell_j\gamma`$ generalization checks, the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed, Belle's light-scalar corner), and the soft scan (no point removed beyond MEG II). |
-| `build_reports.sh` | rebuilds the seven `report_*.pdf` (figures first, then pdflatex ×2) and the eight `derivations_0N.pdf`; the PDFs are committed so they render on GitHub. |
+| `reports/report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
+| `reports/report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
+| `reports/report_scalar_decays.tex` | report on notebook 03: $h_0$ gauge-phobic for any δ, δ = −ψ, LFV rates against [CMS21]. |
+| `reports/report_soft_vacuum.tex` | report on notebook 05: the soft-broken scan and its decoupling-like spectrum. |
+| `reports/report_soft_decays.tex` | report on notebook 06: the arrowhead lepton fit, SM-like LFV from the non-vacuum admixture, $R_{\gamma\gamma}$ and VSS in the soft vacuum. |
+| `reports/report_mu_e_gamma.tex` | report on notebook 07: the exact-vacuum zero (residual $\mathbb Z_2$), the amplitude checks, the scan against MEG II and its robustness. |
+| `reports/report_tau_l_gamma.tex` | report on notebook 08: the $`\ell_i\to\ell_j\gamma`$ generalization checks, the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed, Belle's light-scalar corner), and the soft scan (no point removed beyond MEG II). |
+| `build_reports.sh` | rebuilds the seven `reports/report_*.pdf` (figures first, then pdflatex ×2) and the eight `derivations_0N.pdf`; the PDFs are committed so they render on GitHub. |
 | `README.md` | the folder's GitHub landing page: the report index. |
-| `extract_figures.py` | copies the stored notebook figures to `figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
+| `extract_figures.py` | copies the stored notebook figures to `reports/figures/*.png` for the reports; each entry is guarded by a marker string in its source cell. |
 | `claims.py` | builds `CLAIMS.md`, the review register: every `derivations_*.tex` ledger step plus the curated assumptions, ordered assumed → imported → derived. Picks up a new notebook's ledger with no change. Run `python research/thdm_s3/claims.py` after re-executing a notebook. |
 | `assumptions.py` | the load-bearing assumptions the ledgers do not record (scan priors, local minimum, cuts, κ_t = κ_V, missing diagrams, experimental limits). New notebooks should record their choices in their own ledger as `obtained="assumed"` instead. |
 | `pipeline.py` | `PIPELINE`, the notebook/script → results-file map (consumes/produces), and `REPORTS`, report → notebooks quoted. Shared by `claims.py` and `provenance.py`; update it when a notebook starts reading or writing a file. |
 | `provenance.py` | staleness: fingerprints each node (code cells, transitively imported local modules, consumed results, feynlag) into `results/MANIFEST.json`. `check` lists stale / upstream-stale nodes and reports that need re-checking; `stamp <node>` after a re-run; `audit` reads git history for what changed since each node's outputs were written. |
 | `results/MANIFEST.json` | provenance record; `provenance.py check` reads it. **Baseline 2026-10-16, every node current.** `scan.py`/`scan_soft.py` re-run at HEAD give byte-identical JSON. 01 and 08 had no change since their run. 07 is reproduced by 08 at HEAD. 03, 04 and 05 were re-executed at HEAD (py3.13, numpy 2.5.3, scipy 1.18.1): only machine-precision residuals moved, plus round-off-level BRs (~1e-30) that are analytically zero. Since 2026-10-17 every node is re-executed in this environment. The two checks that used to pin environment-dependent numbers are now robust: nb02 requires *at least* 4 exact quark-fit solutions (4 in the original environment, 5 with numpy 2.5.3 / scipy 1.18.1, an extra one at $`\|r\|=5.579`$; the selected fit is identical), and nb06 pins the trilinear round-off's decade ($10^{-13}$ GeV). |
-| `report_numbers.py` | writes `numbers.tex`, the headline numbers as LaTeX macros read from `results/*.json`; the reports `\input` it. `check` lists numbers still typed by hand. Run by `build_reports.sh`. |
+| `report_numbers.py` | writes `reports/numbers.tex`, the headline numbers as LaTeX macros read from `results/*.json`; the reports `\input` it. `check` lists numbers still typed by hand. Run by `build_reports.sh`. |
 | `benchmarks.py` | picks three soft points by fixed rules (decoupled, light H±, near S₃) and writes `BENCHMARKS.md`, one card per point from the stored results; the chosen indices go to `results/benchmarks.json`. |
 | `CLAIMS.md` | generated; the place to start a manual review. |
 | `store.py` | the results/cache split: `write` puts a payload in full in `cache/<name>.json` and its summary (no `points`, plus `points_sha256`) in `results/<name>.json`; `points`/`full`/`summary` read them back; `save_raw`/`load_raw` pickle the compute scripts' raw loop output. |

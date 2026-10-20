@@ -36,7 +36,7 @@ plus a note), then run `python research/thdm_s3/claims.py`.
 |---|---|---|
 | `claims.py` | what is claimed, and what is derived, imported or assumed | [`CLAIMS.md`](CLAIMS.md), [`review_status.csv`](review_status.csv) |
 | `provenance.py` | which results, notebooks and reports are out of date | `check`/`stamp`/`audit` on [`results/MANIFEST.json`](results/MANIFEST.json) |
-| `report_numbers.py` | the headline numbers the reports quote, read from `results/` | `numbers.tex` (run by `build_reports.sh`) |
+| `report_numbers.py` | the headline numbers the reports quote, read from `results/` | `reports/numbers.tex` (run by `build_reports.sh`) |
 | `benchmarks.py` | what one point looks like from end to end | [`BENCHMARKS.md`](BENCHMARKS.md) |
 | `run_pipeline.py` | regenerates `cache/` and whatever is out of date, in order | the per-point data in `cache/` |
 
@@ -55,13 +55,13 @@ validations and the figures.
 
 | report | source notebook | main result |
 |---|---|---|
-| [Scalar sector](report_scalar_sector.pdf) | [01](01_scalar_parameter_space.ipynb) | The Das–Dey boundedness conditions are necessary but not sufficient; the corrected condition, and a scan with a coupling-based cut centred on m_H = 125.20 GeV (1973 points from 6×10⁷). |
-| [Fermion sector](report_fermion_sector.pdf) | [02](02_s3_fermion_sector.ipynb) | Three defects in the LFVHD draft, corrected; exact S₃ forces V_us = 0, and soft breaking turns the Cabibbo angle on. |
-| [Scalar decays and LFV](report_scalar_decays.pdf) | [03](03_scalar_decays.ipynb) | h₀ is gauge-phobic for every δ; LFV data bound the lepton parameter μ₃, not the scalar sector; at the exact vacuum the SM-like state gives τμ only and h₀ only eτ and eμ. |
-| [Soft-broken vacuum](report_soft_vacuum.pdf) | [05](05_soft_scalar_scan.ipynb) | The soft-broken spectrum is decoupling-like; the exact scan's light gauge-phobic scalars do not survive generic soft breaking. |
-| [Soft-vacuum decays and LFV](report_soft_decays.pdf) | [06](06_soft_decays.ipynb) | The lepton fit is an exact arrowhead cubic and soft breaking pins μ₃ near ±m_τ; SM-like LFV is pure non-vacuum admixture; h→eμ binds hardest; only 5 of 2028 scalar points are LFV-excluded. |
-| [μ→eγ](report_mu_e_gamma.pdf) | [07](07_mu_to_e_gamma.ipynb) | Forbidden to all orders at the exact vacuum (residual Z₂); in the soft vacuum the W-loop Barr–Zee diagram dominates and MEG II keeps 618 of 2028 scalar points, against 2023 for the Higgs LFV limits. |
-| [τ→μγ, τ→eγ](report_tau_l_gamma.pdf) | [08](08_tau_to_l_gamma.ipynb) | At the exact vacuum τ→eγ vanishes but τ→μγ is allowed, and Belle excludes a light-scalar corner that h→τμ misses; in the soft vacuum both τ modes are ~10⁻¹² and remove no point beyond MEG II. |
+| [Scalar sector](reports/report_scalar_sector.pdf) | [01](01_scalar_parameter_space.ipynb) | The Das–Dey boundedness conditions are necessary but not sufficient; the corrected condition, and a scan with a coupling-based cut centred on m_H = 125.20 GeV (1973 points from 6×10⁷). |
+| [Fermion sector](reports/report_fermion_sector.pdf) | [02](02_s3_fermion_sector.ipynb) | Three defects in the LFVHD draft, corrected; exact S₃ forces V_us = 0, and soft breaking turns the Cabibbo angle on. |
+| [Scalar decays and LFV](reports/report_scalar_decays.pdf) | [03](03_scalar_decays.ipynb) | h₀ is gauge-phobic for every δ; LFV data bound the lepton parameter μ₃, not the scalar sector; at the exact vacuum the SM-like state gives τμ only and h₀ only eτ and eμ. |
+| [Soft-broken vacuum](reports/report_soft_vacuum.pdf) | [05](05_soft_scalar_scan.ipynb) | The soft-broken spectrum is decoupling-like; the exact scan's light gauge-phobic scalars do not survive generic soft breaking. |
+| [Soft-vacuum decays and LFV](reports/report_soft_decays.pdf) | [06](06_soft_decays.ipynb) | The lepton fit is an exact arrowhead cubic and soft breaking pins μ₃ near ±m_τ; SM-like LFV is pure non-vacuum admixture; h→eμ binds hardest; only 5 of 2028 scalar points are LFV-excluded. |
+| [μ→eγ](reports/report_mu_e_gamma.pdf) | [07](07_mu_to_e_gamma.ipynb) | Forbidden to all orders at the exact vacuum (residual Z₂); in the soft vacuum the W-loop Barr–Zee diagram dominates and MEG II keeps 618 of 2028 scalar points, against 2023 for the Higgs LFV limits. |
+| [τ→μγ, τ→eγ](reports/report_tau_l_gamma.pdf) | [08](08_tau_to_l_gamma.ipynb) | At the exact vacuum τ→eγ vanishes but τ→μγ is allowed, and Belle excludes a light-scalar corner that h→τμ misses; in the soft vacuum both τ modes are ~10⁻¹² and remove no point beyond MEG II. |
 
 Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness method) has no
 report yet.
@@ -111,7 +111,7 @@ bash research/thdm_s3/build_reports.sh
 ```
 
 This re-extracts the figures from the notebooks' stored outputs (`extract_figures.py`),
-regenerates `numbers.tex` from `results/*.json` (`report_numbers.py`), and compiles each
+regenerates `reports/numbers.tex` from `results/*.json` (`report_numbers.py`), and compiles each
 report and each derivation ledger twice. It fails on any LaTeX error or undefined reference. Quote headline numbers
 through the `numbers.tex` macros (`\nMEGallowed{}`), not by typing them;
 `python research/thdm_s3/report_numbers.py check` lists any number still typed by hand.

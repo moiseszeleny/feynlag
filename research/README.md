@@ -58,6 +58,7 @@ research/<project>/
   NN_<topic>.ipynb  # the actual research, numbered in the order it was done
   results/          # small committed JSON artifacts (< ~100 kB)
   cache/            # heavy intermediates — gitignored, never committed
+  reports/          # optional LaTeX write-ups (report_*.tex/.pdf, figures/) for readers
 ```
 
 When a result has a large per-point part (a scan's surviving points, one row
