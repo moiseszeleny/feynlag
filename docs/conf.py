@@ -56,13 +56,11 @@ intersphinx_mapping = {
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# The tutorial notebooks are symlinked in from examples/ and contain
-# relative markdown links (../CONVENTIONS.md, sm_scalar_gauge.py, ...)
-# written for their original location; those resolve fine on GitHub but not
-# from docs/tutorials/, and editing the notebooks themselves is out of
-# scope (CLAUDE.md: notebooks are tracked pre-executed, edit only via
-# nbconvert --execute). Suppress just this warning class rather than -W
-# the whole build on noise we can't fix without touching notebook content.
+# The tutorial notebooks in docs/tutorials/ contain relative markdown links
+# to files outside the Sphinx source dir (../../CONVENTIONS.md,
+# ../../examples/sm_scalar_gauge.py, ../../tests/...); they resolve on
+# GitHub but Sphinx cannot cross-reference them. Suppress just this warning
+# class rather than -W the whole build on noise from links we want to keep.
 suppress_warnings = ["myst.xref_missing"]
 
 html_theme = "furo"

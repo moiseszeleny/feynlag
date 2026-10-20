@@ -181,7 +181,7 @@ def test_cp_even_mass_matrix_structure(s3_model):
 # All three scalar sectors + the geometric rotation.
 #
 # These pin what previously lived only as print statements inside
-# examples/THDM_S3_Tutorial.ipynb §6-§9.  Built here from this file's own
+# docs/tutorials/THDM_S3_Tutorial.ipynb §6-§9.  Built here from this file's own
 # fixture, deliberately self-contained: the suite pins the library's physics
 # and must not depend on any external model code.
 # ---------------------------------------------------------------------------
@@ -318,7 +318,7 @@ def test_masses_match_gomezbock_closed_forms(s3_sectors):
 def test_aligned_vacuum_can_meet_the_electroweak_scale(s3_model):
     """The alignment and √Σvᵢ² = 246 GeV are simultaneously satisfiable.
 
-    Regression for a real bug found in examples/THDM_S3_Tutorial.ipynb: it
+    Regression for a real bug found in docs/tutorials/THDM_S3_Tutorial.ipynb: it
     picks (v1,v2,vS) = (200,115,80) so that √Σvᵢ² ≈ 246 ([GomezBock21] Eq. 8),
     then imposes the alignment as the substitution v1 → v2/√3, which *replaces*
     v1 = 200 by 66.4 and silently drops the vacuum to 155 GeV.  Imposing both

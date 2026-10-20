@@ -84,7 +84,7 @@ m.mass_matrix([h])            # Matrix([[2 lam v²]])
 m.feynman_rules([h])          # {(h,h,h): -6i lam v, (h,h,h,h): -6i lam}
 ```
 
-See `examples/` for full runs: `sm_scalar_gauge.py` (complete SM: Higgs +
+See `examples/` (index: [`examples/README.md`](examples/README.md)) for full runs: `sm_scalar_gauge.py` (complete SM: Higgs +
 electroweak gauge + leptons + quark/QCD sector), `sm_vll.py` (SM + a
 vector-like lepton doublet, biunitary mass-matrix diagonalization),
 `sm_u1x.py` (SM × U(1)_X with a Z′, symbolic charges, chained rotations),

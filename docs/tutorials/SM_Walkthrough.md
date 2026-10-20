@@ -1,8 +1,12 @@
 # Tutorial: Feynman rules of the Standard Model with feynlag
 
-This walks through `sm_scalar_gauge.py` line by line — declaring the SM
-electroweak sector, checking it, breaking the symmetry, diagonalizing, and
-extracting Feynman rules — then shows how to turn it into a BSM model.
+A prose companion to `examples/sm_scalar_gauge.py`: it walks the
+scalar + electroweak-gauge core of that script — declaring the SM electroweak
+sector, checking it, breaking the symmetry, diagonalizing, and extracting
+Feynman rules — sketches the fermion track, then shows how to turn it into a
+BSM model. (The script itself goes further, with the lepton and quark/QCD
+sectors; the {doc}`SM_Feynman_Rules_Tutorial` notebook walks all of it with
+executed output.)
 
 Run the finished script at any point with:
 
@@ -16,7 +20,8 @@ file is the source of truth if a sign looks unfamiliar.
 
 ## 0. What we're building
 
-The scalar + electroweak-gauge sector of the SM: an `SU(2)_L × U(1)_Y` Higgs
+Sections 1–8 build the scalar + electroweak-gauge sector of the SM (the
+script adds leptons and quarks on top; §9 sketches how): an `SU(2)_L × U(1)_Y` Higgs
 doublet with its potential and covariant kinetic term. This is enough to
 extract the Higgs self-couplings, the gauge-boson masses, the Weinberg
 rotation, and every `hVV`/`hhVV`/Goldstone vertex — the same pipeline stages
