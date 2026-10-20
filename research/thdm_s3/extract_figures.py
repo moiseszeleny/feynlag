@@ -1,8 +1,8 @@
-"""Extract the stored figures of the research notebooks to figures/*.png.
+"""Extract the stored figures of the research notebooks to reports/figures/*.png.
 
 The notebooks are tracked with ``nbstripout --keep-output``, so their figures are
 real committed bytes rather than something a re-run has to reproduce.  This pulls
-them out so the ``report_*.tex`` write-ups can \\includegraphics them without anyone
+them out so the ``reports/report_*.tex`` write-ups can \\includegraphics them without anyone
 re-executing a scan.
 
 The mapping below is by *cell index*, which is brittle if the notebook is
@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OUTDIR = HERE / "figures"
+OUTDIR = HERE / "reports" / "figures"
 
 NB01 = "01_scalar_parameter_space.ipynb"     # report_scalar_sector.tex
 NB02 = "02_s3_fermion_sector.ipynb"          # report_fermion_sector.tex
@@ -76,7 +76,7 @@ def main():
         print("  %-28s <- %s cell %-3d  %6.1f KB"
               % (name + ".png", notebook[:2], idx, len(raw) / 1024))
 
-    print("wrote %d figures to %s/" % (len(FIGURES), OUTDIR.name))
+    print("wrote %d figures to %s/" % (len(FIGURES), OUTDIR.relative_to(HERE)))
 
 
 if __name__ == "__main__":

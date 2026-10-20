@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild the report PDFs (report_*.tex -> report_*.pdf) and the derivation-ledger
+# Rebuild the report PDFs (reports/report_*.tex -> reports/report_*.pdf) and the derivation-ledger
 # PDFs (derivations_0N.tex, emitted by the notebooks) for reading on GitHub.
 #
 # The .tex files are the source; the PDFs are committed (see research/.gitignore) so they
@@ -11,12 +11,14 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 python3 extract_figures.py
-# the headline numbers the reports quote, read from results/*.json (numbers.tex)
+# the headline numbers the reports quote, read from results/*.json (reports/numbers.tex)
 python3 report_numbers.py
 
 status=0
-for tex in report_*.tex derivations_*.tex; do
-    name="${tex%.tex}"
+# each file compiles in its own folder, where its \input and figure paths resolve
+for path in reports/report_*.tex derivations_*.tex; do
+    dir="$(dirname "$path")"; tex="$(basename "$path")"; name="${tex%.tex}"
+    pushd "$dir" > /dev/null
     # twice, so cross-references and citations resolve
     for _ in 1 2; do
         pdflatex -interaction=nonstopmode -halt-on-error "$tex" > /dev/null || true
@@ -26,8 +28,9 @@ for tex in report_*.tex derivations_*.tex; do
     elif grep -qE 'undefined (references|citations)|Reference .* undefined|Citation .* undefined' "$name.log"; then
         echo "FAIL $tex: undefined reference or citation"; status=1
     else
-        echo "ok   $name.pdf"
+        echo "ok   $dir/$name.pdf"
     fi
     rm -f "$name.aux" "$name.log" "$name.out"
+    popd > /dev/null
 done
 exit $status

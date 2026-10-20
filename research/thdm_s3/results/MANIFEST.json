@@ -349,49 +349,49 @@
   }
  },
  "reports": {
-  "report_fermion_sector.tex": {
+  "reports/report_fermion_sector.tex": {
    "notebooks": {
     "02": "ab799baa2efc016b"
    },
    "stamped": "2026-10-17",
    "tex": "d5cfdbad8829069d"
   },
-  "report_mu_e_gamma.tex": {
+  "reports/report_mu_e_gamma.tex": {
    "notebooks": {
     "07": "4fdb4aadaeba7477"
    },
    "stamped": "2026-10-18",
    "tex": "e1071395735fe151"
   },
-  "report_scalar_decays.tex": {
+  "reports/report_scalar_decays.tex": {
    "notebooks": {
     "03": "dfdbdc91b80bffe2"
    },
    "stamped": "2026-10-17",
    "tex": "fa211e830ca5a8fa"
   },
-  "report_scalar_sector.tex": {
+  "reports/report_scalar_sector.tex": {
    "notebooks": {
     "01": "f4ea196aa89392df"
    },
    "stamped": "2026-10-17",
    "tex": "6da88ad9fbf44c1c"
   },
-  "report_soft_decays.tex": {
+  "reports/report_soft_decays.tex": {
    "notebooks": {
     "06": "adb41b7dd28b19e2"
    },
    "stamped": "2026-10-17",
    "tex": "95b74bcb5518fc74"
   },
-  "report_soft_vacuum.tex": {
+  "reports/report_soft_vacuum.tex": {
    "notebooks": {
     "05": "304a48e69a0da4ec"
    },
    "stamped": "2026-10-17",
    "tex": "2d74cd1d7fa98787"
   },
-  "report_tau_l_gamma.tex": {
+  "reports/report_tau_l_gamma.tex": {
    "notebooks": {
     "08": "1fefadb04d573bf8"
    },
