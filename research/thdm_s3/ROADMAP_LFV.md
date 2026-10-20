@@ -11,36 +11,37 @@ Inline maths uses GitHub's `` $`…`$ `` form, which renders whatever characters
 
 ## 0. The thesis
 
-1. **Selection rule.** At the aligned (exact-$`S_3`$) vacuum a residual $`\mathbb Z_2`$ survives.
-   - **Odd:** the electron and the three in-plane non-vacuum scalars ($`h_0`$, one $`A`$,
-     one $`H^\pm`$).
-   - **Even:** $`\mu`$, $`\tau`$ and the other four scalars.
+**1. Selection rule.** At the aligned (exact-$`S_3`$) vacuum a residual $`\mathbb Z_2`$ survives.
+- **Odd:** the electron and the three in-plane non-vacuum scalars ($`h_0`$, one $`A`$, one $`H^\pm`$).
+- **Even:** $`\mu`$, $`\tau`$ and the other four scalars.
 
-   Every amplitude whose external states have odd total parity vanishes **to all orders**:
+Every amplitude whose external states have odd total parity vanishes **to all orders**:
 
-   ```math
-   \prod_{\text{external } X} P_{\mathbb Z_2}(X) = -1 \quad\Longrightarrow\quad \mathcal A = 0 .
-   ```
+$$
+\prod_{\text{external } X} P_{\mathbb Z_2}(X) = -1 \quad\Longrightarrow\quad \mathcal A = 0 .
+$$
 
-   So $`\mu\to e\gamma`$ and $`\tau\to e\gamma`$ are exactly zero, while $`\tau\to\mu\gamma`$ is
-   allowed. The SM-like Higgs (even) decays to $`\tau\mu`$ only; the odd $`h_0`$ decays to
-   $`e\mu`$ and $`e\tau`$ only (nb03 §7.2).
-2. **Soft breaking switches the forbidden channels on** in proportion to the
-   $`\mathbb Z_2`$ breaking $`\varepsilon`$:
+So $`\mu\to e\gamma`$ and $`\tau\to e\gamma`$ are exactly zero, while $`\tau\to\mu\gamma`$ is allowed.
+The SM-like Higgs (even) decays to $`\tau\mu`$ only; the odd $`h_0`$ decays to $`e\mu`$ and
+$`e\tau`$ only (nb03 §7.2).
 
-   ```math
-   \mathcal B(\mu\to e\gamma),\ \mathcal B(\tau\to e\gamma) \;\propto\; \varepsilon^2 ,
-   \qquad \varepsilon \propto 60^\circ-\varphi \ \ \text{off the alignment.}
-   ```
+**2. Soft breaking switches the forbidden channels on** in proportion to the $`\mathbb Z_2`$
+breaking $`\varepsilon`$:
 
-   In the soft scan the free soft terms break the $`\mathbb Z_2`$ whatever $`\varphi`$ is.
-3. **$`\mu\to e\gamma`$ dominates.** In the soft vacuum, MEG II is the only LFV limit that cuts
-   into the scalar sector.
-   - It keeps 618 of 2028 points, while $`h\to\ell\ell'`$ keeps 2023 and $`\tau\to\ell\gamma`$
-     removes nothing more.
-   - The reason is the $`W`$-loop Barr–Zee diagram through the SM-like Higgs.
-   - The $`\tau`$ rates allowed by every limit sit an order of magnitude below the Belle II
-     reach, so the model predicts a null $`\tau\to\ell\gamma`$ result there.
+$$
+\mathcal B(\mu\to e\gamma),\ \mathcal B(\tau\to e\gamma) \;\propto\; \varepsilon^2 ,
+\qquad \varepsilon \propto 60^\circ-\varphi \ \ \text{off the alignment.}
+$$
+
+In the soft scan the free soft terms break the $`\mathbb Z_2`$ whatever $`\varphi`$ is.
+
+**3. $`\mu\to e\gamma`$ dominates.** In the soft vacuum, MEG II is the only LFV limit that cuts
+into the scalar sector.
+- It keeps 618 of 2028 points, while $`h\to\ell\ell'`$ keeps 2023 and $`\tau\to\ell\gamma`$
+  removes nothing more.
+- The reason is the $`W`$-loop Barr–Zee diagram through the SM-like Higgs.
+- The $`\tau`$ rates allowed by every limit sit an order of magnitude below the Belle II reach,
+  so the model predicts a null $`\tau\to\ell\gamma`$ result there.
 
 ## 1. What is established
 
@@ -83,18 +84,17 @@ Each item names the claim it protects, the deliverable, and the gate that says i
   - Find the combination $`\varepsilon(m^2_{\rm soft},\varphi)`$ of soft terms that mixes
     $`\mathbb Z_2`$-odd and $`\mathbb Z_2`$-even states: the odd–even block of the mass matrices
     at first order.
-  - Show that the ratio collapses over the whole soft scan:
-
-    ```math
-    \frac{\mathcal B(\mu\to e\gamma)}{\varepsilon^2} \approx \text{const.}
-    ```
-
+  - Show that the ratio in the equation below collapses over the whole soft scan.
 - **Deliverable:**
   - notebook `10_z2_order_parameter.ipynb`;
   - a per-point $`\varepsilon`$ column, added through `store` (cache) plus a summary.
 - **Gate:**
   - The collapse holds with a stated spread.
   - It reduces to $`(60^\circ-\varphi)^2`$ on the zero-soft slice.
+
+$$
+\frac{\mathcal B(\mu\to e\gamma)}{\varepsilon^2} \approx \text{const.}
+$$
 
 ### B3. The missing two-loop pieces
 - **Why:** claim 3 rests on the Barr–Zee $`W`$ loop, and the $`W`$ term carries a known 14 % gap
