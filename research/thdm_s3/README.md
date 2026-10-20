@@ -5,6 +5,9 @@ Research project on the S₃-symmetric three-Higgs-doublet model, built end to e
 lepton-flavour-violating Higgs rates. These are findings and may be revised. The running log
 is [`NOTES.md`](NOTES.md).
 
+**Paper plan:** [`ROADMAP_LFV.md`](ROADMAP_LFV.md), the roadmap from notebooks 03 and 06–08 to a paper on
+LFV, residual-ℤ₂ selection rules and μ→eγ dominance under soft breaking.
+
 ## How to review, by time available
 
 **30 minutes: what is claimed, and on what assumptions.**
