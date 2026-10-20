@@ -9,6 +9,18 @@ Findings are numbered as in [`NOTES.md`](NOTES.md); assumptions as in [`CLAIMS.m
 
 Inline maths uses GitHub's `` $`…`$ `` form, which renders whatever characters touch it.
 
+## Status
+
+- **Done (notebook 09, NOTES finding 15):** B1, the residual $`\mathbb Z_2`$ derived and the
+  selection rule checked coupling by coupling; S1, the channel parity table; S5, the seesaw
+  neutrino sector.
+- **R1 answered:** exact $`S_3`$ cannot give solar or reactor mixing, but a
+  $`\mathbb Z_2`$-odd soft breaking of the $`\nu_R`$ Majorana mass alone fits the oscillation
+  data and leaks into $`\mu\to e\gamma`$ at least six orders below MEG II. Claim 1 holds in the
+  charged-lepton and scalar sectors **up to $`m_\nu/M_R`$-suppressed effects**.
+- **Next:** B2, the order parameter (notebook 09 §1 already splits each soft pair into its
+  $`\mathbb Z_2`$-even and odd combinations).
+
 ## 0. The thesis
 
 **1. Selection rule.** At the aligned (exact-$`S_3`$) vacuum a residual $`\mathbb Z_2`$ survives.
@@ -222,6 +234,9 @@ belong in this paper, S4 and S5 could be follow-ups.
     becomes "forbidden up to neutrino-sector effects".
   - **The response:** show that those effects are negligible, or restate the selection rule.
   - **Check this early**, in parallel with phase A.
+  - **Outcome (notebook 09):** the breaking can sit in $`M_R`$ alone, and its leak into
+    $`\mu\to e\gamma`$ is at most $`6\times10^{-20}`$ for $`M=10^3`$–$`10^{14}`$ GeV. Claim 1 stands
+    with the qualifier "up to $`m_\nu/M_R`$-suppressed effects".
 - **R2. The missing diagrams shift the count** (B3) beyond the variant band. In that case the
   headline becomes a range rather than one number.
 - **R3. Global-minimum cuts remove survivors** (B5). This changes the count, but not

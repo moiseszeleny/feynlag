@@ -35,6 +35,11 @@ pedagogical walk-through). This directory is where the open questions go.
 | `results/mu_e_gamma.json` | scan summaries; the per-soft-point least-constrained (μ₃, branch) configuration and its breakdown are in `cache/mu_e_gamma.json`. Written by notebook 07. |
 | `08_tau_to_l_gamma.ipynb` | τ→μγ and τ→eγ: the index generalization checked against notebook 07, [HKZ13] and [OST16]; the exact-vacuum split (τ→eγ ≡ 0, τ→μγ allowed); the soft scan against Belle/BaBar and h→τℓ. **Done.** |
 | `derivations_08.tex` | printable appendix emitted by notebook 08. |
+| `09_residual_z2.ipynb` | the residual $`\mathbb Z_2`$ derived (generator, parities, selection rule checked coupling by coupling) and the type-I seesaw neutrino sector (exact S₃ forbids solar/reactor mixing; a $`\mathbb Z_2`$-odd $`M_R`$ breaking fixes it without leaking into μ→eγ). **Done.** |
+| `derivations_09.tex` | printable appendix emitted by notebook 09. |
+| `z2.py` | the residual $`\mathbb Z_2`$: the vacuum-fixing S₃ element, `parity` of a flavour vector, the even/odd split of the soft pairs and of symmetric matrices. |
+| `neutrinos.py` | the S₃ neutrino sector: ν_R (2 ⊕ 1), the five Dirac structures on H̃, the invariant Majorana mass, the seesaw light spectrum and PMNS angles, and the charged-scalar loop function for a massive neutral fermion. |
+| `results/neutrino_fit.json` | notebook 09's seesaw fit (Z2-odd $`M_R`$ breaking only) and the neutrino-induced μ→eγ at M = 10³…10¹⁴ GeV. |
 | `results/tau_l_gamma.json` | exact-vacuum and scan summaries; the per-soft-point least-constrained configuration of each τ channel and the counts allowed by each limit are in `cache/tau_l_gamma.json`. Written by notebook 08. |
 | `reports/report_scalar_sector.tex` | advisor/collaborator report on notebook 01 (the corrected BFB condition, the scan with the hVV coupling cut). |
 | `reports/report_fermion_sector.tex` | report on notebook 02: the three draft defects, $V_{us}=0$ with exact S₃, the soft-breaking CKM fit. |
@@ -665,6 +670,36 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
 - **Belle II prediction:** where every limit holds, $\mathcal B(\tau\to\mu\gamma)\le4.8\times10^{-10}$ and
   $\mathcal B(\tau\to e\gamma)\le3.9\times10^{-10}$, about 15× and 23× below the 50 ab⁻¹ reach [Snowmass22]. A τ→ℓγ signal would exclude the soft vacuum.
 
+### 15. The residual ℤ₂ is a theorem; exact S₃ forbids solar and reactor mixing (notebook 09)
+
+**The symmetry.** Of the six S₃ elements, exactly one non-identity element fixes the aligned
+vacuum: the reflection $ab$ about the vacuum direction. The potential is invariant under it,
+and each soft pair splits into one $\mathbb Z_2$-even and one $\mathbb Z_2$-odd combination
+(the seed of the order parameter, roadmap B2). Read off the rotations, $e$, $h_0$, one $A$ and
+one $H^\pm$ are odd; everything else is even.
+
+**The selection rule.** An amplitude whose external states multiply to $-1$ vanishes to all
+orders: 8 of the 14 LFV channels listed are forbidden at the exact vacuum (μ→eγ, τ→eγ, μ→3e,
+μN→eN, τ→eμμ, $h_{\rm even}\to e\mu,e\tau$, $h_{\rm odd}\to\tau\mu$). Checked coupling by coupling at
+594 exact (point, μ₃) evaluations: every odd-parity coupling $<3\times10^{-15}$, every allowed
+off-diagonal one $\ge3\times10^{-6}$.
+
+**Neutrinos.** The three ν_R allow five Dirac structures on H̃ and $M_R=\mathrm{diag}(M,M,M_S)$;
+both respect the $\mathbb Z_2$, so the PMNS electron row has a single non-zero entry: **exact S₃
+cannot give solar or reactor mixing**, the lepton analogue of $V_{us}=0$ (finding 9). A
+$\mathbb Z_2$-odd soft breaking of $M_R$ alone (two of the four S₃-breaking directions) fits the
+three angles and two splittings exactly with a hierarchical spectrum, down to
+$|\epsilon|/M\approx5\times10^{-4}$, at every seesaw scale. The induced μ→eγ (H±–N loops, and a
+bound on W–N loops) is below $10^{-30}$ for a generic fit and at most $6\times10^{-20}$ at the
+smallest-breaking benchmark, whose mixing a cancellation in $m_\nu$ enhances: at least six
+orders below MEG II. So the selection rule holds in the charged-lepton and scalar sectors up to
+$m_\nu/M_R$-suppressed effects (roadmap R1 answered).
+
+**Inputs and caveats.** Angles from NuFIT 6.0 (IC24 with SK-atm, NO) and $\Delta m^2_{21}$ from
+the PDG, transcribed from web-search excerpts; $\Delta m^2_{31}=2.5\times10^{-3}$ eV² is an
+order-of-magnitude input. Real fit (no $\delta_{CP}$); the lightest mass is an input (1 meV);
+the W–N piece is a bound.
+
 ## Open questions / next
 
 - ~~Get the [DasDey14] erratum.~~ **Closed** — see finding 4. It corrects only the
@@ -718,9 +753,10 @@ and one $H^\pm$, have $\tau\mu=0$), with median $2\times10^{-11}$.
     exclusions, and τ→3μ / τ→μee (same dipole plus contact terms);
   - an order parameter for the residual $\mathbb Z_2$ in the soft vacuum, a combination of
     soft terms rather than φ.
-- **The neutrino sector** (finding 7) is enumerated but not built: Dirac Yukawas
-  on $\tilde H$ plus S₃-allowed Majorana $\nu_R$ masses. feynlag has the pieces
-  (`seesaw_mass_matrix`, `MajoranaRotation`, Takagi) — see `examples/sm_seesaw.py`.
+- ~~The neutrino sector.~~ **Built** — finding 15, `09_residual_z2.ipynb`, `neutrinos.py`.
+  Left open: a $\mathbb Z_2$-odd breaking in the *scalar* soft terms instead (vacuum
+  misalignment) would tie $\theta_{13}$ to μ→eγ; and $\Delta m^2_{31}$ and the angles should be
+  re-read from the NuFIT 6.0 table itself before publication.
 - **Quark channels are absent from notebook 03**, so it quotes the *measured*
   SM-like total width rather than computing one, and reports no $b\bar b$ /
   $c\bar c$ BRs. Deliberate: notebook 02 finding 9 showed the exact-S₃ quark

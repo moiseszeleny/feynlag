@@ -55,3 +55,11 @@ nb08-e6d8a698,todo,,nb08 step 1,"$\ell_i\to\ell_j\gamma$ amplitudes for general 
 nb08-f5b82283,todo,,nb08 step 2,$\mathcal B(\tau\to\ell\gamma)=48\pi^3\alpha(|A_L|^2+|A_R|^2)/G_F^2\times\mathcal B(\tau\t
 nb08-4add94d5,todo,,nb08 step 3,"Residual $\mathbb Z_2$: $\tau\to e\gamma=0$, $\tau\to\mu\gamma\neq0$ at the exact vacuum"
 nb08-6d96cb76,todo,,nb08 step 4,Quark couplings along the vacuum direction
+nb09-4eb3ee33,todo,,nb09 step 1,The residual $\mathbb Z_2$ of the aligned vacuum is the S$_3$ reflection $ab$ about the va
+nb09-1663a312,todo,,nb09 step 2,"Parities of the physical states: $e$, $h_0$, one $A$ and one $H^\pm$ are odd; $\mu$, $\tau"
+nb09-76864212,todo,,nb09 step 3,Selection rule: an amplitude whose external states multiply to $-1$ vanishes to all orders
+nb09-6d4cd149,todo,,nb09 step 4,Exact S$_3$ forces a single non-zero entry in the PMNS electron row: no solar or reactor m
+nb09-32f41460,todo,,nb09 step 5,NuFIT 6.0 / PDG oscillation inputs (normal ordering)
+nb09-49cb5871,todo,,nb09 step 6,A $\mathbb Z_2$-odd soft breaking of $M_R$ alone reproduces the oscillation data
+nb09-8abe4fb0,todo,,nb09 step 7,Charged-scalar dipole function for a neutral fermion of any mass
+nb09-bf4cd28f,todo,,nb09 step 8,The $M_R$ breaking leaks into $\mu\to e\gamma$ only through $m_\nu/M_R$-suppressed neutrin
