@@ -4,7 +4,9 @@ Ten fully executed Jupyter notebooks, walking a worked model stage by
 stage with real (stored) output — plots, mass matrices, Feynman rules. They
 are tracked through the `nbstripout --keep-output` git filter (see the
 repo's `CLAUDE.md`), so what you see below is exactly what re-running the
-notebook produces.
+notebook produces. The notebooks live here in `docs/tutorials/`; the plain
+runnable scripts they mirror are in the repository's `examples/` directory.
+A prose walkthrough of the SM build closes the list.
 
 ```{toctree}
 :maxdepth: 1
@@ -19,6 +21,7 @@ SM_U1X_Tutorial
 ModelBuilding_Tutorial
 SM_Seesaw_Tutorial
 THDM_S3_Tutorial
+SM_Walkthrough
 ```
 
 ## Particle Decays Tutorial
@@ -169,3 +172,10 @@ while the CP-even sector needs one further dynamical mixing angle (reusing
 the same 2×2 tool `thdm.py` uses for the plain 2HDM) — closing with a
 numerical stability scan (mirroring the paper's own) that turns a mostly
 tachyonic benchmark point into seven genuine physical scalar masses.
+
+## SM Walkthrough (prose)
+
+A plain-Markdown, line-by-line companion to `examples/sm_scalar_gauge.py`
+with no executed output: the scalar + electroweak-gauge core of the SM from
+declaration to Feynman rules, a sketch of the chiral-fermion track, and a
+checklist for turning the SM build into a BSM model.
