@@ -1,39 +1,58 @@
-# Roadmap: lepton flavour violation in the S₃-symmetric 3HDM
+# Roadmap: lepton flavour violation in the $`S_3`$-symmetric 3HDM
 
-**Working title:** *Lepton flavour violation in the S₃-symmetric 3HDM: residual-ℤ₂ selection
-rules and the dominance of μ→eγ under soft breaking.*
+**Working title:** *Lepton flavour violation in the $`S_3`$-symmetric 3HDM: residual-$`\mathbb Z_2`$
+selection rules and the dominance of $`\mu\to e\gamma`$ under soft breaking.*
 
 This is the plan for turning notebooks 03 and 06–08 into one paper. It lists what is
 established, what must still be done before the claims can be published, and in what order.
 Findings are numbered as in [`NOTES.md`](NOTES.md); assumptions as in [`CLAIMS.md`](CLAIMS.md).
 
+Inline maths uses GitHub's `` $`…`$ `` form, which renders whatever characters touch it.
+
 ## 0. The thesis
 
-1. **Selection rule.** At the aligned (exact-S₃) vacuum a residual ℤ₂ survives. The electron
-   and the three in-plane non-vacuum scalars (h₀, one A, one H±) are odd; μ, τ and the other
-   four scalars are even. Every amplitude whose external states have odd total parity
-   vanishes **to all orders**: μ→eγ and τ→eγ are exactly zero, while τ→μγ is allowed. The
-   SM-like Higgs (even) decays to τμ only; the odd h₀ decays to eμ and eτ only (nb03 §7.2).
-2. **Soft breaking switches the forbidden channels on** in proportion to the ℤ₂ breaking,
-   B ∝ ε². Off the alignment ε ∝ (60° − φ); in the soft scan the free soft terms break the ℤ₂
-   whatever φ is.
-3. **μ→eγ dominates.** In the soft vacuum, MEG II is the only LFV limit that cuts into the
-   scalar sector: it keeps 618 of 2028 points, while h→ℓℓ′ keeps 2023 and τ→ℓγ removes
-   nothing more. The reason is the W-loop Barr–Zee diagram through the SM-like Higgs. The
-   τ rates allowed by every limit sit an order of magnitude below the Belle II reach, so the
-   model predicts a null τ→ℓγ result there.
+1. **Selection rule.** At the aligned (exact-$`S_3`$) vacuum a residual $`\mathbb Z_2`$ survives.
+   - **Odd:** the electron and the three in-plane non-vacuum scalars ($`h_0`$, one $`A`$,
+     one $`H^\pm`$).
+   - **Even:** $`\mu`$, $`\tau`$ and the other four scalars.
+
+   Every amplitude whose external states have odd total parity vanishes **to all orders**:
+
+   ```math
+   \prod_{\text{external } X} P_{\mathbb Z_2}(X) = -1 \quad\Longrightarrow\quad \mathcal A = 0 .
+   ```
+
+   So $`\mu\to e\gamma`$ and $`\tau\to e\gamma`$ are exactly zero, while $`\tau\to\mu\gamma`$ is
+   allowed. The SM-like Higgs (even) decays to $`\tau\mu`$ only; the odd $`h_0`$ decays to
+   $`e\mu`$ and $`e\tau`$ only (nb03 §7.2).
+2. **Soft breaking switches the forbidden channels on** in proportion to the
+   $`\mathbb Z_2`$ breaking $`\varepsilon`$:
+
+   ```math
+   \mathcal B(\mu\to e\gamma),\ \mathcal B(\tau\to e\gamma) \;\propto\; \varepsilon^2 ,
+   \qquad \varepsilon \propto 60^\circ-\varphi \ \ \text{off the alignment.}
+   ```
+
+   In the soft scan the free soft terms break the $`\mathbb Z_2`$ whatever $`\varphi`$ is.
+3. **$`\mu\to e\gamma`$ dominates.** In the soft vacuum, MEG II is the only LFV limit that cuts
+   into the scalar sector.
+   - It keeps 618 of 2028 points, while $`h\to\ell\ell'`$ keeps 2023 and $`\tau\to\ell\gamma`$
+     removes nothing more.
+   - The reason is the $`W`$-loop Barr–Zee diagram through the SM-like Higgs.
+   - The $`\tau`$ rates allowed by every limit sit an order of magnitude below the Belle II
+     reach, so the model predicts a null $`\tau\to\ell\gamma`$ result there.
 
 ## 1. What is established
 
 | claim | evidence | where |
 |---|---|---|
-| residual ℤ₂ forbids e-odd amplitudes at the exact vacuum | μ→eγ, τ→eγ are round-off (≤10⁻²⁹) at 1973 points; 3-odd/4-even coupling pattern at every evaluation | findings 13–14; nb07 §3, nb08 §3 |
-| ε² switch-on off the alignment | log-log slopes 2.002 (μ→eγ) and 1.996 (τ→eγ), single-point probes | nb07 §3, nb08 §3 |
-| μ→eγ is the binding LFV constraint | 618/2028 (MEG II) vs 2023/2028 (h→ℓℓ′); median 9×10⁴ more restrictive per configuration | finding 13; `report_mu_e_gamma` |
+| residual $`\mathbb Z_2`$ forbids $`e`$-odd amplitudes at the exact vacuum | $`\mu\to e\gamma`$, $`\tau\to e\gamma`$ are round-off ($`\le10^{-29}`$) at 1973 points; 3-odd/4-even coupling pattern at every evaluation | findings 13–14; nb07 §3, nb08 §3 |
+| $`\varepsilon^2`$ switch-on off the alignment | log-log slopes 2.002 ($`\mu\to e\gamma`$) and 1.996 ($`\tau\to e\gamma`$), single-point probes | nb07 §3, nb08 §3 |
+| $`\mu\to e\gamma`$ is the binding LFV constraint | 618/2028 (MEG II) vs 2023/2028 ($`h\to\ell\ell'`$); median $`9\times10^{4}`$ more restrictive per configuration | finding 13; `report_mu_e_gamma` |
 | robust to the two softest inputs | 504 / 453 / 684 survivors under the three variants | finding 13 |
-| τ modes add nothing in the soft vacuum | 0.020 % / 0.029 % of configurations over Belle / BaBar; counts unchanged | finding 14; `report_tau_l_gamma` |
-| exact-vacuum τ→μγ probes a light-scalar corner | 460 configurations at 20 points excluded by Belle, allowed by h→τμ; light even scalar (6.7–223 GeV) | finding 14 |
-| amplitudes validated piece by piece | HKZ13 (A3), OST16 (17)/(19)/(20)/(32), Lavoura03, Ilisie15; extractor agreement 10⁻¹⁸ | nb07 §1–2, nb08 §1–2 |
+| $`\tau`$ modes add nothing in the soft vacuum | 0.020 % / 0.029 % of configurations over Belle / BaBar; counts unchanged | finding 14; `report_tau_l_gamma` |
+| exact-vacuum $`\tau\to\mu\gamma`$ probes a light-scalar corner | 460 configurations at 20 points excluded by Belle, allowed by $`h\to\tau\mu`$; light even scalar (6.7–223 GeV) | finding 14 |
+| amplitudes validated piece by piece | HKZ13 (A3), OST16 (17)/(19)/(20)/(32), Lavoura03, Ilisie15; extractor agreement $`10^{-18}`$ | nb07 §1–2, nb08 §1–2 |
 
 ## 2. Blocking gaps (must close before submission)
 
@@ -43,8 +62,9 @@ Each item names the claim it protects, the deliverable, and the gate that says i
 - **Why:** claim 1 is the paper's spine. Today it is a numerical pattern plus a symmetry
   argument in prose.
 - **Do:**
-  - Write the ℤ₂ generator explicitly: the S₃ reflection that fixes the aligned vacuum,
-    with its action on the doublets, the lepton multiplets and the mass eigenstates.
+  - Write the $`\mathbb Z_2`$ generator explicitly: the $`S_3`$ reflection that fixes the
+    aligned vacuum, with its action on the doublets, the lepton multiplets and the mass
+    eigenstates.
   - Derive the parity of every physical field **symbolically**, from the Lagrangian, as a
     `derive.Ledger` step.
   - Prove that the Yukawa and scalar-potential couplings respect it. Then the vanishing to all
@@ -55,34 +75,42 @@ Each item names the claim it protects, the deliverable, and the gate that says i
   - Its falsifier (a deliberately non-invariant coupling) fires.
   - It reproduces the 3-odd/4-even pattern of nb08 §3.
 
-### B2. An order parameter for the ℤ₂ breaking in the soft vacuum
-- **Why:** claim 2. The observation that φ is *not* the order parameter (finding 13) is the
-  most interesting open thread, and a referee will ask what is.
+### B2. An order parameter for the $`\mathbb Z_2`$ breaking in the soft vacuum
+- **Why:** claim 2. The observation that $`\varphi`$ is *not* the order parameter (finding 13)
+  is the most interesting open thread, and a referee will ask what is.
 - **Do:**
   - Expand the soft potential around the aligned vacuum.
-  - Find the combination ε(m²_soft, φ) of soft terms that mixes ℤ₂-odd and ℤ₂-even states:
-    the odd–even block of the mass matrices at first order.
-  - Show that B(μ→eγ)/ε² collapses over the whole soft scan.
+  - Find the combination $`\varepsilon(m^2_{\rm soft},\varphi)`$ of soft terms that mixes
+    $`\mathbb Z_2`$-odd and $`\mathbb Z_2`$-even states: the odd–even block of the mass matrices
+    at first order.
+  - Show that the ratio collapses over the whole soft scan:
+
+    ```math
+    \frac{\mathcal B(\mu\to e\gamma)}{\varepsilon^2} \approx \text{const.}
+    ```
+
 - **Deliverable:**
   - notebook `10_z2_order_parameter.ipynb`;
-  - a per-point ε column, added through `store` (cache) plus a summary.
+  - a per-point $`\varepsilon`$ column, added through `store` (cache) plus a summary.
 - **Gate:**
   - The collapse holds with a stated spread.
-  - It reduces to (60° − φ)² on the zero-soft slice.
+  - It reduces to $`(60^\circ-\varphi)^2`$ on the zero-soft slice.
 
 ### B3. The missing two-loop pieces
-- **Why:** claim 3 rests on the Barr–Zee W loop, and the W term carries a known 14 % gap
+- **Why:** claim 3 rests on the Barr–Zee $`W`$ loop, and the $`W`$ term carries a known 14 % gap
   to [HKZ13]'s number.
-- **Do:** implement the φZγ Barr–Zee term, the H±W∓γ Barr–Zee term and [HKZ13]'s set C, or
-  bound each one. Re-run `compute_mu_e_gamma.py` and `compute_tau_l_gamma.py`.
+- **Do:**
+  - Implement the $`\phi Z\gamma`$ Barr–Zee term, the $`H^\pm W^\mp\gamma`$ Barr–Zee term and
+    [HKZ13]'s set C, or bound each one.
+  - Re-run `compute_mu_e_gamma.py` and `compute_tau_l_gamma.py`.
 - **Gate:**
-  - The W-loop gap to [HKZ13] closes, or is explained.
+  - The $`W`$-loop gap to [HKZ13] closes, or is explained.
   - The 618 count moves by less than the existing variant band (453–684), or the claim is
     restated.
 
 ### B4. Quark couplings per soft point
-- **Why:** the κ_t = κ_V ansatz (`A-quark-kappa`) feeds the Barr–Zee quark term, which
-  interferes destructively with the W term.
+- **Why:** the $`\kappa_t=\kappa_V`$ ansatz (`A-quark-kappa`) feeds the Barr–Zee quark term,
+  which interferes destructively with the $`W`$ term.
 - **Do:** build the soft-vacuum quark sector per point, at least the top and bottom Yukawa
   directions, reusing notebook 02's soft fit.
 - **Gate:** the baseline count is recomputed; its shift is reported against the "no quark"
@@ -94,78 +122,84 @@ Each item names the claim it protects, the deliverable, and the gate that says i
 - **Gate:** the number of survivors that sit in the global minimum, and whether that number
   changes any headline count.
 
-### B6. The near-S₃ corner
-- **Why:** the selection-rule story is most predictive where the ℤ₂ is approximately
-  preserved. The uniform prior (`A-prior-soft`) has only 14 points with every soft term
-  below v².
-- **Do:** a targeted `scan_soft.py` mode: log-uniform soft terms, φ near π/3.
-- **Gate:** B(μ→eγ) as a function of ε (B2) is mapped down to the MEG II limit, giving the
-  smallest allowed ℤ₂ breaking.
+### B6. The near-$`S_3`$ corner
+- **Why:** the selection-rule story is most predictive where the $`\mathbb Z_2`$ is
+  approximately preserved. The uniform prior (`A-prior-soft`) has only 14 points with every
+  soft term below $`v^2`$.
+- **Do:** a targeted `scan_soft.py` mode: log-uniform soft terms, $`\varphi`$ near $`\pi/3`$.
+- **Gate:** $`\mathcal B(\mu\to e\gamma)`$ as a function of $`\varepsilon`$ (B2) is mapped
+  down to the MEG II limit, giving the smallest allowed $`\mathbb Z_2`$ breaking.
 
 ## 3. Strengthening (should do)
 
-### S1. A complete ℤ₂ parity table of LFV channels
-Classify every channel by the total parity of its external states. The photon, Z, W and the
-nuclei are even, so for charged-lepton decays only the electron count matters. For a scalar
-decay the scalar's own parity enters.
+### S1. A complete $`\mathbb Z_2`$ parity table of LFV channels
+Classify every channel by the total parity of its external states.
+- The photon, $`Z`$, $`W`$ and the nuclei are even, so for charged-lepton decays only the
+  electron count matters.
+- For a scalar decay, the scalar's own parity enters.
+
+The table:
 - **Odd, so forbidden at the exact vacuum:**
-  - μ→eγ, τ→eγ, μ→3e, μN→eN, τ→eμμ;
-  - h_even→eμ and h_even→eτ;
-  - h_odd→τμ (h₀, one A, one H± are the odd scalars).
+  - $`\mu\to e\gamma`$, $`\tau\to e\gamma`$, $`\mu\to3e`$, $`\mu N\to eN`$, $`\tau\to e\mu\mu`$;
+  - $`h_{\rm even}\to e\mu`$ and $`h_{\rm even}\to e\tau`$;
+  - $`h_{\rm odd}\to\tau\mu`$ ($`h_0`$, one $`A`$, one $`H^\pm`$ are the odd scalars).
 - **Even, so allowed:**
-  - τ→μγ, τ→3μ, τ→μee;
-  - h_even→τμ;
-  - h_odd→eμ and h_odd→eτ.
+  - $`\tau\to\mu\gamma`$, $`\tau\to3\mu`$, $`\tau\to\mu ee`$;
+  - $`h_{\rm even}\to\tau\mu`$;
+  - $`h_{\rm odd}\to e\mu`$ and $`h_{\rm odd}\to e\tau`$.
 
 This turns claim 1 into a falsifiable pattern across experiments. Each assignment must be
 checked against the B1 parity table, not taken from this list. The Higgs rows reproduce
 nb03 §7.2.
 
-### S2. μ→3e and μ–e conversion
-- **What:** both share the dipole and add contact terms; both are ℤ₂-odd.
-- **Prediction:** under soft breaking, their ratios to μ→eγ are a prediction. They are
-  dipole-dominated if the contact terms are small.
+### S2. $`\mu\to3e`$ and $`\mu`$–$`e`$ conversion
+- **What:** both share the dipole and add contact terms; both are $`\mathbb Z_2`$-odd.
+- **Prediction:** under soft breaking, their ratios to $`\mu\to e\gamma`$ are a prediction.
+  They are dipole-dominated if the contact terms are small.
 - **Before quoting:** the experimental prospects (Mu3e, Mu2e/COMET) need verified,
   cited numbers.
 
-### S3. τ→3μ and τ→μee
-These are the even channels: the first allowed probes of the exact vacuum beyond τ→μγ. They
-reuse the nb08 machinery plus tree-level scalar exchange.
+### S3. $`\tau\to3\mu`$ and $`\tau\to\mu ee`$
+These are the even channels: the first allowed probes of the exact vacuum beyond
+$`\tau\to\mu\gamma`$. They reuse the nb08 machinery plus tree-level scalar exchange.
 
 ### S4. The light-scalar corner
 Find the direct-search status (LEP, LHC) of the light non-SM even scalars behind the
-exact-vacuum τ→μγ exclusions. The scans only cut on the hVV coupling.
+exact-vacuum $`\tau\to\mu\gamma`$ exclusions. The scans only cut on the $`hVV`$ coupling.
 
 ### S5. Consistency with lepton mixing (a key risk, see §6)
-The residual ℤ₂ decouples the electron in the charged-lepton sector, so PMNS mixing involving
-the electron must come from the neutrino sector. Build the neutrino sector (Dirac Yukawas on
-H̃ plus S₃-allowed Majorana ν_R masses; feynlag has `seesaw_mass_matrix` and
-`MajoranaRotation`). Then check whether it breaks the ℤ₂, and whether that breaking feeds
-back into the scalar-sector LFV.
+The residual $`\mathbb Z_2`$ decouples the electron in the charged-lepton sector, so PMNS mixing
+involving the electron must come from the neutrino sector.
+- **Build the neutrino sector:** Dirac Yukawas on $`\tilde H`$ plus $`S_3`$-allowed Majorana
+  $`\nu_R`$ masses. feynlag has `seesaw_mass_matrix` and `MajoranaRotation`.
+- **Then check** whether it breaks the $`\mathbb Z_2`$, and whether that breaking feeds back into
+  the scalar-sector LFV.
 
 ## 4. Paper outline
 
-1. **Introduction:** S₃ 3HDMs, LFV as a probe; claims 1–3.
+1. **Introduction:** $`S_3`$ 3HDMs, LFV as a probe; claims 1–3.
 2. **Model and vacuum:** the potential, the aligned vacuum, soft breaking; the scan with its
-   cuts (BFB correction, hVV coupling cut).
-3. **The residual ℤ₂** (B1): parity table, all-orders selection rule, channel classification
-   (S1).
-4. **Breaking it softly** (B2): the order parameter ε, B ∝ ε², the collapse plot.
+   cuts (BFB correction, $`hVV`$ coupling cut).
+3. **The residual $`\mathbb Z_2`$** (B1): parity table, all-orders selection rule, channel
+   classification (S1).
+4. **Breaking it softly** (B2): the order parameter $`\varepsilon`$,
+   $`\mathcal B\propto\varepsilon^2`$, the collapse plot.
 5. **Radiative decays:** the amplitude assembly and its validation (nb07–08, compressed).
 6. **Results:**
-   - the soft scan: μ→eγ against h→ℓℓ′ and τ→ℓγ;
+   - the soft scan: $`\mu\to e\gamma`$ against $`h\to\ell\ell'`$ and $`\tau\to\ell\gamma`$;
    - the survivor counts;
    - the robustness (B3, B4, B5);
-   - the near-S₃ corner (B6).
-7. **Exact vacuum:** τ→μγ and the light-scalar corner (S4).
-8. **Predictions:** the Belle II null result for τ→ℓγ; μ→3e and conversion ratios (S2).
+   - the near-$`S_3`$ corner (B6).
+7. **Exact vacuum:** $`\tau\to\mu\gamma`$ and the light-scalar corner (S4).
+8. **Predictions:** the Belle II null result for $`\tau\to\ell\gamma`$; $`\mu\to3e`$ and
+   conversion ratios (S2).
 9. **Conclusions.**
 
 Figures:
 - the parity table;
-- the B/ε² collapse;
-- the MEG II vs h→eμ scatter (`meg_scan.png`);
-- the τ→ℓγ panels (`tau_l_gamma_scan.png`);
+- the $`\mathcal B/\varepsilon^2`$ collapse;
+- the MEG II vs $`h\to e\mu`$ scatter (`meg_scan.png`);
+- the $`\tau\to\ell\gamma`$ panels (`tau_l_gamma_scan.png`);
 - the variant robustness bars.
 
 ## 5. Phases
@@ -183,17 +217,18 @@ belong in this paper, S4 and S5 could be follow-ups.
 
 ## 6. Risks
 
-- **R1. Lepton mixing breaks the ℤ₂** (S5). If the neutrino sector needed for PMNS
-  necessarily breaks it, claim 1 becomes "forbidden up to neutrino-sector effects". The size
-  of those effects must then be shown to be negligible, or the selection rule restated.
-  **Check this early**, in parallel with phase A.
+- **R1. Lepton mixing breaks the $`\mathbb Z_2`$** (S5).
+  - **The risk:** the neutrino sector needed for PMNS may break it necessarily. Then claim 1
+    becomes "forbidden up to neutrino-sector effects".
+  - **The response:** show that those effects are negligible, or restate the selection rule.
+  - **Check this early**, in parallel with phase A.
 - **R2. The missing diagrams shift the count** (B3) beyond the variant band. In that case the
   headline becomes a range rather than one number.
 - **R3. Global-minimum cuts remove survivors** (B5). This changes the count, but not
   claims 1–2.
-- **R4. Prior dependence** (`A-prior-soft`, `A-prior-exact`). Counts and fractions depend on
-  the prior; statements of existence and of selection rules do not. The paper should lead with
-  the latter.
+- **R4. Prior dependence** (`A-prior-soft`, `A-prior-exact`).
+  - Counts and fractions depend on the prior.
+  - Statements of existence and of selection rules do not, so the paper should lead with them.
 
 ## 7. Assumptions this paper inherits
 
