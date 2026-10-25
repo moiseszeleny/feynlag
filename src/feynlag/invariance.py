@@ -15,9 +15,9 @@ Strategy (see plan): **explicit component transformation**.
   :func:`_fermion_transform_discrete`.
 - Global U(1)s: infinitesimal phase ``φ → (1 + iqα)φ`` with per-flavour
   fermion charges — see :func:`check_global_invariance`.
-- Hermiticity: ``expand(L − L*) = 0`` (valid for bosonic sectors; fermion
-  bilinears need Dirac-conjugation identities not yet implemented — see
-  ``Model.check_invariance``, which skips sectors containing ``Bilinear``).
+- Hermiticity: ``expand(L − L*) = 0``, for every sector — a fermion
+  ``Bilinear`` conjugates via ``Bilinear._eval_conjugate``
+  (``(ψ̄₁Γψ₂)† = ψ̄₂Γ̄ψ₁``), so a term missing its ``+ h.c.`` fails.
 - Mass dimension: symbolic power counting (renormalizability: ≤ 4).  A
   fermion ``Bilinear`` contributes exactly 3 (two spin-½ legs).
 """
@@ -325,7 +325,10 @@ def check_global_invariance(term, group):
 
 
 def check_hermiticity(expr):
-    """Whether a bosonic Lagrangian (sector) is hermitian: ``L = L*``.
+    """Whether a Lagrangian (sector) is hermitian: ``L = L*``.
+
+    Fermion sandwiches conjugate through ``Bilinear._eval_conjugate`` /
+    ``MajoranaBilinear._eval_conjugate``, so this covers fermionic sectors too.
 
     Returns:
         ``(ok: bool, residual)``.
