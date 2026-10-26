@@ -18,3 +18,4 @@ scripts/*_UFO/
 # the raw/ corpus `graphify add <url>` fetches external content into
 graphify-out/
 raw/
+research/thdm_s3/notas/
