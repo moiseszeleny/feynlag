@@ -15,9 +15,10 @@ import sympy as sp
 from .fields import Scalar
 from .groups.base import GaugeGroup
 from .groups.discrete import DiscreteSymmetry
+from .groups.global_symmetry import GlobalU1
 from .invariance import (
-    check_discrete_invariance, check_gauge_invariance, check_hermiticity,
-    check_mass_dimension,
+    check_discrete_invariance, check_gauge_invariance, check_global_invariance,
+    check_hermiticity, check_mass_dimension,
 )
 from .operators import PartialMu, to_momentum_space
 from .parameters import ParameterSet
@@ -151,7 +152,9 @@ class Model:
 
     Pipeline surface:
 
-    - :meth:`check_invariance` — gauge/discrete invariance of every term,
+    - :meth:`check_invariance` — gauge/discrete/global invariance of every
+      term (``global_groups``: :class:`~feynlag.groups.GlobalU1` groups, e.g. a
+      Froggatt–Nielsen U(1) with per-flavour charges),
       hermiticity per sector, mass-dimension power counting;
     - :attr:`potential`, :attr:`vacuum` — EWSB setup (``L ⊃ −V``);
     - :meth:`tadpoles`, :meth:`solve_tadpoles` — vacuum conditions;
@@ -162,10 +165,13 @@ class Model:
     """
 
     def __init__(self, name, gauge_groups=(), discrete_groups=(), fields=(),
-                 parameters=None, lagrangian=None):
+                 parameters=None, lagrangian=None, global_groups=()):
         self.name = name
         self.gauge_groups = list(gauge_groups)
         self.discrete_groups = list(discrete_groups)
+        #: global continuous symmetries (:class:`GlobalU1`): checked by
+        #: :meth:`check_invariance`, never gauged, no anomaly constraint
+        self.global_groups = list(global_groups)
         self.fields = list(fields)
         if parameters is None:
             parameters = ParameterSet()
@@ -180,6 +186,9 @@ class Model:
         for g in self.discrete_groups:
             if not isinstance(g, DiscreteSymmetry):
                 raise TypeError(f"{g!r} is not a DiscreteSymmetry")
+        for g in self.global_groups:
+            if not isinstance(g, GlobalU1):
+                raise TypeError(f"{g!r} is not a GlobalU1")
 
         #: registered weak → physical Rotations, in application order
         self.rotations = []
@@ -298,6 +307,39 @@ class Model:
 
     # ---------------------------------------------------------------- spins
 
+    def gauge_vertices(self, groups=None, basis=None, simplifier=sp.simplify,
+                       include=("VVV", "VVVV")):
+        """VVV and VVVV :class:`Vertex` objects for the gauge self-couplings.
+
+        The second extraction track for bosons: the Yang-Mills sector has no
+        Lagrangian term (``-1/4 F F`` is never written), so these vertices
+        come from the group's structure constants rotated into the physical
+        basis by the registered :attr:`rotations`, and do **not** overlap
+        :meth:`vertices` output.  See
+        :func:`~feynlag.gauge_basis.gauge_self_couplings`.
+
+        Couplings are in feynlag's own convention; the field->particle leg
+        sign a UFO needs is applied at export by the writer
+        (:mod:`feynlag.export.ufo.legs`).
+
+        Note ``groups`` defaults to every non-abelian group on the model, and
+        an **unbroken** one raises: its "physical" basis is its weak-basis
+        adjoint components, whose couplings carry the group factor (use
+        ``adjoint_vvv``/``adjoint_vvvv`` for those).  A model with both an
+        electroweak and a colour group therefore needs an explicit
+        ``groups=[SU2L]``.
+        """
+        from .gauge_basis import gauge_self_couplings
+        key = ("gauge_vertices",
+               None if groups is None else tuple(g.name for g in groups),
+               None if basis is None else tuple(basis),
+               tuple(include), getattr(simplifier, "__name__", repr(simplifier)))
+        if key not in self._cache:
+            self._cache[key] = gauge_self_couplings(
+                self, groups=groups, basis=basis, simplifier=simplifier,
+                include=include)
+        return self._cache[key]
+
     def spin_map(self, conjugate_map=None):
         """``{symbol: spin}`` for every known component, fluctuation and
         rotated physical field (rotations propagate block spin; conjugate
@@ -399,6 +441,12 @@ class Model:
                 if not ok:
                     report.failures.append(
                         (term, f"discrete:{group.name}", violations))
+            for group in self.global_groups:
+                ok, violations = check_global_invariance(term.expr, group)
+                report.checked += 1
+                if not ok:
+                    report.failures.append(
+                        (term, f"global:{group.name}", violations))
             if dimension:
                 ok, worst = check_mass_dimension(
                     term.expr, self.fields, self.parameters, max_dim=max_dim)

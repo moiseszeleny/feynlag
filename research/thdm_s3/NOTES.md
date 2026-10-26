@@ -2,7 +2,7 @@
 
 The S₃-symmetric three-Higgs-doublet model: `(H1, H2)` an S₃ doublet, `HS` the
 singlet. The symbolic build lives in `examples/thdm_s3.py` (potential only,
-weak-basis CP-even mass matrix) and `examples/THDM_S3_Tutorial.ipynb` (the
+weak-basis CP-even mass matrix) and `docs/tutorials/THDM_S3_Tutorial.ipynb` (the
 pedagogical walk-through). This directory is where the open questions go.
 
 ## Layout
@@ -178,7 +178,7 @@ half-integer power λ₄ introduces is exactly what invalidates it.
 
 ### 1. The tutorial benchmark sits at the wrong electroweak scale
 
-`examples/THDM_S3_Tutorial.ipynb` picks $(v_1,v_2,v_S)=(200,115,80)$ GeV
+`docs/tutorials/THDM_S3_Tutorial.ipynb` picks $(v_1,v_2,v_S)=(200,115,80)$ GeV
 precisely so that $\sqrt{\sum v_i^2}\approx246$ GeV ([GomezBock21] Eq. 8,
 stated in its md cell 5). It then imposes the S₃ alignment as the substitution
 `align = {v1: v2/sqrt(3)}`, which **replaces** $v_1=200$ by $115/\sqrt3=66.4$
@@ -195,7 +195,7 @@ $v_S=v\cos θ$, and the alignment then fixes $v_1=v_{12}/2$,
 $v_2=\sqrt3\,v_{12}/2$ exactly. Implemented as `model.aligned_vevs`, pinned by
 `tests/test_thdm_s3.py::test_aligned_vacuum_can_meet_the_electroweak_scale`.
 
-**Not yet propagated to the tutorial.** Correcting `examples/THDM_S3_Tutorial.ipynb`
+**Not yet propagated to the tutorial.** Correcting `docs/tutorials/THDM_S3_Tutorial.ipynb`
 §9 is a separate, small follow-up (re-execute + commit).
 
 ### 2. feynlag's masses reproduce the published closed forms — and fix the dictionary

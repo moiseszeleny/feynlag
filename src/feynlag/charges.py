@@ -461,6 +461,18 @@ def check_hermiticity_pairing(bosonic_vertices=(), conjugates=None,
     n = 0
 
     # --- bosonic ---
+    # A multi-structure vertex (VVVV) carries its couplings in
+    # meta['structures'] and has a zero `coupling` slot; comparing that slot
+    # would "pass" vacuously. Checking one properly means permuting the
+    # structures into the partner ordering (they MIX — see
+    # export.ufo.vvvv.permute_vvvv), which is not implemented, so refuse.
+    multi = [v for v in bosonic_vertices if v.meta.get("structures")]
+    if multi:
+        raise NotImplementedError(
+            f"check_hermiticity_pairing cannot handle multi-structure "
+            f"vertices ({[v.particles for v in multi]}): a leg permutation "
+            f"mixes the Lorentz structures, so the partner's couplings are "
+            f"not the conjugates of these ones")
     table = {tuple(v.particles): sp.expand(v.coupling) for v in bosonic_vertices}
     seen = set()
     for v in bosonic_vertices:

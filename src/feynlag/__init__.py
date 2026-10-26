@@ -1,6 +1,6 @@
 """feynlag — tree-level Feynman rules from BSM Lagrangians in pure SymPy."""
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 from .conventions import METRIC_SIGNATURE, SQRT2, tidy
 from .dirac import (
@@ -25,10 +25,13 @@ from .verify import (
     verify_ufo_numeric,
 )
 from .export import latex_feynman_table
+from .texsymbol import TexSymbol, tex_symbol
 from .parameters import (
     ExternalParameter, InternalParameter, Parameter, ParameterSet,
 )
-from .groups import SU2, SU3, SUN, U1, S3, ZN, DiscreteSymmetry, GaugeGroup
+from .groups import (
+    SU2, SU3, SUN, U1, S3, ZN, DiscreteSymmetry, GaugeGroup, GlobalU1,
+)
 from .fields import (
     DiracFermion, Field, Fermion, GaugeBoson, MajoranaFermion, Scalar,
     WeylFermion, bar_partner, conjugate_pair, dag, hc,
@@ -47,7 +50,8 @@ from .vertices.bilinear import (
     majorana_mass_matrix,
 )
 from .invariance import (
-    check_discrete_invariance, check_gauge_invariance, check_hermiticity,
+    check_discrete_invariance, check_gauge_invariance, check_global_invariance,
+    check_hermiticity,
     check_mass_dimension, gauge_variation,
 )
 from .lagrangian import (
@@ -63,6 +67,10 @@ from .charges import (
     derive_charge_operator, physical_charges,
 )
 from .flavor import CKM_ELEMENT_NAMES, cabibbo_2x2, standard_ckm
+from .gauge_basis import (
+    adjoint_rotation, gauge_self_couplings, physical_vector_basis,
+)
+from .export.ufo.legs import ufo_leg_sign
 from .models import (
     ElectroweakScaffold, PhysicalBasis, StandardModel,
     charged_current_rotation, electroweak_gauge, electroweak_scaffold,
@@ -74,8 +82,10 @@ from .suggest import (
 )
 
 __all__ = [
+    "TexSymbol", "tex_symbol",
     "Parameter", "ExternalParameter", "InternalParameter", "ParameterSet",
     "GaugeGroup", "U1", "SUN", "SU2", "SU3", "DiscreteSymmetry", "ZN", "S3",
+    "GlobalU1",
     "Field", "Scalar", "Fermion", "WeylFermion", "DiracFermion",
     "MajoranaFermion", "GaugeBoson", "dag", "hc", "conjugate_pair",
     "bar_partner",
@@ -91,6 +101,7 @@ __all__ = [
     "four_fermion_feynman_rule", "majorana_mass_matrix",
     "majorana_feynman_rule",
     "gauge_variation", "check_gauge_invariance", "check_discrete_invariance",
+    "check_global_invariance",
     "check_hermiticity", "check_mass_dimension",
     "Lagrangian", "LagrangianTerm", "Model", "InvarianceReport",
     "ValidationReport",
@@ -116,6 +127,8 @@ __all__ = [
     "check_charge_consistency", "check_hermiticity_pairing",
     "derive_charge_operator", "physical_charges",
     "standard_ckm", "cabibbo_2x2", "CKM_ELEMENT_NAMES",
+    "adjoint_rotation", "gauge_self_couplings", "physical_vector_basis",
+    "ufo_leg_sign",
     "ElectroweakScaffold", "PhysicalBasis", "StandardModel",
     "electroweak_gauge", "higgs_doublet", "weinberg_rotation",
     "charged_current_rotation", "electroweak_scaffold", "to_physical_basis",
