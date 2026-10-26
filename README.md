@@ -84,7 +84,7 @@ m.mass_matrix([h])            # Matrix([[2 lam v²]])
 m.feynman_rules([h])          # {(h,h,h): -6i lam v, (h,h,h,h): -6i lam}
 ```
 
-See `examples/` for full runs: `sm_scalar_gauge.py` (complete SM: Higgs +
+See `examples/` (index: [`examples/README.md`](examples/README.md)) for full runs: `sm_scalar_gauge.py` (complete SM: Higgs +
 electroweak gauge + leptons + quark/QCD sector), `sm_vll.py` (SM + a
 vector-like lepton doublet, biunitary mass-matrix diagonalization),
 `sm_u1x.py` (SM × U(1)_X with a Z′, symbolic charges, chained rotations),
@@ -121,9 +121,9 @@ tested (400+ tests pinning physical results), and the exported SM UFO is
 **cross-checked against MadGraph** (`e+e-→μ+μ-` and the gauge-cancelling
 `e+e-→W+W-` reproduce the stock `sm` cross sections to MC precision, and a
 four-fermion UFO reproduces the muon width — see
-[`docs/benchmark.md`](docs/benchmark.md)).
+[`docs/benchmark.md`](https://github.com/moiseszeleny/feynlag/blob/main/docs/benchmark.md)).
 
-Known limitations (planned, see [`docs/roadmap.md`](docs/roadmap.md)):
+Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszeleny/feynlag/blob/main/docs/roadmap.md)):
 
 - no R_ξ gauge fixing or ghosts (Goldstone bosons are kept, but no
   gauge-fixing terms, ghost vertices or ξ dependence);
@@ -137,4 +137,4 @@ plausible-looking wrong answer.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](https://github.com/moiseszeleny/feynlag/blob/main/LICENSE).

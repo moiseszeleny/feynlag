@@ -10,18 +10,42 @@ __all__ = ["latex_feynman_table"]
 
 
 def _rows_from_interactions(interactions):
-    """Yield ``(field_tuple, coefficient)`` from either dict layout.
+    """Yield ``(field_tuple, coefficient)`` from any of the dict layouts.
 
     Accepts the nested ``{n_fields: {fields: coeff}}`` output of
-    ``extract_interaction_coefficients`` or a flat ``{fields: coeff}`` dict.
+    ``extract_interaction_coefficients``, a flat ``{fields: coeff}`` dict, or
+    a multi-structure ``{fields: {lorentz name: coeff}}`` dict (a VVVV vertex
+    has one coupling per Lorentz structure — see
+    :meth:`~feynlag.vertices.vertex.Vertex.structure_couplings`), which gets
+    one row per structure with the name appended to the interaction label.
+
+    The three are told apart by their inner keys: ints/tuples of symbols for
+    the nested layout, strings for the multi-structure one.
     """
     for key in sorted(interactions.keys(), key=str):
         value = interactions[key]
         if isinstance(value, dict):
-            for fields, coeff in value.items():
-                yield fields, coeff
+            if value and all(isinstance(k, str) for k in value):
+                for name, coeff in sorted(value.items()):
+                    yield tuple(key) + (_StructureLabel(name),), coeff
+            else:
+                for fields, coeff in value.items():
+                    yield fields, coeff
         else:
             yield key, value
+
+
+class _StructureLabel:
+    """A Lorentz-structure name rendered as a trailing bracket in a row."""
+
+    def __init__(self, name):
+        self.name = name
+
+    def _latex(self, printer=None):
+        return rf"[\mathrm{{{self.name}}}]"
+
+    def __str__(self):
+        return f"[{self.name}]"
 
 
 def latex_feynman_table(interactions, simplify_coeff=None, extra_column=None,

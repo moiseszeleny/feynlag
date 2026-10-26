@@ -12,6 +12,19 @@ plan file, this is committed and discoverable in any future session.
 reusable SM builders (`feynlag.models`) and the any-SU(N) irrep support —
 414 tests green, `pytest` ~4 min. See `CHANGELOG.md` for the release notes.
 
+**v0.2.0** adds per-symbol LaTeX names (`TexSymbol`: `component_tex=`,
+parameter `tex=`, a name-keyed `tex=` map on the SM builders), numeric Takagi
+factorisation for large numeric matrices, and a UFO `texname` escaping fix —
+512 tests green. See `CHANGELOG.md`.
+
+**v0.3.0** adds a numeric complex SVD for Dirac mass matrices
+(`diagonalize_svd(method="numeric")`, `Rotation.bar`), so that generic complex
+3×3 Yukawas give their masses and `V_CKM` inside feynlag, and a global U(1)
+with per-flavour charges (`GlobalU1`, `Model(global_groups=...)`) for
+Froggatt–Nielsen-type horizontal symmetries. These close feynlag-models gaps
+FG-6 and FG-7. The SU(N) and Particle Decays tutorials are rebuilt in the
+derive-then-check style. 549 tests green. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
@@ -31,10 +44,9 @@ Completed before v0.1.0:
   caught and fixed two real UFO-export bugs (relative imports, a missing
   Feynman-rule `i` in fermion couplings) — see `CLAUDE.md`'s "MadGraph
   round-trip" section for the full account.
-- **D.3 — model-building tutorial** (`examples/ModelBuilding_Tutorial.ipynb`,
-  executed, symlinked into `docs/tutorials/`) — walks the *model-building*
-  workflow (as opposed to the analysis-pipeline tutorials): for a dark `U(1)_D`
-  sector with symbolic charges, `feynlag.anomalies` derives the anomaly-free
+- **D.3 — model-building tutorial** (`docs/tutorials/ModelBuilding_Tutorial.ipynb`,
+  executed) — walks the *model-building* workflow (as opposed to the
+  analysis-pipeline tutorials): for a dark `U(1)_D` sector with symbolic charges, `feynlag.anomalies` derives the anomaly-free
   assignment (forcing the dark fermion vector-like), `feynlag.suggest`
   enumerates the invariant operator basis (and returns empty on a mistuned
   charge), and `build_lagrangian` assembles a validated model before the full
@@ -136,7 +148,7 @@ light+heavy spectrum; and a new charge-conjugation-aware `MajoranaRotation`
 mass eigenstates (mixing `ν_L` with `ν_R^c`), so `extract_fermion_vertices`
 yields the heavy-neutrino couplings `W ℓ̄ N=(g/√2)·V`, `Z ν̄ N∝(g_Z/2)V` with the
 light–heavy mixing `V≈m_D/M_R` and its decoupling `M_R→∞`. `examples/sm_seesaw.py`,
-`examples/SM_Seesaw_Tutorial.ipynb`, `tests/test_seesaw.py`.
+`docs/tutorials/SM_Seesaw_Tutorial.ipynb`, `tests/test_seesaw.py`.
 
 ### E — UFO export of Majorana vertices (new follow-up, from D.2)
 
@@ -149,7 +161,7 @@ the FFFF h.c.-pairing lesson (`docs/benchmark.md`). Until then
 
 ### ~~D.3 — model-building tutorial notebook~~ ✅ done
 
-Delivered — see the Status section above (`examples/ModelBuilding_Tutorial.ipynb`).
+Delivered — see the Status section above (`docs/tutorials/ModelBuilding_Tutorial.ipynb`).
 
 ### F — decay-width extensions (tiered; own chapter)
 

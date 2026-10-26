@@ -39,7 +39,7 @@ CKM_ELEMENT_NAMES = (
 _S12, _S13, _S23, _DELTA = 0.22500, 0.003675, 0.04182, 1.144
 
 
-def standard_ckm(prefix=""):
+def standard_ckm(prefix="", tex=None):
     """CKM matrix in the exact PDG standard parametrization.
 
     Builds four real external mixing parameters (``th12``, ``th13``, ``th23``,
@@ -50,6 +50,9 @@ def standard_ckm(prefix=""):
     Args:
         prefix: optional string prepended to every parameter name (to run more
             than one CKM-like matrix in one model).
+        tex: ``{symbol name: LaTeX}`` for any of the 13 parameters (full
+            names, prefix included), e.g. ``{"th12": r"\theta_{12}"}``;
+            names it lacks stay plain Symbols.
 
     Returns:
         ``(params, V)``: ``params`` is the list of all 13 parameters (4
@@ -57,10 +60,16 @@ def standard_ckm(prefix=""):
         then internals in dependency order), and ``V`` is the ``3×3``
         :class:`sympy.Matrix` of the internal element symbols.
     """
-    th12 = ExternalParameter(prefix + "th12", value=math.asin(_S12))
-    th13 = ExternalParameter(prefix + "th13", value=math.asin(_S13))
-    th23 = ExternalParameter(prefix + "th23", value=math.asin(_S23))
-    delta = ExternalParameter(prefix + "deltaCP", value=_DELTA)
+    tex = tex or {}
+
+    def external(name, value):
+        return ExternalParameter(prefix + name, value=value,
+                                 tex=tex.get(prefix + name))
+
+    th12 = external("th12", math.asin(_S12))
+    th13 = external("th13", math.asin(_S13))
+    th23 = external("th23", math.asin(_S23))
+    delta = external("deltaCP", _DELTA)
 
     c12, s12 = sp.cos(th12.s), sp.sin(th12.s)
     c13, s13 = sp.cos(th13.s), sp.sin(th13.s)
@@ -81,7 +90,8 @@ def standard_ckm(prefix=""):
     V = sp.zeros(3, 3)
     for i in range(3):
         for j in range(3):
-            p = InternalParameter(prefix + CKM_ELEMENT_NAMES[i][j], real=False)
+            name = prefix + CKM_ELEMENT_NAMES[i][j]
+            p = InternalParameter(name, real=False, tex=tex.get(name))
             p.define(exprs[i, j])
             internals.append(p)
             V[i, j] = p.s

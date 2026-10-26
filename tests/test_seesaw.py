@@ -27,6 +27,99 @@ def _num(x):
 # mass-sector helpers
 # --------------------------------------------------------------------------
 
+class TestNumericTakagi:
+    """``diagonalize_takagi`` on a numeric N > 2 matrix goes numeric (mpmath):
+    the symbolic ``Matrix.diagonalize`` does not finish on a generic 5×5."""
+
+    @staticmethod
+    def _generic_2n():
+        """3 ν_L + 2 ν_R: generic 3×2 m_D (rationals and √2), M_R = diag(1, 3) TeV."""
+        mD = sp.Matrix([[sp.Rational(3, 100), sp.Rational(-7, 100)],
+                        [sp.Rational(11, 100) / sp.sqrt(2), sp.Rational(5, 100)],
+                        [sp.Rational(-2, 100), sp.Rational(13, 100) / sp.sqrt(2)]])
+        MR = sp.diag(sp.Integer(1000), sp.Integer(3000))
+        return mD, MR, seesaw_mass_matrix(mD, MR)
+
+    @staticmethod
+    def _maxabs(expr_matrix):
+        return max(abs(x) for x in expr_matrix.evalf(45))
+
+    def test_generic_5x5_finishes_and_reconstructs(self):
+        import signal
+
+        def timeout(*_):
+            raise TimeoutError("diagonalize_takagi did not finish in 10 s")
+        mD, MR, M = self._generic_2n()
+        assert M.shape == (5, 5)
+        old = signal.signal(signal.SIGALRM, timeout)
+        signal.alarm(10)
+        try:
+            U, D = diagonalize_takagi(M)
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old)
+        assert self._maxabs(U * D * U.T - M) < 1e-40 * 3000
+        assert self._maxabs(U * U.conjugate().T - sp.eye(5)) < 1e-40
+        masses = [D[k, k] for k in range(5)]
+        assert all(m >= 0 for m in masses) and masses == sorted(masses)
+        # rank-2 m_D: exactly one massless light state, two massive light, two heavy
+        assert masses[0] == 0
+        assert 0 < masses[1] < masses[2] < 1e-3 < 1e2 < masses[3]
+        # dual check: light masses = |eigenvalues| of −m_D M_R⁻¹ m_Dᵀ (to O(m_D²/M_R²))
+        lam = sp.Symbol("lam")
+        charpoly = seesaw_light_mass(mD, MR).charpoly(lam).as_expr()
+        formula = sorted(abs(complex(r)) for r in sp.Poly(charpoly, lam).nroots(n=40))
+        for a, b in zip(masses[1:3], formula[1:]):
+            assert abs(float(a) - b) / b < 1e-6
+        for k, M_k in ((3, 1000), (4, 3000)):
+            assert abs(float(masses[k]) / M_k - 1) < 1e-6
+
+    def test_numeric_matches_symbolic_on_block_matrix(self):
+        """A diagonal m_D splits the 6×6 into 2×2 blocks: the exact route
+        still finishes there, and both routes agree."""
+        M = seesaw_mass_matrix(sp.diag(sp.Rational(2, 100), sp.Rational(3, 100),
+                                       sp.Rational(5, 100)),
+                               sp.diag(sp.Integer(1000), 2000, 5000))
+        Us, Ds = diagonalize_takagi(M, method="symbolic")
+        Un, Dn = diagonalize_takagi(M)                # auto → numeric
+        exact = sorted((sp.N(Ds[k, k], 45) for k in range(6)), key=abs)
+        for a, b in zip([Dn[k, k] for k in range(6)], exact):
+            assert abs(a - b) < sp.Float("1e-35") * max(abs(b), 1)
+        assert self._maxabs(Un * Dn * Un.T - M) < 1e-40 * 5000
+
+    def test_negative_eigenvalue_gets_phase_i(self):
+        M = sp.Matrix([[0, 1], [1, 0]])               # eigenvalues ±1
+        U, D = diagonalize_takagi(M, method="numeric")
+        assert all(abs(D[k, k] - 1) < 1e-45 for k in range(2))
+        assert any(x.has(sp.I) for x in U)
+        assert self._maxabs(U * D * U.T - M) < 1e-45
+
+    def test_auto_keeps_small_and_symbolic_matrices_exact(self):
+        mD, MR = sp.symbols("mD MR", positive=True)
+        U, D = diagonalize_takagi(sp.Matrix([[0, mD], [mD, MR]]))
+        assert not any(x.atoms(sp.Float) for x in U)  # symbolic route
+        U, D = diagonalize_takagi(sp.Matrix([[0, 1], [1, 1000]]))
+        assert not any(x.atoms(sp.Float) for x in U)  # 2×2 numeric stays exact
+
+    def test_rotation_third_element(self):
+        _, _, M = self._generic_2n()
+        f = sp.symbols("n0:5")
+        g = sp.symbols("x0:5")
+        U, D, rot = diagonalize_takagi(M, f, g)
+        assert rot.kind == "unitary" and rot.matrix == U.conjugate().T
+
+    def test_numeric_input_validation(self):
+        m = sp.Symbol("m")
+        with pytest.raises(ValueError, match="numeric"):
+            diagonalize_takagi(sp.Matrix([[0, m], [m, 1]]), method="numeric")
+        with pytest.raises(ValueError, match="real"):
+            diagonalize_takagi(sp.Matrix([[sp.I, 1], [1, 1]]), method="numeric")
+        with pytest.raises(ValueError, match="method"):
+            diagonalize_takagi(sp.Matrix([[0, 1], [1, 0]]), method="svd")
+        with pytest.raises(ValueError, match="symmetric"):
+            diagonalize_takagi(sp.Matrix([[0, 1, 0], [2, 0, 0], [0, 0, 1]]))
+
+
 def test_seesaw_mass_matrix_block_structure():
     mD, MR = sp.symbols("mD MR", positive=True)
     M = seesaw_mass_matrix([[mD]], [[MR]])
@@ -133,14 +226,14 @@ def test_seesaw_model_invariant(seesaw_model):
     assert seesaw_model["model"].check_invariance().ok
 
 
-def _diagonalize(m, bench):
+def _diagonalize(m, bench, method="auto"):
     Mnu = seesaw_mass_matrix(
         fermion_mass_matrix(m["LYukD"], m["nuLbar"], m["nR"], m["model"].vacuum,
                             1, (m["i"], m["j"]), gamma=diracPR),
         majorana_mass_matrix(m["LMaj"], m["nR"], m["model"].vacuum, 1,
                              (m["i"], m["j"]), gamma=m["CPL"]))
     Mn = sp.Matrix(2, 2, lambda a, b: sp.nsimplify(Mnu[a, b].subs(bench)))
-    U, D = diagonalize_takagi(Mn)
+    U, D = diagonalize_takagi(Mn, method=method)
     masses = [abs(_num(D[k, k])) for k in range(2)]
     light = 0 if masses[0] < masses[1] else 1
     return U, masses, light, 1 - light
@@ -170,12 +263,14 @@ def _extract(m, U, bench):
     return tab, chiL, chiLbar
 
 
-def test_seesaw_W_production_coupling(seesaw_model):
-    """W⁻ ē ν_light = g/√2 (full SM); W⁻ ē N_heavy = (g/√2)·V (∝ m_D/M_R)."""
+@pytest.mark.parametrize("method", ["symbolic", "numeric"])
+def test_seesaw_W_production_coupling(seesaw_model, method):
+    """W⁻ ē ν_light = g/√2 (full SM); W⁻ ē N_heavy = (g/√2)·V (∝ m_D/M_R).
+    The numeric Takagi ``U`` feeds :class:`MajoranaRotation` unchanged."""
     m = seesaw_model
     bench = {m["yv"].s: 0.01, m["v"].s: 246.0, m["MR"].s: 1000.0,
              m["gw"].s: 0.6535, m["g1"].s: 0.3580}
-    U, masses, light, heavy = _diagonalize(m, bench)
+    U, masses, light, heavy = _diagonalize(m, bench, method)
     tab, chiL, chiLbar = _extract(m, U, bench)
     mu = sp.Symbol("mu", integer=True)
     gL = DiracGamma(mu) * diracPL

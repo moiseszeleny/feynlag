@@ -23,3 +23,16 @@ def test_table_from_flat_dict_with_extra_column():
     table = latex_feynman_table(flat, extra_column=sp.simplify)
     # extra column simplifies to just lambda
     assert table.count("&") == 2 * 2  # header row + one data row, 3 columns
+
+
+def test_table_from_multi_structure_dict():
+    """A VVVV vertex has one coupling per Lorentz structure — each gets its
+    own row, labelled, rather than being mistaken for the nested
+    {n_fields: {fields: coeff}} layout."""
+    Wm, Wp, Z = sp.symbols("Wm Wp Z")
+    g = sp.Symbol("g")
+    table = latex_feynman_table(
+        {(Wm, Wp, Z, Z): {"VVVV2": sp.I * g ** 2, "VVVV3": -g}})
+    assert r"[\mathrm{VVVV2}]" in table
+    assert r"[\mathrm{VVVV3}]" in table
+    assert table.count(r"\\") == 3        # header + two structure rows

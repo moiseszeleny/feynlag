@@ -4,7 +4,9 @@ Ten fully executed Jupyter notebooks, walking a worked model stage by
 stage with real (stored) output — plots, mass matrices, Feynman rules. They
 are tracked through the `nbstripout --keep-output` git filter (see the
 repo's `CLAUDE.md`), so what you see below is exactly what re-running the
-notebook produces.
+notebook produces. The notebooks live here in `docs/tutorials/`; the plain
+runnable scripts they mirror are in the repository's `examples/` directory.
+A prose walkthrough of the SM build closes the list.
 
 ```{toctree}
 :maxdepth: 1
@@ -19,27 +21,34 @@ SM_U1X_Tutorial
 ModelBuilding_Tutorial
 SM_Seesaw_Tutorial
 THDM_S3_Tutorial
+SM_Walkthrough
 ```
 
 ## Particle Decays Tutorial
 
 How to get from a Lagrangian to a measured lifetime, for a student who has
 met Feynman rules and Dirac spinors but never carried a decay calculation
-through to a number. Derives everything by hand first — two-body phase space
-and the Källén function, the spin sums that turn $|\mathcal{M}|^2$ into a
-Dirac trace, the trace theorems, polarisation sums — and only then reveals
-`DecayCalculator` as the automation of exactly those steps. Lands on
-$\Gamma(h\to f\bar f) = N_c m_h m_f^2\beta^3/8\pi v^2$ (with the $\beta^3$
-explained as the P-wave signature of a CP-even scalar), $\Gamma(Z\to\nu\bar\nu)$
-and $\Gamma(W\to\ell\nu)$ within ~1% of the PDG, and the familiar Higgs
-branching-ratio-versus-mass plot. Then completes the picture: the
-`DiracParticle` fermion sector, and the **off-shell $1\to3$** $h\to WW^*/ZZ^*$
-(a $W^*$ line-shape figure showing the virtual $W$ never reaches its mass shell,
-and the canonical Higgs BR chart — $b\bar b$ 61%, $WW^*$ 25%). Closes with the
-two mistakes that fail *silently* — forgetting that a Dirac fermion is two Weyl
-fields (an error that vanishes in the massless limit), and closed channels
-turning $\sqrt\lambda$ imaginary — and then builds a $Z'$ from scratch to show
-the same machinery on a new model.
+through to a number — in the same *derive, then check* style as the group
+tutorials: every section predicts a result before a cell settles it, and every
+claim is an assertion (46 of them). Derives everything by hand first — two-body
+phase space from energy conservation, the spin sums that turn
+$|\mathcal{M}|^2$ into a Dirac trace, the trace theorems (the covariant engine
+refereed by explicit $4\times4$ Dirac matrices), polarisation sums — and only
+then reveals `DecayCalculator` as the automation of exactly those steps,
+checking that it reproduces the hand results symbolically. Lands on
+$\Gamma(h\to f\bar f) = N_c m_h m_f^2\beta^3/8\pi v^2$ (the $\beta^3$ as the
+P-wave signature of a CP-even scalar), $\Gamma(Z\to\nu\bar\nu)$ and
+$\Gamma(W\to\ell\nu)$ within ~1% of the PDG, and the Higgs
+branching-ratio-versus-mass plot. Then completes the canonical Higgs picture:
+the `DiracParticle` fermion sector, the **off-shell $1\to3$** $h\to WW^*/ZZ^*$
+(reproducing Keung–Marciano, with a $W^*$ line-shape showing the virtual $W$
+never reaches its mass shell), and the loop-induced $gg$/$\gamma\gamma$/$Z\gamma$
+from imported one-loop form factors — $b\bar b$, $WW^*$, $gg$, $\tau\tau$,
+$c\bar c$, $ZZ^*$ in the measured order. Closes with the two mistakes that fail
+*silently* — forgetting that a Dirac fermion is two Weyl fields (an error that
+vanishes in the massless limit) and closed channels turning $\sqrt\lambda$
+imaginary — builds a $Z'$ from scratch to show the same machinery on a new
+model, and ends with a recap of tools and traps and web-verified references.
 
 ## Scattering Tutorial
 
@@ -61,15 +70,22 @@ QED benchmark is untouched.
 
 ## SU(N) Groups Tutorial
 
-A gentle, self-contained introduction to gauge representations for a reader
-new to particle physics (linear algebra + basic QM only). Builds up from
-"what is a generator?" through the Lie algebra and representations to
-`feynlag`'s dynamic any-SU(N)/any-irrep machinery: Dynkin labels and the Weyl
-dimension formula, a peek at the highest-weight/ladder (Gelfand–Tsetlin)
-construction (with the tell-tale `√2` ladder entries of the **6** of SU(3)),
-conjugate representations `T̄ = −T*`, and anomaly coefficients — culminating in
-the SU(5) `5̄ + 10` anomaly cancellation and a gauge-invariance check of a
-scalar in the fundamental of SU(4).
+The continuous counterpart to the discrete-groups notebook, for a reader new to
+particle physics (linear algebra + basic QM only), in the same *derive, then
+check* style: every section predicts a result before a cell settles it, and every
+claim is an assertion. The structure constants are derived from the generator
+matrices and the adjoint is built from them; Dynkin labels and the Weyl
+dimension formula (with the ambiguous **15** of SU(3)); weights and the
+Gelfand–Tsetlin ladder of the **6**; what survives a change of basis (weights,
+`C₂`, the Dynkin index, anomalies — never generator entries); conjugates
+`T̄ = −T*` and the three kinds of reality, including the pseudo-real SU(2)
+doublet behind `H̃ = iσ₂H*`. Its core question — which terms can be singlets —
+is answered before building them: `C₂` eigenspaces of tensor products, checked
+against the null space, give mesons, baryons (the singlet *is* `ε_ijk`) and no
+diquarks. Closes with the SU(5) `5̄ + 10` anomaly cancellation, a gauge-invariance
+check in the fundamental of SU(4), and a capstone that builds the **6** of SU(3)
+by hand from `3 ⊗ 3` and matches it to the library's construction on every
+invariant. With a verified reference list.
 
 ## Discrete Groups Tutorial
 
@@ -156,3 +172,10 @@ while the CP-even sector needs one further dynamical mixing angle (reusing
 the same 2×2 tool `thdm.py` uses for the plain 2HDM) — closing with a
 numerical stability scan (mirroring the paper's own) that turns a mostly
 tachyonic benchmark point into seven genuine physical scalar masses.
+
+## SM Walkthrough (prose)
+
+A plain-Markdown, line-by-line companion to `examples/sm_scalar_gauge.py`
+with no executed output: the scalar + electroweak-gauge core of the SM from
+declaration to Feynman rules, a sketch of the chiral-fermion track, and a
+checklist for turning the SM build into a BSM model.

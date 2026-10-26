@@ -16,8 +16,8 @@ import sympy as sp
 
 from feynlag import (
     Dmu, ExternalParameter, InternalParameter, Lagrangian, Model,
-    ParameterSet, Rotation, SU2, Scalar, U1, conjugate_pair, cubic_couplings,
-    dag, rotation_2x2,
+    ParameterSet, Rotation, SU2, Scalar, U1, conjugate_pair, dag,
+    rotation_2x2,
 )
 from feynlag.export.ufo import UFOParticle, write_ufo
 from feynlag import verify_ufo_numeric
@@ -26,11 +26,13 @@ from feynlag import verify_ufo_numeric
 @pytest.fixture(scope="module")
 def sm_ufo(tmp_path_factory):
     gw = ExternalParameter("gw", 0.6535, positive=True)
-    g1 = ExternalParameter("g1", 0.3580, positive=True)
+    # texs with a quote and backslashes (incl. the \t of \theta) pin that the
+    # writer escapes them: an unquoted '{g'}' is a SyntaxError in the UFO
+    g1 = ExternalParameter("g1", 0.3580, positive=True, tex="{g'}")
     SU2L, U1Y = SU2("SU2L", coupling=gw), U1("U1Y", coupling=g1)
 
     v = ExternalParameter("v", 246.0, positive=True, unit_dim=1)
-    lam = ExternalParameter("lam", 0.129)
+    lam = ExternalParameter("lam", 0.129, tex=r"\lambda_{\theta}")
     mu2 = InternalParameter("mu2", unit_dim=2)
     MH = InternalParameter("MH", positive=True, unit_dim=1)
     MW = InternalParameter("MW", positive=True, unit_dim=1)
@@ -78,22 +80,15 @@ def sm_ufo(tmp_path_factory):
              + model.vertices(fields, sector="kinetic",
                               conjugate_map=cmap, simplifier=sp.simplify))
 
-    cw, sw = g / sp.sqrt(g**2 + gp**2), gp / sp.sqrt(g**2 + gp**2)
-    Umix = sp.Matrix([
-        [1 / sp.sqrt(2), 1 / sp.sqrt(2), 0, 0],
-        [sp.I / sp.sqrt(2), -sp.I / sp.sqrt(2), 0, 0],
-        [0, 0, cw, sw],
-    ])
-    cubic = cubic_couplings(SU2L, physical=[Wp, Wm, Z, A], U=Umix)
-    # one representative ordering per boson triple (the tensor is totally
-    # antisymmetric — UFO wants a single vertex per particle set)
-    seen = set()
-    vvv = {}
-    for t, coupling in cubic.items():
-        key = frozenset((s, list(t).count(s)) for s in t)
-        if key not in seen:
-            seen.add(key)
-            vvv[t] = coupling
+
+    # Gauge self-couplings via the library, not by hand: gauge_vertices
+    # derives the weak->physical U from the registered Rotations and uses a
+    # canonical leg ordering. Building this from raw cubic_couplings and
+    # deduplicating by leg multiset kept an ARBITRARY representative ordering,
+    # and since the tensor is totally antisymmetric that choice set the sign.
+    vvv = {v.particles: v.coupling
+           for v in model.gauge_vertices(groups=[SU2L], basis=[Wp, Wm, Z, A],
+                                         include=("VVV",))}
 
     particles = [
         UFOParticle(h, 25, "h", spin=1, mass="MH"),
@@ -101,7 +96,7 @@ def sm_ufo(tmp_path_factory):
         UFOParticle(Gp, 251, "G+", antiname="G-", spin=1, mass="MW",
                     charge=1, antisymbol=Gm, goldstone=True),
         UFOParticle(Z, 23, "Z", spin=3, mass="MZ"),
-        UFOParticle(A, 22, "a", spin=3),
+        UFOParticle(A, 22, "a", spin=3, texname=r"\gamma"),
         UFOParticle(Wp, 24, "W+", antiname="W-", spin=3, mass="MW",
                     charge=1, antisymbol=Wm),
     ]
@@ -154,6 +149,16 @@ def test_ufo_uses_absolute_imports(sm_ufo):
         text = (path / fname).read_text()
         assert "from ." not in text and "from . import" not in text, \
             f"{fname} has a relative import"
+
+
+def test_texnames_survive_export(sm_ufo):
+    """LaTeX names reach the UFO verbatim (quotes and backslashes escaped)."""
+    out, *_ = sm_ufo
+    lib = _import_ufo(out)
+    tex = {p.name: p.texname for p in lib.all_parameters}
+    assert tex["g1"] == "{g'}" and tex["lam"] == r"\lambda_{\theta}"
+    (photon,) = [p for p in lib.all_particles if p.name == "a"]
+    assert photon.texname == r"\gamma"
 
 
 def test_ufo_roundtrip_reproduces_pinned_hWW(sm_ufo):
@@ -262,3 +267,121 @@ def test_ufo_vertices_reference_valid_objects(sm_ufo):
         for l in vert.lorentz:
             assert l.spins == [p.spin for p in vert.particles], \
                 (vert.name, l.spins, [p.spin for p in vert.particles])
+
+
+def _eval_ufo_couplings(ufo, num):
+    """``{sorted particle names: {lorentz name: complex value}}``."""
+    import cmath
+    ns = {"cmath": cmath, "complex": complex, "abs": abs,
+          "complexconjugate": lambda z: complex(z).conjugate()}
+    for p in ufo.all_parameters:
+        ns[p.name] = (float(p.value) if p.nature == "external"
+                      else complex(eval(p.value, ns)))
+    out = {}
+    for vert in ufo.all_vertices:
+        lor = [l.name for l in vert.lorentz]
+        key = tuple(sorted(p.name for p in vert.particles))
+        out[key] = {lor[j]: complex(eval(c.value, ns))
+                    for (i, j), c in vert.couplings.items()}
+    return out
+
+
+def test_exported_cubic_gauge_couplings(sm_ufo):
+    """AWW/ZWW at MadGraph's own leg orderings and conventions:
+    ``GC_4 = +i*ee`` for ``[a,W-,W+]``, ``GC_53 = +i*cw*ee/sw`` for
+    ``[W-,W+,Z]``.
+
+    Nothing in this file asserted any VVV value before, which is why its
+    export sat with the opposite sign: the fixture deduplicated raw
+    cubic_couplings by leg multiset, and the arbitrary representative
+    ordering it kept determined the sign.
+    """
+    path, model, num = sm_ufo
+    vals = _eval_ufo_couplings(_import_ufo(path), num)
+    g, gp = num["g"], num["gp"]
+    e = g * gp / (g ** 2 + gp ** 2) ** 0.5
+    cw = g / (g ** 2 + gp ** 2) ** 0.5
+
+    got = vals[tuple(sorted(["a", "W+", "W-"]))]["VVV1"]
+    assert abs(got - complex(0, 1) * e) < 1e-9, got
+    got = vals[tuple(sorted(["W+", "W-", "Z"]))]["VVV1"]
+    assert abs(got - complex(0, 1) * g * cw) < 1e-9, got
+
+
+def test_exported_vss_goldstone_coupling(sm_ufo):
+    """``A G+ G-`` against MadGraph's ``V_11 [a, G-, G+] : GC_3 = -i*ee``.
+
+    VSS1 = P(1,2) - P(1,3) is antisymmetric in legs 2,3, so the charged pair
+    there flips it under the field->particle relabelling — the same rule that
+    flips the electroweak cubics (feynlag.export.ufo.legs).  Nothing applied
+    it on the VSS path until that module existed, so this assertion fails
+    before the fix: this fixture exports Goldstones, so it is the one place
+    the bug was actually reachable.
+    """
+    path, model, num = sm_ufo
+    ufo = _import_ufo(path)
+    vals = _eval_ufo_couplings(ufo, num)
+    g, gp = num["g"], num["gp"]
+    e = g * gp / (g ** 2 + gp ** 2) ** 0.5
+
+    key = tuple(sorted(["a", "G+", "G-"]))
+    assert key in vals, sorted(vals)
+    # emitted leg order decides the sign; read it back off the vertex
+    vert = next(v for v in ufo.all_vertices
+                if tuple(sorted(p.name for p in v.particles)) == key)
+    names = [p.name for p in vert.particles]
+    got = vals[key]["VSS1"]
+    # MG: (a, G-, G+) -> -i e ; swapping the two scalars flips VSS1
+    expected = complex(0, -1) * e
+    if names.index("G+") < names.index("G-"):
+        expected = -expected
+    assert abs(got - expected) < 1e-9, (names, got, expected)
+
+
+def test_exported_charged_goldstone_couplings(sm_ufo):
+    """Every charged-Goldstone VSS/VVS coupling against MadGraph's stock sm
+    (issue #22).
+
+    These were off by exactly ±i. Two factors, both mappings from feynlag's
+    conventions onto UFO's and both applied in `export/ufo/legs.py`:
+
+    * VSS1 carries one power of momentum and feynlag's `d_mu -> i p_mu`
+      differs from UFO's by a sign there, so a VSS picks up -1
+      unconditionally;
+    * feynlag's charged Goldstone carries a phase `i**(-q)` relative to
+      MadGraph's, so each charged-Goldstone leg contributes `i**q`.
+
+    It was a pure convention, not an error: MadGraph agreed between unitary
+    and Feynman gauge BEFORE the alignment, and a deliberately-broken phase
+    failed that same check.
+
+    The last two rows are the controls. A conjugate pair contributes
+    `i * (1/i) = 1`, so those vertices matched all along and must NOT move --
+    if aligning the phase shifts them, the alignment is wrong.
+    """
+    path, model, num = sm_ufo
+    vals = _eval_ufo_couplings(_import_ufo(path), num)
+    g, gp, v = num["g"], num["gp"], num["v"]
+    e = g * gp / (g ** 2 + gp ** 2) ** 0.5
+    sw = gp / (g ** 2 + gp ** 2) ** 0.5
+    cw = g / (g ** 2 + gp ** 2) ** 0.5
+    j = complex(0, 1)
+
+    expected = {
+        ("W+", "G-", "h"): -e / (2 * sw),            # GC_37
+        ("W-", "G+", "h"): -e / (2 * sw),            # GC_37
+        ("a", "W+", "G-"): e ** 2 * v / (2 * sw),    # GC_75
+        ("a", "W-", "G+"): -e ** 2 * v / (2 * sw),   # GC_74
+        ("W+", "G0", "G-"): -j * e / (2 * sw),       # GC_38
+        ("W-", "G0", "G+"): j * e / (2 * sw),        # GC_39
+        ("W+", "Z", "G-"): -e ** 2 * v / (2 * cw),   # GC_66
+        ("W-", "Z", "G+"): e ** 2 * v / (2 * cw),    # GC_67
+        # controls: legs close under conjugation, so the phase cancels
+        ("a", "G-", "G+"): -j * e,                   # GC_3
+        ("W-", "W+", "h"): j * g ** 2 * v / 2,       # GC_72
+    }
+    for legs, want in expected.items():
+        key = tuple(sorted(legs))
+        assert key in vals, f"{legs} not exported; have {sorted(vals)}"
+        got = list(vals[key].values())[0]
+        assert abs(got - want) < 1e-6 * max(1.0, abs(want)), (legs, got, want)

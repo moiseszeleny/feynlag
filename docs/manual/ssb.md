@@ -127,7 +127,7 @@ solution = model.solve_tadpoles([mu2])   # {mu2.symbol: lam.symbol * v.symbol**2
   [arXiv:2102.02800](https://arxiv.org/abs/2102.02800),
   [doi:10.1140/epjc/s10052-021-09731-3](https://doi.org/10.1140/epjc/s10052-021-09731-3)
   — the literature S₃-3HDM model `examples/thdm_s3.py` and
-  `examples/THDM_S3_Tutorial.ipynb` follow; their Eq. (13) tadpole
+  `docs/tutorials/THDM_S3_Tutorial.ipynb` follow; their Eq. (13) tadpole
   solution is exactly the $v_1=\sqrt3v_2$ alignment above, and their
   Eq. (25)–(29) geometric rotation ansatz is the one the tutorial notebook
   builds and verifies against `feynlag`'s own pseudoscalar/charged/CP-even
