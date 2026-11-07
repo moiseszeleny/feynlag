@@ -1,0 +1,81 @@
+{
+ "description": "Type-I seesaw for the S3 3HDM (notebook 09): Dirac Yukawas on H-tilde (the five S3 structures) and M_R = diag(M, M, M_S) + the two Z2-odd soft directions (eps1: odd-vacuum, eps2: odd-singlet), at the exact-S3 vacuum of notebook 01's point 0 with the charged leptons on the draft branch at mu3 = 1 GeV. The fit is scale-free: Y scales as sqrt(M).",
+ "inputs": {
+  "theta12_deg": 33.68,
+  "sin2_theta13": 0.02215,
+  "theta23_deg": 43.3,
+  "dm21_eV2": 7.53e-05,
+  "dm31_eV2": 0.0025,
+  "sources": "NuFIT 6.0 IC24 w/ SK-atm NO (angles), PDG 2024 (dm21); dm31 order-of-magnitude"
+ },
+ "benchmark": {
+  "M_GeV": 100000000000000.0,
+  "Y_nu": [
+   -0.19485652659197306,
+   0.2792767382049218,
+   6.778366004331696e-05,
+   0.08810087355648331,
+   0.00010754698198255297
+  ],
+  "M_S_over_M": 3.9620944595906716e-07,
+  "eps1_over_M": -0.0003580870563420278,
+  "eps2_over_M": -0.0003766234840178598,
+  "light_masses_eV": [
+   0.0009999999942512155,
+   0.008734987307634962,
+   0.050009999622075654
+  ],
+  "theta12_deg": 33.6800002200342,
+  "sin2_theta13": 0.022150000747988553,
+  "theta23_deg": 43.29999993393575
+ },
+ "lightest_mass_eV_input": 0.001,
+ "n_exact_fits_of_80": 69,
+ "min_odd_breaking_over_M": 0.000519684123899749,
+ "neutrino_induced_mu_e_gamma": {
+  "generic exact fit": {
+   "1e+03": {
+    "B_Hpm_N": 1.8910134281255229e-31,
+    "B_W_N_bound": 1.1350045271470527e-31,
+    "max_mixing": 3.7551342725428596e-07
+   },
+   "1e+06": {
+    "B_Hpm_N": 1.3031563597171986e-35,
+    "B_W_N_bound": 1.1350045271470576e-37,
+    "max_mixing": 1.1874777220994926e-08
+   },
+   "1e+10": {
+    "B_Hpm_N": 1.3034391121284193e-43,
+    "B_W_N_bound": 1.1350045271470574e-45,
+    "max_mixing": 1.187477722099493e-10
+   },
+   "1e+14": {
+    "B_Hpm_N": 1.303439112136133e-51,
+    "B_W_N_bound": 1.1350045271470554e-53,
+    "max_mixing": 1.1874777220994926e-12
+   }
+  },
+  "smallest-breaking benchmark": {
+   "1e+03": {
+    "B_Hpm_N": 3.401640389725395e-43,
+    "B_W_N_bound": 6.254975621638169e-20,
+    "max_mixing": 0.00038074061098509836
+   },
+   "1e+06": {
+    "B_Hpm_N": 3.86555565363689e-37,
+    "B_W_N_bound": 6.254975621638219e-26,
+    "max_mixing": 1.204007528437038e-05
+   },
+   "1e+10": {
+    "B_Hpm_N": 7.060297288436438e-32,
+    "B_W_N_bound": 6.254975621638195e-34,
+    "max_mixing": 1.2040075284370368e-07
+   },
+   "1e+14": {
+    "B_Hpm_N": 1.0406176285720062e-39,
+    "B_W_N_bound": 6.254975621638166e-42,
+    "max_mixing": 1.2040075284370358e-09
+   }
+  }
+ }
+}

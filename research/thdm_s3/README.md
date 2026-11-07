@@ -65,6 +65,7 @@ validations and the figures.
 | [Soft-vacuum decays and LFV](reports/report_soft_decays.pdf) | [06](06_soft_decays.ipynb) | The lepton fit is an exact arrowhead cubic and soft breaking pins μ₃ near ±m_τ; SM-like LFV is pure non-vacuum admixture; h→eμ binds hardest; only 5 of 2028 scalar points are LFV-excluded. |
 | [μ→eγ](reports/report_mu_e_gamma.pdf) | [07](07_mu_to_e_gamma.ipynb) | Forbidden to all orders at the exact vacuum (residual Z₂); in the soft vacuum the W-loop Barr–Zee diagram dominates and MEG II keeps 618 of 2028 scalar points, against 2023 for the Higgs LFV limits. |
 | [τ→μγ, τ→eγ](reports/report_tau_l_gamma.pdf) | [08](08_tau_to_l_gamma.ipynb) | At the exact vacuum τ→eγ vanishes but τ→μγ is allowed, and Belle excludes a light-scalar corner that h→τμ misses; in the soft vacuum both τ modes are ~10⁻¹² and remove no point beyond MEG II. |
+| Residual ℤ₂ and neutrinos (no report yet) | [09](09_residual_z2.ipynb) | The residual ℤ₂ is derived and forbids 8 of 14 LFV channels to all orders (checked coupling by coupling); exact S₃ cannot give solar or reactor mixing; a ℤ₂-odd soft breaking of the ν_R Majorana mass alone fits the oscillation data and leaks into μ→eγ at least six orders below MEG II. |
 
 Notebook [04](04_bfb_conditions.ipynb) (the Boto–Romão–Silva boundedness method) has no
 report yet.
@@ -85,6 +86,7 @@ would falsify it. [`CLAIMS.md`](CLAIMS.md) is built from the same ledgers.
 | [06](derivations_06.pdf) | decays and LFV rates in the soft-broken vacuum |
 | [07](derivations_07.pdf) | the radiative decay of the muon in the soft-broken vacuum |
 | [08](derivations_08.pdf) | the radiative decays of the tau in the soft-broken vacuum |
+| [09](derivations_09.pdf) | the residual ℤ₂ selection rule, and the seesaw neutrino sector |
 
 ## Rebuilding
 

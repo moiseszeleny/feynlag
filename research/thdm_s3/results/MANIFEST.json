@@ -203,6 +203,36 @@
    },
    "stamped": "2026-10-18"
   },
+  "09": {
+   "commit": "9462262",
+   "fingerprint": {
+    "code": "bf0e93f7b64a6ad7",
+    "inputs": {
+     "results/tau_l_gamma.json": "83eda147906bfba5",
+     "results/viable_points.json": "c0724c1488b76738"
+    },
+    "library": "a01f0dcaa5e08609",
+    "modules": {
+     "decays": "cf91e47fbb4d4aef",
+     "derive": "8fff185522e07f25",
+     "fermions": "01f606e4beb55688",
+     "lfv": "9a836f89e55f6851",
+     "model": "b832810ea98fb465",
+     "neutrinos": "ea3eb5c2590c825a",
+     "radiative": "db2323d2d9685145",
+     "sm_inputs": "3fd87e73a98e7104",
+     "soft_decays": "458cf33b9e027cc3",
+     "store": "38eea841c5274cdc",
+     "z2": "bfea96a7aa9e9a1e"
+    }
+   },
+   "note": "notebook 09 first run",
+   "outputs": {
+    "derivations_09.tex": "c958e66c4f058764",
+    "results/neutrino_fit.json": "d7e7675f294c92bd"
+   },
+   "stamped": "2026-10-20"
+  },
   "benchmarks.py": {
    "commit": "b789b04",
    "fingerprint": {
