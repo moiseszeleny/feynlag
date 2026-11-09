@@ -183,34 +183,35 @@
    "stamped": "2026-11-09"
   },
   "08": {
-   "commit": "1287db7",
+   "commit": "2b27e1c",
    "fingerprint": {
-    "code": "89e3ac96b7235503",
+    "code": "fc9bce0ad40471f0",
     "inputs": {
-     "cache/tau_l_gamma_scan.pkl": "cf41c8f74f92b6e4",
-     "results/mu_e_gamma.json": "8fbd11a8d978225c",
+     "cache/tau_l_gamma_scan.pkl": "59903e60bee0f41a",
+     "results/mu_e_gamma.json": "4e31db65549924c3",
      "results/viable_points.json": "c0724c1488b76738",
      "results/viable_points_soft.json": "687b2fd49fea98fd"
     },
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "decays": "cf91e47fbb4d4aef",
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
      "lfv": "9a836f89e55f6851",
      "model": "b832810ea98fb465",
+     "nbsetup": "2f3e22f5e8bc2889",
      "radiative": "db2323d2d9685145",
      "sm_inputs": "3fd87e73a98e7104",
      "soft_decays": "458cf33b9e027cc3",
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "Belle II projection reference -> Snowmass22; outputs unchanged",
+   "note": "",
    "outputs": {
     "derivations_08.tex": "2b48501380fd0cb7",
     "results/tau_l_gamma.json": "83eda147906bfba5"
    },
-   "stamped": "2026-10-18"
+   "stamped": "2026-11-09"
   },
   "09": {
    "commit": "9462262",
@@ -432,9 +433,9 @@
   },
   "reports/report_tau_l_gamma.tex": {
    "notebooks": {
-    "08": "1fefadb04d573bf8"
+    "08": "070048196f20f6f3"
    },
-   "stamped": "2026-10-18",
+   "stamped": "2026-11-09",
    "tex": "bbb68ed1aa5f6ec1"
   }
  }

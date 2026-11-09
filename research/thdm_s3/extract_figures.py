@@ -47,7 +47,7 @@ FIGURES = {
     "softdec_lfv": (NB06, 63, "LFV needs a non-vacuum admixture"),
     "softdec_gammagamma": (NB06, 72, "in the soft-broken vacuum"),
     "meg_scan": (NB07, 83, "over the soft scan ("),
-    "tau_l_gamma_scan": (NB08, 30, "over the soft scan ("),
+    "tau_l_gamma_scan": (NB08, 64, "over the soft scan ("),
 }
 
 
