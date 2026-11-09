@@ -18,6 +18,7 @@ pedagogical walk-through). This directory is where the open questions go.
 | `02_s3_fermion_sector.ipynb` | lepton + quark Yukawa sectors, the draft's derivations, the CKM obstruction, soft breaking. **Done.** |
 | `decays.py` | the physical basis registered on the `Model` at general δ, the electroweak kinetic sector, the lepton mass basis, and the benchmark-point loaders. |
 | `derive.py` | the by-hand derivation vocabulary — `show`, `coefficients_of`, `rows`, `check_homogeneous/limit/invariant`, `hand_slice`, `falsify`, and the `Ledger` that emits the summary table and the printable LaTeX appendix. Renders sympy as typeset maths under a notebook kernel, aligned text outside one. |
+| `nbsetup.py` | the shared set-up cell of the notebooks (imports, plot style, `ok`, `check_quoted`, `table` for rendered tables); see `NOTEBOOK_STYLE.md`. |
 | `derivations_01.tex` | printable appendix emitted by notebook 01 §5.6 — the algebra typeset for checking on paper (`pdflatex derivations_01.tex`); its PDF, like every ledger's, is committed. |
 | `03_scalar_decays.ipynb` | physical basis, gauge couplings, VSS + loop γγ, and the LFV rates. **Done.** |
 | `04_bfb_conditions.ipynb` | the [BotoRomaoSilva22] BFB method read and executed: their $V_N/V_{CB}/V_G$ split, copositivity, the lower-bound strategy — then applied to our $S_3$ potential. **Done.** |
@@ -416,6 +417,11 @@ identically, independent of the couplings. Whether a complex-Yukawa extension of
 this sector can additionally reproduce $\delta$ (equivalently $J\neq0$) is open.
 
 ### 10. The physical basis, the gauge sector, and LFV rates (notebook 03)
+
+*2026-11-07: notebook 03 was rewritten for a student reader (`NOTEBOOK_STYLE.md`). This was
+presentation only: its outputs and every printed number are unchanged. The history it used
+to narrate, namely the blockers this entry records, the δ = −ψ correction and the superseded
+LFV readings below, now lives only here.*
 
 `decays.py` registers the physical basis on the `Model` — the blocker this file
 recorded for notebook 03 — at **general δ**, with the draft's Scenarios A and B

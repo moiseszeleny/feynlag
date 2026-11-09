@@ -44,29 +44,30 @@
    "stamped": "2026-10-17"
   },
   "03": {
-   "commit": "6a17be5",
+   "commit": "abef9d8",
    "fingerprint": {
-    "code": "d1d4c5d74267129d",
+    "code": "88fc0836224455c9",
     "inputs": {
      "results/viable_points.json": "c0724c1488b76738"
     },
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "decays": "cf91e47fbb4d4aef",
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
      "lfv": "9a836f89e55f6851",
      "model": "b832810ea98fb465",
+     "nbsetup": "2f3e22f5e8bc2889",
      "sm_inputs": "3fd87e73a98e7104",
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "proposal 6: report text verified identical apart from the cache/ path",
+   "note": "",
    "outputs": {
     "derivations_03.tex": "061d7a0359d26096",
     "results/decay_benchmarks.json": "99825758cef15ac3"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-11-07"
   },
   "04": {
    "commit": "a31198c",
@@ -339,11 +340,11 @@
    "stamped": "2026-10-17"
   },
   "scan.py": {
-   "commit": "619b3bf",
+   "commit": "abef9d8",
    "fingerprint": {
     "code": "fb90c5c004294520",
     "inputs": {},
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "constraints": "0a35f6c5060a3eaf",
      "model": "b832810ea98fb465",
@@ -355,7 +356,7 @@
    "outputs": {
     "results/viable_points.json": "c0724c1488b76738"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-11-07"
   },
   "scan_soft.py": {
    "commit": "6f9e346",
@@ -395,9 +396,9 @@
   },
   "reports/report_scalar_decays.tex": {
    "notebooks": {
-    "03": "dfdbdc91b80bffe2"
+    "03": "912fcbcf139b8ea9"
    },
-   "stamped": "2026-10-17",
+   "stamped": "2026-11-07",
    "tex": "fa211e830ca5a8fa"
   },
   "reports/report_scalar_sector.tex": {

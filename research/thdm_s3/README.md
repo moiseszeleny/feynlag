@@ -46,6 +46,12 @@ plus a note), then run `python research/thdm_s3/claims.py`.
 The data flow they share (which notebook reads and writes which file) is
 [`pipeline.py`](pipeline.py). Update it when you add a notebook.
 
+**Writing a notebook.** Notebooks are written for a reader new to the project:
+[`NOTEBOOK_STYLE.md`](NOTEBOOK_STYLE.md) is the checklist (opening cells, notation table,
+one idea per cell, typeset outputs, how to verify a restyle changed no number), and
+[`nbsetup.py`](nbsetup.py) is the shared set-up cell. Notebook 03 follows it; 01, 02 and
+04–09 do not yet.
+
 **Where the data lives.** `results/` holds small committed summaries: counts, cut flows,
 conventions. The per-point data (the scan points, one row per lepton configuration) lives in
 the gitignored `cache/`, and each summary records the SHA-256 of its cache file
