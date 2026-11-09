@@ -34,7 +34,7 @@ FIGURES = {
     "cut_flow": (NB01, 75, "Cut flow: S$_3$-3HDM scalar parameter space"),
     "mass_ranges": (NB01, 79, "Theory-allowed mass ranges"),
     "correlations": (NB01, 80, "lightest CP-even scalar"),
-    "fermion_vus_vs_r": (NB02, 55, "Soft $S_3$ breaking turns on the Cabibbo angle"),
+    "fermion_vus_vs_r": (NB02, 115, "Soft $S_3$ breaking turns on the Cabibbo angle"),
     "decays_delta_scenarios": (NB03, 28, "between scenarios A and B"),
     "decays_gammagamma": (NB03, 51, "Charged-Higgs loop in"),
     "decays_lfv_limits": (NB03, 78, "LFV rates at the exact-S"),

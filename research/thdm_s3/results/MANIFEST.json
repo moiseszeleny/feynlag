@@ -24,24 +24,26 @@
    "stamped": "2026-10-17"
   },
   "02": {
-   "commit": "940bf73",
+   "commit": "9037fa9",
    "fingerprint": {
-    "code": "1e93906c5a533186",
+    "code": "c4ab5f9818cab654",
     "inputs": {},
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
      "model": "b832810ea98fb465",
-     "sm_inputs": "3fd87e73a98e7104"
+     "nbsetup": "2f3e22f5e8bc2889",
+     "sm_inputs": "3fd87e73a98e7104",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-executed 2026-10-17 in tree; nb02 now checks at least 4 exact quark-fit solutions (5 found here, selected fit unchanged)",
+   "note": "",
    "outputs": {
     "derivations_02.tex": "39f98897ce200856",
-    "results/quark_soft_fit.json": "b2c5f3c722d159bc"
+    "results/quark_soft_fit.json": "9762e554c97b145c"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-11-08"
   },
   "03": {
    "commit": "abef9d8",
@@ -291,13 +293,13 @@
    "stamped": "2026-10-17"
   },
   "compute_soft_decays.py": {
-   "commit": "f6dbef0",
+   "commit": "9037fa9",
    "fingerprint": {
     "code": "692c485235f1f858",
     "inputs": {
      "results/viable_points_soft.json": "687b2fd49fea98fd"
     },
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "fermions": "01f606e4beb55688",
      "lfv": "9a836f89e55f6851",
@@ -310,9 +312,9 @@
    },
    "note": "run_pipeline.py",
    "outputs": {
-    "cache/soft_decays_scan.pkl": "4870744c33253140"
+    "cache/soft_decays_scan.pkl": "6f0d06212d08f735"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-11-08"
   },
   "compute_tau_l_gamma.py": {
    "commit": "558169d",
@@ -361,11 +363,11 @@
    "stamped": "2026-11-07"
   },
   "scan_soft.py": {
-   "commit": "6f9e346",
+   "commit": "9037fa9",
    "fingerprint": {
     "code": "7ad4f6485a25ea58",
     "inputs": {},
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "constraints": "0a35f6c5060a3eaf",
      "model": "b832810ea98fb465",
@@ -378,15 +380,15 @@
    "outputs": {
     "results/viable_points_soft.json": "687b2fd49fea98fd"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-11-08"
   }
  },
  "reports": {
   "reports/report_fermion_sector.tex": {
    "notebooks": {
-    "02": "ab799baa2efc016b"
+    "02": "8f9502f6fdc79c09"
    },
-   "stamped": "2026-10-17",
+   "stamped": "2026-11-08",
    "tex": "d5cfdbad8829069d"
   },
   "reports/report_mu_e_gamma.tex": {
