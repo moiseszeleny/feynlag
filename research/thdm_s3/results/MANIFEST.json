@@ -70,23 +70,25 @@
    "stamped": "2026-11-07"
   },
   "04": {
-   "commit": "a31198c",
+   "commit": "7f6b6fc",
    "fingerprint": {
-    "code": "7a8c2011f07aec85",
+    "code": "951e0a5fffb2537a",
     "inputs": {},
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "constraints": "0a35f6c5060a3eaf",
      "derive": "8fff185522e07f25",
      "model": "b832810ea98fb465",
-     "sm_inputs": "3fd87e73a98e7104"
+     "nbsetup": "2f3e22f5e8bc2889",
+     "sm_inputs": "3fd87e73a98e7104",
+     "store": "38eea841c5274cdc"
     }
    },
-   "note": "re-centred on M_H = 125.20 GeV (2026-10-17): scans re-run, notebooks 01 and 03-08 re-executed in tree with every check passing; 02 unchanged (re-verified 2026-10-16); benchmarks tuned",
+   "note": "",
    "outputs": {
     "derivations_04.tex": "f1e676f5dd4ad58e"
    },
-   "stamped": "2026-10-17"
+   "stamped": "2026-11-08"
   },
   "05": {
    "commit": "6a17be5",
