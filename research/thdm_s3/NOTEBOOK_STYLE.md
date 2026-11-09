@@ -73,7 +73,9 @@ ledger = dv.Ledger("NN — title")
   `dv.rows([...])`, which typeset under the kernel. For an expression too big to read,
   show its structure (`collect`, a term count) and point to `derivations_NN.pdf`.
 - **Tables** go through `table(headers, rows, fmt=[...])`, not printf columns. Use the
-  same format specs the old printf used, so the numbers stay identical.
+  same format specs the old printf used, so the numbers stay identical. Never name a
+  variable `table` (notebook 09 did, which shadowed the helper), and escape a literal `|`
+  in a cell as `\|`, or write it in LaTeX as `\lvert…\rvert`.
 - **No stray `Out[]`.** End a cell with `;`, or assign `_ = ...`, when its last call returns
   a value (`ledger.step`, `dv.show`, `dv.falsify`, `ledger.to_latex`).
 - **Figures:** axis labels with units, and a one-to-three-sentence *Figure:* caption cell
@@ -93,6 +95,10 @@ ledger = dv.Ledger("NN — title")
 > **Think first.** <the question, to predict before running>
 ```
 
+(Older notebooks used "Before running the next cell", "Predict" and "Work this one out
+before reading on" for the same thing; they now all read **Think first**.) If the text
+right after the box gives the answer away, move that text into the folded answer.
+
 After the cell that settles it, add the answer folded:
 
 ```markdown
@@ -100,6 +106,19 @@ After the cell that settles it, add the answer folded:
 ...
 </details>
 ```
+
+## Restyling by script
+
+Rebuild a notebook from its git-HEAD version with a short script, rather than by editing
+the JSON by hand. The 2026-11 rollout used three operations:
+- `sub`: change text inside one cell (a printf block into a `table()` call);
+- `split`: cut a code cell before the lines that start with given markers, inserting a
+  markdown cell before each piece;
+- `insert_before`: add a markdown cell.
+
+Code is cut, never retyped. Apply a cell's `sub`s **before** its `split`: a split
+captures the text at the moment it is made, so a later `sub` on the same cell is
+silently lost (the rollout's script refused that order).
 
 ## Verifying a restyle
 
@@ -114,7 +133,18 @@ Run all of this from `research/thdm_s3/`, after saving the old notebook:
    differed from git at the 10⁻¹⁵ level (and in quantities that are zero by symmetry). In
    that case keep the committed results (`git checkout results/<file>`), and delete the
    matching `cache/<file>`, so downstream nodes do not go stale for nothing.
+   **Check who reads the cache first.** A node that loads the per-point file through
+   `store.full`/`store.points` (notebook 08 reads `cache/mu_e_gamma.json`; `benchmarks.py`
+   reads the soft-decay and τ caches) needs the summary's `points_sha256` to match the
+   local cache. Keeping a committed summary then means that consumer cannot run in this
+   environment. In the 2026-11 rollout, 07's summary was therefore kept as regenerated
+   (only its hash line changed), while `benchmarks.py` was left stale.
+   A difference that is not round-off but that the notebook itself declares
+   environment-dependent (notebook 02: the quark fit finds 4 exact solutions with today's
+   numpy/scipy where the commit has 5, and every claim says "at least four") is kept as
+   regenerated, so that the stored outputs and the committed results agree. Re-run the
+   nodes downstream of it.
 3. Every number in the old outputs appears in the new ones, and the other way round,
-   timings excepted.
+   timings excepted. The ✓ count is unchanged too.
 4. Update the cell indices of `extract_figures.py` and run it.
 5. `provenance.py stamp NN`, then `provenance.py check`: the node and its report are `ok`.

@@ -7,6 +7,12 @@ pedagogical walk-through). This directory is where the open questions go.
 
 ## Layout
 
+*2026-11-07 to 11-09: notebooks 01–09 were rewritten for a student reader (`NOTEBOOK_STYLE.md`,
+`nbsetup.py`). Presentation only: each one's checks and every printed number match a re-run
+of the original, and every `derivations_0N.tex` is byte-identical. The history the notebooks
+used to narrate (blockers, corrected formulas, superseded readings) is recorded in this file,
+not in them.*
+
 | file | what it is |
 |---|---|
 | `model.py` | the reusable build — algebra only. `build_model()` (with `soft=True` for soft S₃ breaking), the three mass matrices, the geometric rotation, the lambdified spectrum, the quartic potential + its numerical boundedness scan. Lifts the tutorial's notebook-local §6–§8 into importable form. |
@@ -418,10 +424,9 @@ this sector can additionally reproduce $\delta$ (equivalently $J\neq0$) is open.
 
 ### 10. The physical basis, the gauge sector, and LFV rates (notebook 03)
 
-*2026-11-07: notebook 03 was rewritten for a student reader (`NOTEBOOK_STYLE.md`). This was
-presentation only: its outputs and every printed number are unchanged. The history it used
-to narrate, namely the blockers this entry records, the δ = −ψ correction and the superseded
-LFV readings below, now lives only here.*
+*2026-11-07: notebook 03 was rewritten for a student reader (`NOTEBOOK_STYLE.md`); the
+history it used to narrate (the blockers this entry records, the δ = −ψ correction and the
+superseded LFV readings below) now lives only here. See the note under Layout.*
 
 `decays.py` registers the physical basis on the `Model` — the blocker this file
 recorded for notebook 03 — at **general δ**, with the draft's Scenarios A and B
