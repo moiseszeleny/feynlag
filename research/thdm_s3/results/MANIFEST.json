@@ -153,33 +153,34 @@
    "stamped": "2026-11-09"
   },
   "07": {
-   "commit": "b789b04",
+   "commit": "bf7046b",
    "fingerprint": {
-    "code": "5c15205f2699db5e",
+    "code": "14b20cd1a244f78e",
     "inputs": {
-     "cache/mu_e_gamma_scan.pkl": "d96823304964f763",
+     "cache/mu_e_gamma_scan.pkl": "71c04c5cccf5fc13",
      "results/viable_points.json": "c0724c1488b76738",
      "results/viable_points_soft.json": "687b2fd49fea98fd"
     },
-    "library": "a01f0dcaa5e08609",
+    "library": "9e8d1c142e81f669",
     "modules": {
      "decays": "cf91e47fbb4d4aef",
      "derive": "8fff185522e07f25",
      "fermions": "01f606e4beb55688",
      "lfv": "9a836f89e55f6851",
      "model": "b832810ea98fb465",
+     "nbsetup": "2f3e22f5e8bc2889",
      "radiative": "db2323d2d9685145",
      "sm_inputs": "3fd87e73a98e7104",
      "soft_decays": "458cf33b9e027cc3",
      "store": "38eea841c5274cdc"
     }
    },
-   "note": "summary gains median_meg_over_hemu_ratio; report_mu_e_gamma re-checked",
+   "note": "",
    "outputs": {
     "derivations_07.tex": "5334fb1e8a11d6c6",
-    "results/mu_e_gamma.json": "8fbd11a8d978225c"
+    "results/mu_e_gamma.json": "4e31db65549924c3"
    },
-   "stamped": "2026-10-18"
+   "stamped": "2026-11-09"
   },
   "08": {
    "commit": "1287db7",
@@ -396,9 +397,9 @@
   },
   "reports/report_mu_e_gamma.tex": {
    "notebooks": {
-    "07": "4fdb4aadaeba7477"
+    "07": "c82f5c44899830e8"
    },
-   "stamped": "2026-10-18",
+   "stamped": "2026-11-09",
    "tex": "e1071395735fe151"
   },
   "reports/report_scalar_decays.tex": {
