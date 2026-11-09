@@ -43,9 +43,9 @@ FIGURES = {
     "soft_hvv": (NB05, 70, "VV coupling of the non-SM-like CP-even states"),
     "soft_breaking": (NB05, 78, "free-soft prior edge"),
     "soft_mD1_edge": (NB05, 83, "The tadpole-fixed $m_{D1}^2$ across the domain"),
-    "softdec_mu3_existence": (NB06, 14, "Where a charged-lepton fit exists"),
-    "softdec_lfv": (NB06, 18, "LFV needs a non-vacuum admixture"),
-    "softdec_gammagamma": (NB06, 20, "in the soft-broken vacuum"),
+    "softdec_mu3_existence": (NB06, 45, "Where a charged-lepton fit exists"),
+    "softdec_lfv": (NB06, 63, "LFV needs a non-vacuum admixture"),
+    "softdec_gammagamma": (NB06, 72, "in the soft-broken vacuum"),
     "meg_scan": (NB07, 35, "over the soft scan ("),
     "tau_l_gamma_scan": (NB08, 30, "over the soft scan ("),
 }
