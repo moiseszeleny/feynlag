@@ -61,6 +61,19 @@ class Lagrangian:
         self.terms.append(LagrangianTerm(expr, sector=sector, name=name))
         return self
 
+    def add_kinetic(self, *fields, index=None):
+        """Add the canonical kinetic/gauge terms of ``fields``.
+
+        ``(D_μφ)†(D^μφ)`` per scalar (sector ``kinetic``) and the gauge
+        current per charged fermion (sector ``yukawa``), via
+        :func:`feynlag.terms.kinetic`.  Gauge bosons need no term here: their
+        self-couplings come from the structure constants at extraction time.
+        """
+        from .terms import kinetic
+        for expr, sector in kinetic(*fields, index=index):
+            self.add(expr, sector=sector)
+        return self
+
     def sector(self, name):
         """Sum of all terms in one sector."""
         return sp.Add(*[t.expr for t in self.terms if t.sector == name])
@@ -143,6 +156,98 @@ class ValidationReport:
         n_ok = sum(1 for r in run if r.ok)
         status = "PASS" if self.ok else "FAIL"
         return f"ValidationReport({n_ok}/{len(run)} checks passed, {status})"
+
+
+class ParameterReport:
+    """Result of :meth:`Model.check_parameters`.
+
+    Attributes:
+        undeclared: symbols used in the Lagrangian (or as a VEV) that are
+            neither a declared parameter nor a field component.  Such a symbol
+            silently counts as mass dimension 0 in the power-counting check and
+            has no numeric value at export time.
+        flavour_matrices: :class:`~sympy.IndexedBase` couplings (``Y[i,j]``).
+            :class:`~feynlag.parameters.ParameterSet` is scalar-only, so these
+            cannot be declared; they are listed for information and do not
+            fail the check.
+    """
+
+    def __init__(self, undeclared, flavour_matrices):
+        self.undeclared = list(undeclared)
+        self.flavour_matrices = list(flavour_matrices)
+
+    @property
+    def ok(self):
+        return not self.undeclared
+
+    def raise_on_failure(self):
+        if not self.ok:
+            raise ValueError(
+                "undeclared symbols in the Lagrangian: "
+                + ", ".join(str(s) for s in self.undeclared)
+                + " (declare each as an ExternalParameter/InternalParameter "
+                "and pass it to Model(parameters=...))")
+        return self
+
+    def __repr__(self):
+        status = "PASS" if self.ok else "FAIL"
+        parts = [f"undeclared={[str(s) for s in self.undeclared]}"]
+        if self.flavour_matrices:
+            parts.append("flavour_matrices="
+                         f"{[str(b) for b in self.flavour_matrices]}")
+        return f"ParameterReport({', '.join(parts)}, {status})"
+
+
+def _table(header, rows):
+    """Left-aligned plain-text table."""
+    widths = [max(len(str(r[k])) for r in [header] + rows)
+              for k in range(len(header))]
+
+    def line(row):
+        return "  ".join(str(c).ljust(w) for c, w in zip(row, widths)).rstrip()
+
+    return "\n".join([line(header), line(["-" * w for w in widths])]
+                     + [line(r) for r in rows])
+
+
+def _md_table(header, rows):
+    def line(row):
+        return "| " + " | ".join(str(c) or " " for c in row) + " |"
+
+    return "\n".join([line(header), line(["---"] * len(header))]
+                     + [line(r) for r in rows])
+
+
+class ModelSummary:
+    """The field-content and parameter tables of a model, as one would print
+    them in a paper.  ``print()`` gives aligned text; a notebook renders the
+    Markdown tables.  Built by :meth:`Model.summary`.
+    """
+
+    def __init__(self, name, field_header, field_rows, param_header,
+                 param_rows):
+        self.name = name
+        self.field_header = field_header
+        self.field_rows = field_rows
+        self.param_header = param_header
+        self.param_rows = param_rows
+
+    def __str__(self):
+        out = [f"Model: {self.name}", "", "Fields",
+               _table(self.field_header, self.field_rows)]
+        if self.param_rows:
+            out += ["", "Parameters",
+                    _table(self.param_header, self.param_rows)]
+        return "\n".join(out)
+
+    __repr__ = __str__
+
+    def _repr_markdown_(self):
+        out = [f"**Model: {self.name}**", "",
+               _md_table(self.field_header, self.field_rows)]
+        if self.param_rows:
+            out += ["", _md_table(self.param_header, self.param_rows)]
+        return "\n".join(out)
 
 
 class Model:
@@ -485,10 +590,137 @@ class Model:
             report.raise_on_failure()
         return report
 
+    # --------------------------------------------------------- bookkeeping
+
+    def check_parameters(self):
+        """Report Lagrangian symbols that are not declared parameters.
+
+        Scans every Lagrangian term and every VEV for free symbols and removes
+        the declared parameters, the field components (and bar legs), and the
+        integer index symbols (flavour and Lorentz).  What is left was most
+        likely meant to be a parameter and was never passed to
+        ``Model(parameters=...)``.
+
+        Returns:
+            :class:`ParameterReport` (``.ok`` iff nothing is undeclared).
+        """
+        from .fields import Fermion
+
+        expr = self.lagrangian.total
+        symbols = set(expr.free_symbols)
+        known = {p.symbol for p in self.parameters}
+        fermion_bases = set()
+        for f in self.fields:
+            for comp in f.components:
+                if isinstance(comp, sp.IndexedBase):
+                    known.add(comp.label)
+                    fermion_bases.add(comp)
+                else:
+                    known.add(comp)
+            if isinstance(f, Fermion):
+                for bar in f.bar_components:
+                    known.add(bar.label)
+                    fermion_bases.add(bar)
+            for vev, re, im in getattr(f, "vev_expansions", {}).values():
+                symbols |= sp.sympify(vev).free_symbols
+                known.add(re)
+                if im is not None:
+                    known.add(im)
+
+        matrices = {a.base for a in expr.atoms(sp.Indexed)} - fermion_bases
+        known |= {b.label for b in matrices}
+        undeclared = [s for s in symbols
+                      if isinstance(s, sp.Symbol) and not s.is_integer
+                      and s not in known]
+        return ParameterReport(sorted(undeclared, key=str),
+                               sorted(matrices, key=str))
+
+    def undeclared_symbols(self):
+        """Symbols used in the Lagrangian that are neither a declared
+        parameter nor a field (see :meth:`check_parameters`)."""
+        return self.check_parameters().undeclared
+
+    def summary(self):
+        """Field-content and parameter tables (:class:`ModelSummary`).
+
+        One row per field with its type, its representation under every gauge
+        group (the charge for a U(1), the dimension label otherwise), its
+        discrete irrep and global charge where assigned, the number of
+        flavours and any VEV; then one row per parameter.  Read-only.
+        """
+        from .fields import Fermion, GaugeBoson, Scalar
+
+        def kind(f):
+            if isinstance(f, GaugeBoson):
+                return "vector"
+            if isinstance(f, Fermion):
+                return f"fermion {f.chirality}" if f.chirality else "fermion"
+            if isinstance(f, Scalar):
+                return "real scalar" if f.real else "scalar"
+            return type(f).__name__
+
+        def gauge_rep(f, g):
+            if isinstance(f, GaugeBoson):
+                if getattr(f, "group", None) is g:
+                    return "0" if getattr(g, "abelian", False) else "adj"
+                return "0" if getattr(g, "abelian", False) else "1"
+            if getattr(g, "abelian", False):
+                return str(f.charge(g))
+            return str(f.reps.get(g, 1))
+
+        def discrete_rep(f, g):
+            members = set(f.components) | {f}
+            for irrep, multiplet in g.assignments:
+                if any(m is f or m in members for m in multiplet):
+                    return str(irrep)
+            return ""
+
+        def global_charge(f, g):
+            for field, charge in g.assignments:
+                if field is f:
+                    return str(charge)
+            return ""
+
+        def vev(f):
+            out = []
+            for comp, (v, _re, im) in getattr(f, "vev_expansions",
+                                              {}).items():
+                out.append(f"⟨{comp}⟩ = {v}" if im is None
+                           else f"⟨{comp}⟩ = {v}/√2")
+            return ", ".join(out)
+
+        header = (["field", "type"] + [g.name for g in self.gauge_groups]
+                  + [g.name for g in self.discrete_groups]
+                  + [g.name for g in self.global_groups]
+                  + ["flavours", "components", "VEV"])
+        rows = []
+        for f in self.fields:
+            rows.append(
+                [f.name, kind(f)]
+                + [gauge_rep(f, g) for g in self.gauge_groups]
+                + [discrete_rep(f, g) for g in self.discrete_groups]
+                + [global_charge(f, g) for g in self.global_groups]
+                + [str(f.nflavors) if isinstance(f, Fermion) else "",
+                   ", ".join(str(getattr(c, "label", c))
+                             for c in f.components),
+                   vev(f)])
+
+        param_rows = []
+        for p in self.parameters:
+            value = getattr(p, "value", None) if p.nature == "external" \
+                else getattr(p, "expr", None)
+            param_rows.append([p.name, p.nature,
+                               "" if value is None else str(value),
+                               str(p.unit_dim)])
+        return ModelSummary(self.name, header, rows,
+                            ["parameter", "nature", "value / expression",
+                             "mass dim"], param_rows)
+
     def validate(self, invariance=True, hermiticity=True, dimension=True,
                  max_dim=4, anomalies=True, ufo_path=None, external_values=None,
                  charges=None, fields=None, conjugate_map=None,
-                 conjugates=None, fermion_table=None, raise_on_failure=False):
+                 conjugates=None, fermion_table=None, raise_on_failure=False,
+                 parameters=False):
         """Run every applicable consistency check and aggregate the results.
 
         The umbrella entry point: it runs the symmetry/hermiticity/dimension
@@ -526,6 +758,8 @@ class Model:
             fermion_table: optional ``extract_fermion_vertices`` output to add
                 the fermionic vertices to the charge/hermiticity checks.
             raise_on_failure: raise ``ValueError`` if any check fails.
+            parameters: also run :meth:`check_parameters` (every Lagrangian
+                symbol is a declared parameter or a field).  Off by default.
 
         Returns:
             :class:`ValidationReport`.
@@ -533,6 +767,8 @@ class Model:
         from .fields import Fermion
 
         checks = {}
+        if parameters:
+            checks["parameters"] = self.check_parameters()
         if invariance:
             checks["invariance"] = self.check_invariance(
                 hermiticity=hermiticity, dimension=dimension, max_dim=max_dim)

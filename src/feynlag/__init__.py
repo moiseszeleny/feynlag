@@ -55,7 +55,12 @@ from .invariance import (
     check_mass_dimension, gauge_variation,
 )
 from .lagrangian import (
-    InvarianceReport, Lagrangian, LagrangianTerm, Model, ValidationReport,
+    InvarianceReport, Lagrangian, LagrangianTerm, Model, ModelSummary,
+    ParameterReport, ValidationReport,
+)
+from .terms import (
+    FL_I, FL_J, dirac_mass, eps, inner, kinetic, majorana_mass, tilde,
+    weinberg, yukawa,
 )
 from .anomalies import (
     AnomalyReport, anomaly_coefficients, check_anomaly_free,
@@ -82,6 +87,9 @@ from .suggest import (
 )
 
 __all__ = [
+    "ModelSummary", "ParameterReport",
+    "FL_I", "FL_J", "inner", "eps", "tilde", "yukawa", "dirac_mass",
+    "majorana_mass", "weinberg", "kinetic",
     "TexSymbol", "tex_symbol",
     "Parameter", "ExternalParameter", "InternalParameter", "ParameterSet",
     "GaugeGroup", "U1", "SUN", "SU2", "SU3", "DiscreteSymmetry", "ZN", "S3",
