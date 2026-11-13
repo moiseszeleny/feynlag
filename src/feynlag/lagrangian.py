@@ -364,6 +364,39 @@ class Model:
         self._invalidate()
         return rotation
 
+    def mass_blocks(self, kind=None):
+        """The blocks of fields that mix in the mass matrix at the vacuum.
+
+        Scalars are partitioned by what actually mixes (so the CP-even/odd
+        split appears when CP is conserved and not otherwise), tagged with
+        the electric charge derived from the vacuum and with their Goldstone
+        directions; Dirac fermion legs likewise.  See
+        :func:`feynlag.vacuum.physical.mass_blocks`.
+
+        Args:
+            kind: ``"scalar"``, ``"fermion"`` or ``None`` for both.
+        """
+        from .vacuum.physical import mass_blocks
+        return mass_blocks(self, kind=kind)
+
+    def diagonalize(self, block, names=None, **kwargs):
+        """Rotate a :class:`~feynlag.vacuum.physical.MassBlock` to its mass
+        eigenstates, register the rotation and record the new states in
+        :attr:`physical`.  Arguments as
+        :func:`feynlag.vacuum.physical.diagonalize_block`."""
+        from .vacuum.physical import diagonalize_block
+        return diagonalize_block(self, block, names=names, **kwargs)
+
+    @property
+    def physical(self):
+        """The accumulated physical states
+        (:class:`~feynlag.vacuum.physical.PhysicalRegistry`): ``bosons``,
+        ``cmap``, ``conjugates``, ``charges``, ``goldstones``, ``masses``."""
+        if getattr(self, "_physical", None) is None:
+            from .vacuum.physical import PhysicalRegistry
+            self._physical = PhysicalRegistry(self)
+        return self._physical
+
     def physical_lagrangian(self, sector=None):
         """The Lagrangian in the physical basis: vacuum-shifted, tadpole
         solutions substituted, all registered rotations applied, expanded."""

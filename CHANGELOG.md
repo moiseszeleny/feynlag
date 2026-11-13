@@ -36,7 +36,33 @@ All notable changes to feynlag are documented here. The format follows
   text or Markdown.
 - `Parameter.__rpow__` (`2 ** p`).
 
+- Guided physical basis. `Model.mass_blocks()` partitions the scalar
+  fluctuations and the Dirac fermion legs into the blocks that actually mix,
+  each tagged with its electric charge (derived from the vacuum), its CP
+  content and its Goldstone directions (`i T^a⟨φ⟩`, checked to be zero modes;
+  unsolved tadpoles are reported). Nothing is assumed about CP: a
+  CP-violating potential gives one merged neutral block.
+  `Model.diagonalize(block, names=[...])` picks the route (Goldstone-fixed
+  rotation, `tan 2θ`, analytic 2×2 biunitary with bar-side rotations, or a
+  numeric rotation with `values=`), verifies it, registers it, and creates the
+  new symbols and conjugate pairs. With `values=` a symbolic 2×2 keeps its
+  symbolic angle and the numbers choose the `tan 2θ` branch so the first name
+  is the heavier state; `branch_valid_for` records where that holds.
+  `Model.physical` accumulates `bosons`, `cmap`, `conjugates`, `charges`,
+  `goldstones` and `masses`; `weinberg_rotation`, `charged_current_rotation`
+  and `to_physical_basis` record into it too. A symbolic block with no closed
+  form, a field mixing with a conjugate field, and flavoured or Majorana
+  fermion blocks are refused or reported with the route to use instead.
+- A scalar component can be expanded around a zero VEV
+  (`expand_vev({comp: 0})`, e.g. the neutral component of an inert doublet):
+  `Model.tadpoles()` / `solve_tadpoles` used to raise on it. Its stationarity
+  condition is reported under the fluctuation symbol only when it does not
+  vanish identically.
+
 ### Changed
+- `examples/thdm.py` uses the guided physical basis; its previous output is
+  unchanged and it now also prints the blocks, `tan β`, `m_A²`, `m_{H±}²` and
+  the derived charges.
 - `examples/sm_vll.py` is written with the new constructors; its printed
   physics is unchanged.
 

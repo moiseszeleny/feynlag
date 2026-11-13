@@ -192,6 +192,151 @@ Two rules make this work correctly:
   tutorial notebook include a standalone demonstration of exactly this
   failure mode.
 
+## 7.5 Guided physical basis (`mass_blocks`, `diagonalize`)
+
+Sections 7.1–7.4 describe the diagonalizers; using them still means deciding
+by hand which symbols form each block, building every mass matrix, knowing
+which rotation each block needs, creating the new symbols and wiring the
+conjugate maps. `Model.mass_blocks()` and `Model.diagonalize()` do that
+bookkeeping and leave the user the one physics choice, the names:
+
+```python
+model.solve_tadpoles([m11sq, m22sq])
+even, odd, charged = model.mass_blocks()
+# scalar  Q=0  cp-even  [H10_r, H20_r]  goldstones: 0
+# scalar  Q=0  cp-odd   [H10_i, H20_i]  goldstones: 1
+# scalar  Q=1           [H1p, H2p]      goldstones: 1
+model.diagonalize(even, names=["H", "h"], angle="alpha")
+model.diagonalize(odd, names=["G0", "A0"], angle="beta")
+model.diagonalize(charged, names=["Gp", "Hp"], conjugate_names=["Gm", "Hm"])
+phys = model.physical     # bosons, cmap, conjugates, charges, goldstones, masses
+```
+
+### Algorithm: finding the blocks
+
+Nothing is assumed about CP or about a vacuum alignment.
+
+1. **Electric charge** of every component comes from the vacuum
+   ({doc}`charges`: the diagonal-generator combination that annihilates every
+   VEV), normalised so the first non-abelian Cartan coefficient is $+1$
+   ($Q = T^3 + \dots$).
+2. **Real neutral sector.** One mass matrix over *all* real fluctuations
+   $\phi_r, \phi_i$, then the **connected components of its non-zero pattern**.
+   When CP is conserved the CP-even and CP-odd fluctuations do not connect and
+   two blocks come out; with a CP-violating potential they come out as one
+   block tagged `mixed`. The CP-conserving case is a limit of the general
+   one, not an input.
+3. **Complex sector.** Components without a VEV expansion, grouped by charge,
+   with $M^2_{ij} = \partial^2V/\partial\bar\phi_i\partial\phi_j$ and the same
+   connected-component split.
+4. **Fermions.** The Dirac mass terms $\bar\psi_L P_R \psi_R$ at the vacuum
+   define a bipartite graph between left and right components; its connected
+   components are the blocks (colour copies separate on their own).
+
+Two situations are refused with a specific message instead of being guessed:
+
+- a neutral complex component with a $\phi\phi$ mass term (an inert doublet
+  with $\lambda_5$): its real and imaginary parts are split, so it must be
+  declared with a zero VEV, `expand_vev({comp: 0})`. A zero VEV has no tadpole
+  variable; its stationarity condition (the term linear in the fluctuation)
+  is reported by `Model.tadpoles()` only if it does not vanish identically;
+- components of opposite charge that mix (doublets with $Y=\pm\tfrac12$),
+  which need a basis of a field together with a conjugate field.
+
+### Derivation: Goldstone directions
+
+Under an infinitesimal gauge transformation
+$\delta\phi = i\alpha^a T^a \phi$. The potential is invariant, so at a
+stationary point $\langle\phi\rangle$ the mass matrix annihilates every
+direction $i\,T^a\langle\phi\rangle$ — the Goldstone theorem [GSW62]. Each
+broken generator therefore *gives* a zero mode, with no diagonalization:
+
+$$
+G^a \;\propto\; i\,T^a\langle\phi\rangle, \qquad M^2\,G^a = 0 .
+$$
+
+In fluctuation coordinates, with $\phi = (v + \phi_r + i\phi_i)/\sqrt2$,
+$\delta\phi_r = \sqrt2\,\mathrm{Re}\,\delta\phi$ and
+$\delta\phi_i = \sqrt2\,\mathrm{Im}\,\delta\phi$
+(`goldstone_directions`). For two doublets with VEVs $v_1, v_2$ the
+directions are $(v_1, v_2)/\sqrt{v_1^2+v_2^2}$ in both the CP-odd and the
+charged block, so the rotation is $R(\beta)$ with $\tan\beta = v_2/v_1$ — the
+familiar 2HDM result [Branco12] *comes out* of the group theory.
+
+`mass_blocks` checks $M^2 G = 0$ for every Goldstone vector it attaches to a
+block. A failure means the vacuum is not a stationary point as given, almost
+always because the tadpoles were not solved, and it raises saying so.
+
+### Algorithm: choosing the rotation
+
+| block | route | order of `names` |
+|---|---|---|
+| $1\times1$ | no rotation (optional rename) | the state |
+| $n\times n$ with $n-1$ Goldstones | fixed exactly by the Goldstone vectors: rows $G^\dagger$, then the orthogonal complement | Goldstones, then the physical state |
+| real $2\times2$, no Goldstone | $\tan2\theta$ (7.1) | rows of $R(\theta)$ |
+| fermion $2\times2$, one flavour | analytic biunitary (7.2), field- and bar-side rotations for both chiralities | as `diagonalize_svd_2x2` |
+| any block with `values=` | numeric, at 50 digits | ascending or descending mass (`order=`) |
+| symbolic, larger, fewer Goldstones | `NotImplementedError` listing the options | |
+
+Every rotation is checked against the mass matrix before it is registered:
+symbolically for the Goldstone-fixed route, at random numeric points for the
+$\tan2\theta$ route (whose explicit $\tfrac12\arctan$ angle makes `simplify`
+take minutes on an identity that holds by construction). A user-supplied
+`rotation=` goes through the same check.
+
+Flavoured fermion blocks ($n_f>1$) and blocks with a Majorana mass term are
+*reported* with their matrix and `diagonalizable=False`, and the note names
+the existing route (`diagonalize_svd(method="numeric")`, or 7.3).
+
+### Which state is which: the $\tan2\theta$ branch
+
+$\tan2\theta$ fixes $\theta$ only modulo $\pi/2$, and a shift by $\pi/2$
+swaps the two eigenstates. The principal value $\theta=\tfrac12\arctan(\dots)$
+puts the heavier state first only where $M_{11}>M_{22}$; which state is
+heavier cannot be decided symbolically. So:
+
+- without `values=`, the names follow the rows of $R(\theta)$ on the principal
+  branch, exactly as `diagonalize_orthogonal_2x2` does, and carry no mass
+  claim;
+- with `values=` (a benchmark point), the rotation stays symbolic in
+  $\theta$ and the numbers only pick the branch
+  ($\theta \to \theta \pm \pi/2$ with the sign of $M_{12}$ when needed) so the
+  first name is the heavier state (`order="light_first"` for the opposite).
+  `Diagonalization.branch_valid_for` records the signs of
+  $(M_{11}-M_{22},\,M_{12})$ at that point: the labelling holds in the region
+  of parameter space where those signs do, and a point across
+  $M_{11}=M_{22}$ needs its own call.
+
+Floats in `values=` are read as exact decimals, so a numeric rotation is
+computed at full working precision and a Goldstone comes out as an exact zero.
+
+### `model.physical`
+
+Each `diagonalize` call, and the SM helpers `weinberg_rotation`,
+`charged_current_rotation` and `to_physical_basis`, record their states in one
+registry: `bosons` (with conjugate partners), `cmap`, `conjugates`,
+`goldstones`, `masses`, and `charges` (the vacuum-derived charge propagated
+through the registered rotations). These are the arguments `Model.vertices`,
+`Model.validate(charges=…, fields=…, conjugate_map=…, conjugates=…)` and the
+UFO export ask for.
+
+Gauge bosons are not rotated by `diagonalize`: use `weinberg_rotation` and
+`charged_current_rotation` (`feynlag.models`).
+
+## 7.6 References
+
+- **[GSW62]** J. Goldstone, A. Salam and S. Weinberg, *"Broken Symmetries"*,
+  Phys. Rev. **127**, 965 (1962).
+  [doi:10.1103/PhysRev.127.965](https://doi.org/10.1103/PhysRev.127.965) — the
+  Goldstone theorem: a massless mode along each broken-generator direction.
+- **[Branco12]** G. C. Branco, P. M. Ferreira, L. Lavoura, M. N. Rebelo,
+  M. Sher and J. P. Silva, *"Theory and phenomenology of two-Higgs-doublet
+  models"*, Phys. Rept. **516** (2012) 1–102,
+  [arXiv:1106.0034](https://arxiv.org/abs/1106.0034),
+  [doi:10.1016/j.physrep.2012.02.002](https://doi.org/10.1016/j.physrep.2012.02.002)
+  — the 2HDM $\beta$ rotation of the CP-odd and charged sectors that the
+  Goldstone-fixed route reproduces.
+
 ## Design gotchas
 
 - **Never use generic `Matrix.diagonalize()`/`eigenvects()` on symbolic
@@ -203,6 +348,14 @@ Two rules make this work correctly:
   precisely so this isn't left to manual inspection.
 
 ## Validation
+
+- `tests/test_physical_basis.py` — the guided basis (7.5): SM blocks, charges
+  and Goldstone directions; the 2HDM blocks found without hints, with
+  `tan β = v2/v1`, `m_A²` and `m_{H±}²` from the Goldstone-fixed route and the
+  CP-even rotation identical to the hand-built one; branch selection on both
+  sides of `M11 = M22`; a CP-violating potential merging the neutral block;
+  the refusal guards; the vector-like-lepton rotations equal to
+  `diagonalize_svd_2x2`'s.
 
 - `tests/test_scalar_pipeline_thdm.py::test_alpha_rotation_diagonalizes_cp_even`,
   `::test_goldstone_beta_rotation` — the analytic 2×2 route, §7.1.
