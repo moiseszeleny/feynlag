@@ -80,6 +80,9 @@ class Parameter:
     def __pow__(self, other):
         return self.symbol ** sp.sympify(other)
 
+    def __rpow__(self, other):
+        return sp.sympify(other) ** self.symbol
+
     def __neg__(self):
         return -self.symbol
 
@@ -141,6 +144,23 @@ class ParameterSet:
             self._by_name[p.name] = p
             self._by_symbol[p.symbol] = p
         return self
+
+    def external(self, name, value=None, **kwargs):
+        """Create an :class:`ExternalParameter`, register it and return it.
+
+        Declares a parameter exactly once: ``ye = P.external("ye", 0.01)``
+        instead of building it and listing it again in
+        ``Model(parameters=[...])`` (pass the set itself, ``parameters=P``).
+        """
+        param = ExternalParameter(name, value, **kwargs)
+        self.add(param)
+        return param
+
+    def internal(self, name, expr=None, **kwargs):
+        """Create an :class:`InternalParameter`, register it and return it."""
+        param = InternalParameter(name, expr, **kwargs)
+        self.add(param)
+        return param
 
     def __getitem__(self, key):
         if isinstance(key, sp.Symbol):

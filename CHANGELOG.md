@@ -6,6 +6,40 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Field-level term constructors (`feynlag.terms`): `yukawa(y, FL, S, FR)`,
+  `dirac_mass(M, FL, FR)`, `majorana_mass(M, F)` and `weinberg(c, F, S)` build
+  the gauge contraction, the flavour indices and the `+ h.c.` in one call;
+  `tilde(H)` selects the conjugate doublet, and `inner(A, B)` / `eps(A, B)`
+  give the scalar invariants `A†B` and `Aᵀ(iσ₂)B`. A coupling may be a
+  parameter (flavour-universal) or an `IndexedBase` matrix (`Y[i, j]`). Each
+  returns exactly the expression the component-level `Bilinear` code produces.
+  A term whose U(1) charges do not balance raises a `ValueError` giving the
+  charge sum and, where it applies, the `S` ↔ `tilde(S)` fix; an unsupported
+  representation raises `NotImplementedError`. `feynlag.suggest` now uses the
+  same contraction functions.
+- `kinetic(*fields)` and `Lagrangian.add_kinetic(*fields)`: the scalar kinetic
+  terms and fermion gauge currents of a list of fields.
+- `FL_I`, `FL_J`: canonical flavour-index symbols, the defaults of the
+  constructors above.
+- `ParameterSet.external(...)` / `.internal(...)`: create, register and return
+  a parameter, so it is declared once (`Model(parameters=P)`).
+- Named component access: `H.H0`, `PsiL.EL`, `PsiL.ELbar`, and after
+  `expand_vev` the fluctuations `H.H0_r` / `H.H0_i`; `Field.named()` lists
+  them. The stored object is returned, so a tex-carrying symbol is never
+  rebuilt by name.
+- `Model.check_parameters()` / `Model.undeclared_symbols()`: Lagrangian or VEV
+  symbols that are neither a declared parameter nor a field. Opt-in through
+  `Model.validate(parameters=True)`; the default `validate()` is unchanged.
+- `Model.summary()`: the field-content table (type, gauge representations,
+  discrete and global assignments, flavours, VEVs) and the parameter table, as
+  text or Markdown.
+- `Parameter.__rpow__` (`2 ** p`).
+
+### Changed
+- `examples/sm_vll.py` is written with the new constructors; its printed
+  physics is unchanged.
+
 ## [0.3.0] — 2026-10-07
 
 ### Added

@@ -107,3 +107,43 @@ def test_dirac_fermion_fails_fast(groups):
     SU2L, U1Y = groups
     with pytest.raises(NotImplementedError, match="two WeylFermions"):
         DiracFermion("E", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)})
+
+
+def test_named_component_access(groups):
+    """``field.<component name>`` returns the stored component objects."""
+    SU2L, U1Y = groups
+    H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2)},
+               component_names=["Gp", "H0"], component_tex=["G^+", "H^0"])
+    assert H.Gp is H.components[0] and H.H0 is H.components[1]
+    # the tex-carrying symbol itself, not a same-named plain Symbol
+    assert H.H0 != sp.Symbol("H0") and sp.latex(H.H0) == "H^0"
+
+    v = ExternalParameter("v", 246.0, positive=True)
+    with pytest.raises(AttributeError):
+        H.H0_r                                   # no VEV expanded yet
+    H.expand_vev({H.H0: v}, tex={"H0_r": "h"})
+    re, im = H.fluctuations
+    assert H.H0_r is re and H.H0_i is im
+    assert sp.latex(H.H0_r) == "h"
+
+    PsiL = WeylFermion("PsiL", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
+                       chirality="L", component_names=["NL", "EL"])
+    assert PsiL.EL is PsiL.components[1]
+    assert PsiL.ELbar is PsiL.bar_components[1]
+    assert PsiL.bar(PsiL.EL) is PsiL.ELbar       # the method is untouched
+    assert set(PsiL.named()) == {"NL", "EL", "NLbar", "ELbar"}
+
+
+def test_named_access_errors_and_does_not_shadow(groups):
+    import copy
+
+    SU2L, U1Y = groups
+    H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2)},
+               component_names=["Gp", "H0"])
+    with pytest.raises(AttributeError, match="components: Gp, H0"):
+        H.nope
+    # real attributes win, and optional-attribute probes still get defaults
+    assert H.name == "H" and H.dim == 2
+    assert getattr(H, "chirality", None) is None
+    assert not hasattr(H, "_sympy_")
+    assert copy.copy(H).components == H.components

@@ -22,6 +22,28 @@ don't know `μ²` until you've imposed the tadpole condition, but you need the
 symbol `μ²` to exist before you can write down the potential that contains
 it.
 
+A parameter can be used directly in an expression (`lam * v**2`,
+`sp.sqrt(v)`, `ye * Bilinear(...)`); the `.s` attribute returns the
+underlying symbol and is only needed where SymPy asks for a `Symbol` itself
+(a `subs` key, a `solve` unknown).
+
+To declare each parameter once, create it through the set and hand the set
+to the model:
+
+```python
+P = ParameterSet()
+v = P.external("v", 246.0, positive=True, unit_dim=1)
+mu2 = P.internal("mu2", unit_dim=2)
+model = Model("...", parameters=P, ...)
+```
+
+`Model.check_parameters()` reports any symbol of the Lagrangian (or of a VEV)
+that is neither a declared parameter nor a field component. Such a symbol
+would count as mass dimension 0 in the power-counting check and have no
+value at export time. `IndexedBase` flavour matrices cannot be declared in the
+scalar-only `ParameterSet`, so they are listed separately and do not fail
+the check. It runs inside `Model.validate(parameters=True)`.
+
 ### Algorithm: `ParameterSet.dependency_order`
 
 A UFO parameter card must assign every internal parameter *after* every
@@ -66,6 +88,18 @@ plain symbols `H_1`, `H_2`.
   generically comes in several generations and every vertex-extraction and
   invariance check needs to preserve that index symbolically rather than
   unrolling it into `nflavors` separate symbols.
+
+Components are reachable by their declared names: `H.H0`, `PsiL.EL`, a
+fermion's bar leg as `PsiL.ELbar`, and after `expand_vev` the fluctuations
+`H.H0_r` / `H.H0_i` (`Field.named()` lists them). The stored object is
+returned. Use this rather than `sp.Symbol("H0_r", real=True)`: a symbol
+declared with a `tex=` name is a different object from the plain symbol of
+the same name, so rebuilding it by name silently refers to nothing in the
+model.
+
+`Model.summary()` prints the declared content as the table one would put in
+a paper: one row per field (type, representation under each gauge group,
+discrete irrep, global charge, flavours, VEV) and one per parameter.
 
 `Field.dim` (`fields.py:79`) is the product of `group.rep_dim(rep)` over
 every non-abelian group in `reps` — a field charged under `SU2L: 2` and
@@ -173,6 +207,10 @@ rather than raising.
 - `tests/test_fields.py::test_generators_doublet`,
   `::test_gauge_boson_from_group`, `::test_vev_expansion` — component and
   generator construction.
+- `tests/test_parameters.py::test_parameter_set_factories_declare_once`,
+  `tests/test_fields.py::test_named_component_access`,
+  `tests/test_validation.py::test_check_parameters_flags_an_undeclared_symbol`,
+  `::test_summary_tables` — the declaration conveniences above.
 - `tests/test_groups.py::TestSU2`, `::TestSU3`, `::TestS3` — generator
   matrices satisfy the expected commutation relations and CG products.
 
