@@ -146,6 +146,7 @@ def weinberg_rotation(model, SU2L, U1Y, z="Z", a="A", tex=None):
     Z, A = (tex_symbol(n, tex.get(n), real=True) for n in (z, a))
     theta_w = sp.atan(U1Y.coupling.s / SU2L.coupling.s)
     model.rotate(Rotation([W3, B], [Z, A], rotation_2x2(-theta_w)))
+    model.physical.add_bosons([Z, A])
     return Z, A
 
 
@@ -162,6 +163,8 @@ def charged_current_rotation(model, SU2L, wp="Wp", wm="Wm", tex=None):
     Wp, Wm = (tex_symbol(n, tex.get(n)) for n in (wp, wm))
     U = sp.Matrix([[1, -sp.I], [1, sp.I]]) / sp.sqrt(2)
     model.rotate(Rotation([W1, W2], [Wp, Wm], U, kind="unitary"))
+    model.physical.add_bosons([Wp, Wm])
+    model.physical.add_conjugate_pair(Wp, Wm)
     return Wp, Wm
 
 
@@ -276,6 +279,8 @@ def to_physical_basis(model, scaffold, gm_name="Gm", tex=None):
     Gp = H.components[0]
     Gm, cmap = conjugate_pair(Gp, gm_name, tex=tex.get(gm_name))
     bosons = [h, G0, Gp, Gm, Z, A, Wp, Wm]
+    model.physical.add_bosons([h, G0, Gp, Gm], goldstones=[G0, Gp, Gm])
+    model.physical.add_conjugate_pair(Gp, Gm, cmap)
     return PhysicalBasis(Z, A, Wp, Wm, h, G0, Gp, Gm, cmap, bosons)
 
 

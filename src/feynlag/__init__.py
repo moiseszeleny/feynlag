@@ -37,6 +37,7 @@ from .fields import (
     WeylFermion, bar_partner, conjugate_pair, dag, hc,
 )
 from .vacuum import (
+    Diagonalization, MassBlock, PhysicalRegistry, goldstone_directions,
     MajoranaRotation, Rotation, Vacuum, build_mass_matrix, charged_mass_matrix,
     diagonalize_orthogonal_2x2, diagonalize_svd, diagonalize_svd_2x2,
     diagonalize_takagi,
@@ -87,6 +88,7 @@ from .suggest import (
 )
 
 __all__ = [
+    "MassBlock", "Diagonalization", "PhysicalRegistry", "goldstone_directions",
     "ModelSummary", "ParameterReport",
     "FL_I", "FL_J", "inner", "eps", "tilde", "yukawa", "dirac_mass",
     "majorana_mass", "weinberg", "kinetic",
