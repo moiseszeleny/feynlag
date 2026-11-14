@@ -192,10 +192,11 @@ class MassBlock:
     """One set of fields that mix among themselves in the mass matrix.
 
     Attributes:
-        kind: ``"scalar"`` or ``"fermion"``.
+        kind: ``"scalar"``, ``"gauge"`` or ``"fermion"``.
         fields: the basis.  Scalars: real fluctuation symbols, or complex
-            components for a charged block.  Fermions: the left-handed
-            component ``IndexedBase``\\ s (``right`` holds the right-handed).
+            components for a charged block.  Gauge: the real weak-basis
+            components.  Fermions: the left-handed component
+            ``IndexedBase``\\ s (``right`` holds the right-handed).
         matrix: ``M²`` (scalars; symmetric, or hermitian with rows ``∂/∂φ̄``
             for a complex block) or the Dirac mass matrix ``M`` (fermions;
             rows bar-left, columns right).
@@ -221,6 +222,11 @@ class MassBlock:
     nflavors: int = 1
     diagonalizable: bool = True
     note: str = ""
+    #: gauge blocks — exact massless vectors in this basis (the photon)
+    massless: list = dc_field(default_factory=list)
+    #: charged gauge blocks — ``(A_a, A_b, sign)`` per positive-charge state
+    #: ``(A_a − i·sign·A_b)/√2``; ``fields`` is the flat ``[a1, b1, a2, …]``
+    pairs: list = dc_field(default_factory=list)
 
     @property
     def size(self):
@@ -238,6 +244,8 @@ class MassBlock:
             parts.append(f"x [{rnames}]")
             if self.nflavors != 1:
                 parts.append(f"flavours: {self.nflavors}")
+        elif self.kind == "gauge":
+            parts.append(f"massless: {len(self.massless)}")
         else:
             parts.append(f"goldstones: {len(self.goldstones)}")
         if not self.diagonalizable:
@@ -490,15 +498,147 @@ def _fermion_blocks(model, coeffs):
     return blocks
 
 
+# --------------------------------------------------------------------------
+# gauge-boson blocks
+# --------------------------------------------------------------------------
+
+def _plus_rows(pairs, flat):
+    """Rows ``u_p`` with ``W⁺_p = u_p · A`` over the flat component list."""
+    rows = sp.zeros(len(pairs), len(flat))
+    for p, (a, b, sign) in enumerate(pairs):
+        rows[p, flat.index(a)] = 1 / SQRT2
+        rows[p, flat.index(b)] = -sp.I * sign / SQRT2
+    return rows
+
+
+def _gauge_blocks(model, coeffs):
+    """Charged and neutral gauge-boson blocks of the groups acting on a VEV.
+
+    Charge eigenstates come from the adjoint action of the unbroken charge
+    ``Q = Σ c_k T_k``: ``Q_adj`` pairs the real components ``(A_a, A_b)`` with
+    block ``[[0, −iq], [iq, 0]]``, and the charge ``+q`` state is
+    ``(A_a − iA_b)/√2``.  The massless neutral vector is known without
+    diagonalizing: ``A ∝ Σ_k (c_k/g_k) A_k`` — the mass term is
+    ``|Σ_k g_k A_k T_k⟨φ⟩|²`` and ``Q⟨φ⟩ = 0``.
+    """
+    from ..charges import _field_charge_matrix
+    from ..fields import GaugeBoson
+
+    if coeffs is None:
+        return []
+    touched = {g for (g, _idx), c in coeffs.items()}
+    fields = [f for f in model.fields
+              if isinstance(f, GaugeBoson) and f.group in touched]
+    if not fields:
+        return []
+    if model.lagrangian.sector("kinetic") == 0:
+        raise ValueError(
+            "the model lists gauge bosons but its Lagrangian has no "
+            "'kinetic' sector, so there is no gauge-boson mass matrix: add "
+            "(D_μφ)†(D^μφ) for every scalar with a VEV, e.g. "
+            "L.add_kinetic(H)")
+
+    comps = [c for f in fields for c in f.components]
+    M = model.gauge_mass_matrix(comps)
+    index = {c: k for k, c in enumerate(comps)}
+
+    # ---- charge structure of each adjoint
+    neutral, pairs_by_charge = [], {}
+    photon = {}
+    for f in fields:
+        g = f.group
+        coupling = sp.sympify(getattr(g.coupling, "symbol", g.coupling))
+        if g.abelian:
+            comp = f.components[0]
+            neutral.append(comp)
+            photon[comp] = coeffs.get((g, None), 0) / coupling
+            continue
+        Q = _field_charge_matrix(f, coeffs)
+        n = Q.shape[0]
+        for group_idx in _components(n, lambda a, b: Q[a, b] != 0
+                                     or Q[b, a] != 0):
+            if len(group_idx) == 1:
+                k = group_idx[0]
+                neutral.append(f.components[k])
+                photon[f.components[k]] = coeffs.get((g, k), 0) / coupling
+                continue
+            a, b = group_idx[0], group_idx[-1]
+            q = sp.simplify(sp.I * Q[a, b])
+            if (len(group_idx) != 2 or Q[a, a] != 0 or Q[b, b] != 0
+                    or sp.simplify(Q[b, a] - sp.I * q) != 0 or q == 0):
+                raise NotImplementedError(
+                    f"the charge operator does not pair {g.name}'s adjoint "
+                    f"components two by two (components "
+                    f"{[str(f.components[k]) for k in group_idx]}); this "
+                    f"generator basis is not supported by mass_blocks")
+            sign = -1 if q.is_negative else 1
+            pairs_by_charge.setdefault(sp.Abs(q), []).append(
+                (f.components[a], f.components[b], sign))
+
+    blocks = []
+
+    # ---- charged blocks: mass matrix in the charge-eigenstate basis
+    for q, pairs in pairs_by_charge.items():
+        flat = [c for a, b, _s in pairs for c in (a, b)]
+        idx = [index[c] for c in flat]
+        U = _plus_rows(pairs, flat)
+        Mc = (U * M.extract(idx, idx) * U.H).applyfunc(sp.simplify)
+        leak = (U * M.extract(idx, [index[c] for c in neutral])).applyfunc(
+            sp.simplify) if neutral else sp.zeros(1, 1)
+        if any(e != 0 for e in leak):
+            raise ValueError(
+                "a charged gauge boson mixes with a neutral one: the vacuum "
+                "breaks electric charge")
+        for members in _components(len(pairs), lambda a, b: Mc[a, b] != 0
+                                   or Mc[b, a] != 0):
+            sub = [pairs[k] for k in members]
+            blocks.append(MassBlock(
+                "gauge", [c for a, b, _s in sub for c in (a, b)],
+                Mc.extract(members, members), charge=q, complex=True,
+                pairs=sub))
+
+    # ---- neutral blocks, each with its share of the photon
+    if neutral:
+        nidx = [index[c] for c in neutral]
+        Mn = M.extract(nidx, nidx)
+        for members in _components(len(neutral), lambda a, b: Mn[a, b] != 0
+                                   or Mn[b, a] != 0):
+            basis = [neutral[k] for k in members]
+            sub = Mn.extract(members, members)
+            vec = sp.Matrix([photon[c] for c in basis])
+            massless = []
+            raw = None
+            if any(e != 0 for e in vec):
+                raw = vec.applyfunc(sp.cancel)
+                vec = _normalized(vec)
+                residual = (sub * vec).applyfunc(sp.simplify)
+                if any(not _is_zero(e) for e in residual):
+                    raise ValueError(
+                        f"the unbroken-charge direction of the gauge block "
+                        f"{basis} is not massless. The kinetic sector is "
+                        f"incomplete: every scalar with a VEV needs its "
+                        f"(D_μφ)†(D^μφ) term.")
+                massless = [vec]
+            block = MassBlock("gauge", basis, sub, charge=sp.S.Zero,
+                              massless=massless)
+            # the un-normalised direction (rational in the couplings), from
+            # which the orthogonal complement is built without radicals
+            block._massless_raw = raw
+            blocks.append(block)
+    return blocks
+
+
 def mass_blocks(model, kind=None):
     """The mass blocks of ``model`` at its vacuum.
 
     Args:
-        kind: ``"scalar"``, ``"fermion"`` or ``None`` (both).
+        kind: ``"scalar"``, ``"gauge"``, ``"fermion"`` or ``None`` (all).
 
     Returns:
-        list of :class:`MassBlock`, scalars first (real neutral blocks, then
-        complex ones), in field-declaration order.
+        list of :class:`MassBlock`: scalars (real neutral blocks, then complex
+        ones), gauge bosons (charged, then neutral), fermions — each in
+        field-declaration order.  Gauge blocks cover the groups that act on a
+        VEV; an unbroken group (colour) has none.
 
     Raises:
         ValueError: a Goldstone direction is not a zero mode (unsolved
@@ -507,12 +647,14 @@ def mass_blocks(model, kind=None):
             build (a field mixing with a conjugate field); the message names
             the components and the way out.
     """
-    if kind not in (None, "scalar", "fermion"):
+    if kind not in (None, "scalar", "gauge", "fermion"):
         raise ValueError(f"unknown block kind {kind!r}")
     coeffs = charge_operator(model)
     out = []
     if kind in (None, "scalar") and model.scalars:
         out += _scalar_blocks(model, coeffs)
+    if kind in (None, "gauge") and model.scalars:
+        out += _gauge_blocks(model, coeffs)
     if kind in (None, "fermion"):
         out += _fermion_blocks(model, coeffs)
     return out
@@ -733,6 +875,49 @@ def _verify(rot, M, what, symbolic=True):
                 f"(entry {(i, j)} is not zero)")
 
 
+def _tan2theta(M, angle, values, order, what, info):
+    """The ``tan 2θ`` angle of a real symmetric 2×2 ``M``; fills ``info``.
+
+    Returns the angle to build ``rotation_2x2`` with: the ``angle`` symbol if
+    one was given, else the explicit solution.  With ``values`` the numbers
+    choose the branch (``θ → θ ± π/2``) so the first state is the heavier
+    (``order="heavy_first"``) or the lighter one.
+    """
+    sym = _angle_symbol(angle)
+    solution, tan2theta = solve_mixing_angle_2x2(M)
+    if values is not None:
+        Mn = _numeric_matrix(M, values, what)
+        m11, m22, m12 = (float(Mn[a, b]) for a, b in
+                         ((0, 0), (1, 1), (0, 1)))
+        if abs(m11 - m22) <= 1e-12 * max(abs(m11), abs(m22), 1e-300):
+            raise ValueError(
+                f"{what}: M11 = M22 at values=, so the two states are "
+                f"not ordered by the tan(2θ) branch at this point")
+        # principal ½·atan puts the heavier state first iff M11 > M22;
+        # otherwise shift by ±π/2 with the sign of M12
+        heavy_first = order == "heavy_first"
+        shift = 0
+        if (m11 > m22) != heavy_first:
+            shift = 1 if m12 > 0 else -1
+        solution = solution + shift * sp.pi / 2
+        th = float(solution.subs(_value_map(values)))
+        D = (rotation_2x2(th) * Mn * rotation_2x2(th).T)
+        first_heavier = float(D[0, 0]) >= float(D[1, 1])
+        if first_heavier != heavy_first:
+            raise ValueError(f"{what}: branch selection failed at values=")
+        info["branch_valid_for"] = (
+            1 if m11 > m22 else -1,
+            0 if m12 == 0 else (1 if m12 > 0 else -1))
+    # without an angle symbol the relation is stated for a placeholder θ
+    # (tan(2·atan(…)/2) would evaluate the equation away)
+    info["angle_relation"] = sp.Eq(
+        sp.tan(2 * (sym if sym is not None
+                    else sp.Symbol("theta", real=True))), tan2theta)
+    info["angle_solution"] = solution
+    info["route"] = "tan2theta"
+    return sym if sym is not None else solution
+
+
 def _scalar_route(model, block, names, tex, angle, values, rotation, order):
     n = block.size
     M = block.matrix
@@ -779,39 +964,7 @@ def _scalar_route(model, block, names, tex, angle, values, rotation, order):
         return R, "orthogonal" if is_real else "unitary", info, k
 
     if n == 2 and real and not (values and not M.free_symbols):
-        sym = _angle_symbol(angle)
-        solution, tan2theta = solve_mixing_angle_2x2(M)
-        if values is not None:
-            Mn = _numeric_matrix(M, values, what)
-            m11, m22, m12 = (float(Mn[a, b]) for a, b in
-                             ((0, 0), (1, 1), (0, 1)))
-            if abs(m11 - m22) <= 1e-12 * max(abs(m11), abs(m22), 1e-300):
-                raise ValueError(
-                    f"{what}: M11 = M22 at values=, so the two states are "
-                    f"not ordered by the tan(2θ) branch at this point")
-            # principal ½·atan puts the heavier state first iff M11 > M22;
-            # otherwise shift by ±π/2 with the sign of M12
-            heavy_first = order == "heavy_first"
-            shift = 0
-            if (m11 > m22) != heavy_first:
-                shift = 1 if m12 > 0 else -1
-            solution = solution + shift * sp.pi / 2
-            th = float(solution.subs(_value_map(values)))
-            D = (rotation_2x2(th) * Mn * rotation_2x2(th).T)
-            first_heavier = float(D[0, 0]) >= float(D[1, 1])
-            if first_heavier != heavy_first:
-                raise ValueError(f"{what}: branch selection failed at values=")
-            info["branch_valid_for"] = (
-                1 if m11 > m22 else -1,
-                0 if m12 == 0 else (1 if m12 > 0 else -1))
-        theta = sym if sym is not None else solution
-        # without an angle symbol the relation is stated for a placeholder θ
-        # (tan(2·atan(…)/2) would evaluate the equation away)
-        info["angle_relation"] = sp.Eq(
-            sp.tan(2 * (sym if sym is not None
-                        else sp.Symbol("theta", real=True))), tan2theta)
-        info["angle_solution"] = solution
-        info["route"] = "tan2theta"
+        theta = _tan2theta(M, angle, values, order, what, info)
         return rotation_2x2(theta), "orthogonal", info, 0
 
     if values is not None:
@@ -1018,6 +1171,218 @@ def _diagonalize_fermion(model, block, names, tex, angle, values, register):
                            new_right=newR)
 
 
+def _real_complement(raw, n):
+    """Orthogonal complement of the real vector ``raw`` in ``R^n``.
+
+    Gram–Schmidt of the unit vectors in component order, done on
+    **un-normalised** vectors so every intermediate is a rational function of
+    the couplings (``cancel``, never ``simplify`` — normalising first makes
+    the projections nested radicals that SymPy does not reduce in reasonable
+    time).  Returns ``[(v, N)]`` with ``v`` un-normalised and ``N = v·v``;
+    the unit vector is ``v/√N``, its first non-zero entry positive where the
+    sign is decidable.
+    """
+    basis = [] if raw is None else [(sp.Matrix(raw), sp.cancel(raw.dot(raw)))]
+    out = []
+    for k in range(n):
+        v = sp.eye(n)[:, k]
+        for u, norm in basis + out:
+            v = v - sp.cancel(u[k] / norm) * u
+        v = v.applyfunc(sp.cancel)
+        if all(e == 0 for e in v):
+            continue
+        # clear the common denominator, fix the sign of the leading entry
+        lead = next(e for e in v if e != 0)
+        v = (v / lead).applyfunc(sp.cancel)
+        den = sp.lcm([sp.fraction(e)[1] for e in v])
+        v = (v * den).applyfunc(sp.cancel)
+        lead = sp.factor(next(e for e in v if e != 0))
+        if lead.could_extract_minus_sign():
+            v = -v
+        out.append((v, sp.factor(sp.cancel(v.dot(v)))))
+    return out
+
+
+def _order_rows(R, eig, order):
+    """Numeric eigen-rows arranged for a gauge block: massive states in
+    ``order``, massless ones last."""
+    rows = list(zip(eig, [R.row(i) for i in range(R.rows)]))
+    massive = [r for r in rows if r[0] != 0]
+    massless = [r for r in rows if r[0] == 0]
+    if order == "heavy_first":
+        massive.reverse()
+    rows = massive + massless
+    return sp.Matrix.vstack(*[r for _e, r in rows]), [e for e, _r in rows]
+
+
+def _diagonalize_gauge(model, block, names, tex, angle, values, rotation,
+                       order, conjugate_names, register):
+    what = f"diagonalize({block.fields})"
+    if order not in ("heavy_first", "light_first"):
+        raise ValueError("order must be 'heavy_first' or 'light_first'")
+    info = {}
+    old = list(block.fields)
+    reg = model.physical
+
+    # ------------------------------------------------------- charged block
+    if block.pairs:
+        k = len(block.pairs)
+        if names is None or len(names) != k:
+            raise ValueError(f"{what}: need {k} names (the positive-charge "
+                             f"states)")
+        if conjugate_names is None or len(conjugate_names) != k:
+            raise ValueError(
+                f"{what}: conjugate_names=[...] is required for a charged "
+                f"gauge block (the names of the negative-charge partners)")
+        Mc = block.matrix
+        U = _plus_rows(block.pairs, old)
+        if rotation is not None:
+            V = sp.Matrix(rotation)
+        elif k == 1:
+            V = sp.eye(1)
+        elif (k == 2 and Mc.free_symbols
+              and all(sp.im(e) == 0 for e in Mc)):
+            theta = _tan2theta(Mc, angle, values, order, what, info)
+            V = rotation_2x2(theta)
+        elif values is not None or not Mc.free_symbols:
+            Mn = _numeric_matrix(Mc, values, what)
+            V, eig, _real = _numeric_hermitian(Mn)
+            V, eig = _order_rows(V, eig, order)
+            info["numeric_masses"] = eig
+        else:
+            raise NotImplementedError(
+                f"{what}: a symbolic {k}×{k} charged block has no closed "
+                f"form; pass values={{...}} or rotation=<matrix>")
+        plus = V * U
+        R = sp.Matrix.vstack(plus, plus.conjugate())
+        new_plus = _new_symbols(names, tex, real=False)
+        new_minus = _new_symbols(conjugate_names, tex, real=False)
+        new = new_plus + new_minus
+        rot = Rotation(old, new, R, kind="unitary")
+        full = model.gauge_mass_matrix(old)
+        explicit = rot
+        if "angle_solution" in info and angle is not None:
+            explicit = Rotation(old, new, R.subs(_angle_symbol(angle),
+                                                 info["angle_solution"]),
+                                kind="unitary")
+        if "numeric_masses" in info:
+            m2 = info["numeric_masses"]
+            _verify(rot, _numeric_matrix(full, values, what), what)
+        else:
+            tan2 = info.get("route") == "tan2theta"
+            _verify(explicit, full, what, symbolic=not tan2)
+            D = V * Mc * V.H
+            m2 = [(sp.expand if tan2 else sp.simplify)(D[a, a])
+                  for a in range(k)]
+        if "angle_solution" in info:
+            rot.angle_relation = info["angle_relation"]
+            rot.angle_solution = info["angle_solution"]
+            _register_angle(model, angle, info["angle_solution"])
+        if register:
+            model.rotate(rot)
+            reg.add_bosons(new)
+            for p, m, mass in zip(new_plus, new_minus, m2):
+                reg.add_conjugate_pair(p, m)
+                reg.masses[p] = reg.masses[m] = mass
+        return Diagonalization(
+            block, [rot], new_plus, masses_squared=m2,
+            angle_relation=info.get("angle_relation"),
+            angle_solution=info.get("angle_solution"),
+            branch_valid_for=info.get("branch_valid_for"),
+            new_right=new_minus)
+
+    # ------------------------------------------------------- neutral block
+    n = block.size
+    M = block.matrix
+    n0 = len(block.massless)
+    if n == 1 and names is None and rotation is None:
+        m2 = [sp.S.Zero if n0 else sp.simplify(M[0, 0])]
+        if register:
+            reg.add_bosons(old)
+            reg.masses[old[0]] = m2[0]
+        return Diagonalization(block, [], old, masses_squared=m2)
+    if names is None or len(names) != n:
+        raise ValueError(f"{what}: need {n} names (massive states first, "
+                         f"the massless one last)")
+
+    explicit_R = None
+    if rotation is not None:
+        R = sp.Matrix(rotation)
+    else:
+        # orthonormal complement of the massless vector(s): Gram–Schmidt of
+        # the unit vectors in component order.  For the SM this is
+        # Z = c·W³ − s·B, the rows of rotation_2x2(−θ_W).
+        comp = _real_complement(getattr(block, "_massless_raw", None), n)
+        roots = [sp.sqrt(N) for _v, N in comp]
+        E = (sp.Matrix.vstack(*[v.T / r for (v, _N), r in zip(comp, roots)])
+             if comp else sp.zeros(0, n))
+        zero_rows = [v.T for v in block.massless]
+        m = n - n0
+        # reduced matrix in the complement, kept rational under the roots
+        Mr = sp.Matrix(m, m, lambda a, b: sp.factor(sp.cancel(
+            (comp[a][0].T * M * comp[b][0])[0])) / (roots[a] * roots[b]))
+        diagonal = all(Mr[a, b] == 0 for a in range(m) for b in range(m)
+                       if a != b)
+        if m <= 1 or (diagonal and values is None):
+            R = sp.Matrix.vstack(E, *zero_rows)
+            sym = _angle_symbol(angle)
+            if sym is not None:
+                if not (n == 2 and n0 == 1):
+                    raise ValueError(
+                        f"{what}: angle= needs a 2×2 block with one massless "
+                        f"state, or a block with two mixing massive states")
+                a = block.massless[0]
+                tan = sp.simplify(a[0] / a[1])
+                info["angle_relation"] = sp.Eq(sp.tan(sym), tan)
+                info["angle_solution"] = sp.atan(tan)
+                explicit_R = R
+                R = rotation_2x2(-sym)
+            m2 = [sp.simplify(Mr[a, a]) for a in range(m)] + [sp.S.Zero] * n0
+        elif m == 2 and Mr.free_symbols:
+            theta = _tan2theta(Mr, angle, values, order, what, info)
+            R = sp.Matrix.vstack(rotation_2x2(theta) * E, *zero_rows)
+            D = rotation_2x2(theta) * Mr * rotation_2x2(theta).T
+            m2 = [sp.expand(D[0, 0]), sp.expand(D[1, 1])] + [sp.S.Zero] * n0
+            if angle is not None:
+                explicit_R = R.subs(_angle_symbol(angle),
+                                    info["angle_solution"])
+        elif values is not None or not M.free_symbols:
+            Mnum = _numeric_matrix(M, values, what)
+            R, eig, _real = _numeric_hermitian(Mnum)
+            R, m2 = _order_rows(R, eig, order)
+            info["numeric_matrix"] = Mnum
+        else:
+            raise NotImplementedError(
+                f"{what}: {m} massive neutral vectors mix and there is no "
+                f"closed-form rotation. Options: pass values={{...}} (a "
+                f"benchmark point) for a numeric rotation, or pass "
+                f"rotation=<matrix> (it is checked against the mass matrix).")
+
+    new = _new_symbols(names, tex, real=True)
+    rot = Rotation(old, new, R, kind="orthogonal")
+    check = Rotation(old, new, explicit_R, kind="orthogonal") \
+        if explicit_R is not None else rot
+    # symbolic check only where it is cheap (a 2×2 fixed by the photon)
+    _verify(check, info.get("numeric_matrix", M), what,
+            symbolic=n <= 2 and info.get("route") != "tan2theta")
+    if rotation is not None:
+        m2 = rot.masses_squared(M)
+    if "angle_solution" in info:
+        rot.angle_relation = info["angle_relation"]
+        rot.angle_solution = info["angle_solution"]
+        _register_angle(model, angle, info["angle_solution"])
+    if register:
+        model.rotate(rot)
+        reg.add_bosons(new)
+        for s_, mass in zip(new, m2):
+            reg.masses[s_] = mass
+    return Diagonalization(
+        block, [rot], new, masses_squared=m2,
+        angle_relation=info.get("angle_relation"),
+        angle_solution=info.get("angle_solution"),
+        branch_valid_for=info.get("branch_valid_for"))
+
+
 def diagonalize_block(model, block, names=None, tex=None, angle=None,
                       values=None, rotation=None, order="heavy_first",
                       conjugate_names=None, register=True):
@@ -1038,6 +1403,17 @@ def diagonalize_block(model, block, names=None, tex=None, angle=None,
       ``Diagonalization.branch_valid_for`` records where that holds.
     - **anything else with ``values=``**: a numeric rotation at that point
       (eigenvalues in ``order``).
+    - **gauge, charged**: the charge eigenstates ``(A_a − iA_b)/√2`` read off
+      the unbroken charge; ``names`` are the positive-charge states and
+      ``conjugate_names`` (required) their partners.  Two charged states that
+      mix (``W_L``–``W_R``) take the ``tan 2θ`` route on top.
+    - **gauge, neutral**: the massless vector (the photon) is fixed exactly
+      by the unbroken charge, ``A ∝ Σ (c_k/g_k) A_k``; ``names`` list the
+      massive states first and the massless one **last** (``["Z", "A"]``).
+      One massive state is then fixed too (``angle=`` writes the 2×2 as
+      ``rotation_2x2(−angle)`` with ``tan(angle)`` attached — the Weinberg
+      angle); two that mix (``Z``–``Z′``) take the ``tan 2θ`` route in the
+      photon's orthogonal complement, registered as one composed rotation.
     - **fermion 2×2** (one flavour per component): the analytic biunitary
       route, registering field- and bar-side rotations for both chiralities;
       ``names=["e1", "e2"]`` creates ``e1L, e1R, e1Lbar, …``;
@@ -1065,5 +1441,8 @@ def diagonalize_block(model, block, names=None, tex=None, angle=None,
     if block.kind == "fermion":
         return _diagonalize_fermion(model, block, names, tex, angle, values,
                                     register)
+    if block.kind == "gauge":
+        return _diagonalize_gauge(model, block, names, tex, angle, values,
+                                  rotation, order, conjugate_names, register)
     return _diagonalize_scalar(model, block, names, tex, angle, values,
                                rotation, order, conjugate_names, register)

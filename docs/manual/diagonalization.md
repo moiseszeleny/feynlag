@@ -229,7 +229,11 @@ Nothing is assumed about CP or about a vacuum alignment.
 3. **Complex sector.** Components without a VEV expansion, grouped by charge,
    with $M^2_{ij} = \partial^2V/\partial\bar\phi_i\partial\phi_j$ and the same
    connected-component split.
-4. **Fermions.** The Dirac mass terms $\bar\psi_L P_R \psi_R$ at the vacuum
+4. **Gauge bosons** of the groups that act on a VEV (an unbroken group such
+   as colour has no block). The adjoint action of the unbroken charge pairs
+   the real components two by two; the neutral components are split by the
+   connected components of the gauge mass matrix (see the derivation below).
+5. **Fermions.** The Dirac mass terms $\bar\psi_L P_R \psi_R$ at the vacuum
    define a bipartite graph between left and right components; its connected
    components are the blocks (colour copies separate on their own).
 
@@ -267,6 +271,53 @@ familiar 2HDM result [Branco12] *comes out* of the group theory.
 block. A failure means the vacuum is not a stationary point as given, almost
 always because the tadpoles were not solved, and it raises saying so.
 
+### Derivation: charge eigenstates and the photon
+
+Let $Q = \sum_k c_k T_k$ be the unbroken charge ({doc}`charges`), a
+combination of Cartan generators and U(1) charges with $Q\langle\phi\rangle=0$.
+
+**Charged vectors.** On a group's adjoint, $(T^a)_{bc} = -i f^{abc}$, so
+$Q_{\rm adj}$ is imaginary and antisymmetric. Its non-zero pattern pairs the
+real components $(A_a, A_b)$ with block
+$\begin{pmatrix}0 & -iq\\ iq & 0\end{pmatrix}$, whose charge-$(+q)$ eigenstate
+is
+
+$$
+W^{+} = \frac{A_a - iA_b}{\sqrt2}, \qquad W^{-} = \frac{A_a + iA_b}{\sqrt2}.
+$$
+
+For SU(2) with $Q \supset T^3$ this is $W^\pm = (W^1 \mp iW^2)/\sqrt2$,
+exactly the matrix `charged_current_rotation` registers. A component left
+unpaired is neutral. A connected piece that is not such a $2\times2$ block is
+refused (`NotImplementedError`).
+
+**The photon.** The gauge mass term comes from
+$|D_\mu\langle\phi\rangle|^2 = \big|\sum_k g_k A_k T_k\langle\phi\rangle\big|^2$.
+Choosing $A_k = (c_k/g_k)\,A$ turns the sum into
+$A\,Q\langle\phi\rangle = 0$, so
+
+$$
+A \;\propto\; \sum_k \frac{c_k}{g_k}\,A_k
+$$
+
+is massless, with no diagonalization. For the SM ($Q = T^3 + Y$) this is
+$A = (g' W^3 + g B)/\sqrt{g^2+g'^2} = \sin\theta_W W^3 + \cos\theta_W B$; for
+$SU(2)_L\times SU(2)_R\times U(1)_{B-L}$ it is
+$\propto W^3_L/g_L + W^3_R/g_R + B/g_{BL}$. `mass_blocks` checks
+$M^2 A = 0$ and raises if it fails (an incomplete kinetic sector).
+
+**The massive neutral states** live in the orthogonal complement of the
+photon, built by Gram–Schmidt of the unit vectors in component order. With one
+massive state that fixes everything: for the SM, $Z = \cos\theta_W W^3 -
+\sin\theta_W B$, the rows of $R(-\theta_W)$ that `weinberg_rotation` uses.
+With two (a $Z'$), the complement basis is the SM-like $Z_0$ and the new
+vector, and the $2\times2$ matrix in that basis takes the $\tan2\theta$ route
+(7.1). The two steps are registered as **one** composed rotation.
+
+The Gram–Schmidt is done on un-normalised vectors, so every intermediate is a
+rational function of the couplings; normalising first produces nested
+radicals that `simplify` does not reduce in reasonable time.
+
 ### Algorithm: choosing the rotation
 
 | block | route | order of `names` |
@@ -274,6 +325,8 @@ always because the tadpoles were not solved, and it raises saying so.
 | $1\times1$ | no rotation (optional rename) | the state |
 | $n\times n$ with $n-1$ Goldstones | fixed exactly by the Goldstone vectors: rows $G^\dagger$, then the orthogonal complement | Goldstones, then the physical state |
 | real $2\times2$, no Goldstone | $\tan2\theta$ (7.1) | rows of $R(\theta)$ |
+| gauge, charged pair(s) | the charge eigenstates above; two that mix ($W_L$–$W_R$) add a $\tan2\theta$ rotation | positive-charge states; partners in `conjugate_names` (required) |
+| gauge, neutral with a photon | photon fixed by $Q$; one massive state fixed too, two take $\tan2\theta$ in the complement | massive states, then the photon **last** |
 | fermion $2\times2$, one flavour | analytic biunitary (7.2), field- and bar-side rotations for both chiralities | as `diagonalize_svd_2x2` |
 | any block with `values=` | numeric, at 50 digits | ascending or descending mass (`order=`) |
 | symbolic, larger, fewer Goldstones | `NotImplementedError` listing the options | |
@@ -320,8 +373,17 @@ through the registered rotations). These are the arguments `Model.vertices`,
 `Model.validate(charges=…, fields=…, conjugate_map=…, conjugates=…)` and the
 UFO export ask for.
 
-Gauge bosons are not rotated by `diagonalize`: use `weinberg_rotation` and
-`charged_current_rotation` (`feynlag.models`).
+For the SM gauge sector the generic route and the helpers
+`weinberg_rotation` / `charged_current_rotation` (`feynlag.models`) register
+the same matrices, so the vertices, and the UFO sign conventions validated
+against MadGraph ({doc}`export`), are the same either way:
+
+```python
+charged, neutral = model.mass_blocks(kind="gauge")
+model.diagonalize(charged, names=["Wp"], conjugate_names=["Wm"])
+model.diagonalize(neutral, names=["Z", "A"], angle="thetaW")   # R(−θ_W)
+# with a Z′:  names=["Z", "Zp", "A"], angle="thetap"
+```
 
 ## 7.6 References
 
@@ -355,7 +417,12 @@ Gauge bosons are not rotated by `diagonalize`: use `weinberg_rotation` and
   CP-even rotation identical to the hand-built one; branch selection on both
   sides of `M11 = M22`; a CP-violating potential merging the neutral block;
   the refusal guards; the vector-like-lepton rotations equal to
-  `diagonalize_svd_2x2`'s.
+  `diagonalize_svd_2x2`'s. Gauge sector: the SM rotations equal to
+  `weinberg_rotation` / `charged_current_rotation`, with the same physical
+  kinetic Lagrangian and the same cubic and quartic gauge vertices; the
+  U(1)$_X$ composed rotation equal to the chained hand-built one, with the
+  `tan 2θ′` of `test_u1x.py`; a left-right model
+  ($SU(2)_L\times SU(2)_R\times U(1)$) with $W_L$–$W_R$ mixing and its photon.
 
 - `tests/test_scalar_pipeline_thdm.py::test_alpha_rotation_diagonalizes_cp_even`,
   `::test_goldstone_beta_rotation` — the analytic 2×2 route, §7.1.
