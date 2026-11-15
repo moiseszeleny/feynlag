@@ -53,6 +53,24 @@ All notable changes to feynlag are documented here. The format follows
   and `to_physical_basis` record into it too. A symbolic block with no closed
   form, a field mixing with a conjugate field, and flavoured or Majorana
   fermion blocks are refused or reported with the route to use instead.
+- `Model.most_general(name, fields, gauge_groups, discrete_groups)`
+  (`feynlag.general.most_general_lagrangian`): the most general Lagrangian
+  the declared symmetries allow, built from the `suggest` operator basis with
+  a named coupling of the right mass dimension per operator (`m2_k`, `mu_k`,
+  `lam_k`, `M_k`, `y_k`, `c_k`; `names=` overrides), flavour-matrix Yukawas
+  for multi-flavour fermions, and the kinetic terms. Gauge bosons missing from
+  `fields` are added. A potential operator needing `+ h.c.` gets one real
+  coupling (the CP-odd combination is not enumerated).
+- `Model.term_coverage()` / `Model.missing_terms()`: decompose a hand-written
+  potential and Yukawa sector on that basis and report the coefficient of each
+  invariant, the allowed invariants that are absent, and the remainder (a
+  non-invariant term, a complex coupling's CP-odd part, a soft breaking of a
+  declared symmetry).
+- `InvarianceReport.explain()` and `report.hints`: one plain sentence per
+  failed check (which monomial carries a net U(1) charge, gauge bosons missing
+  from `Model(fields=...)`, a sector missing its `+ h.c.`);
+  `raise_on_failure()` includes it. `invariance.u1_charge_breakdown` is the
+  underlying diagnostic. `report.failures` is unchanged.
 - Gauge bosons in the guided physical basis. `Model.mass_blocks(kind="gauge")`
   returns the charged and neutral gauge blocks of every group that acts on a
   VEV, and `Model.diagonalize` rotates them: the charge eigenstates

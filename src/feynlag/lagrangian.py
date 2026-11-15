@@ -99,15 +99,37 @@ class InvarianceReport:
     #: list of (term, check_name, details)
     failures: list = dc_field(default_factory=list)
     checked: int = 0
+    #: one plain-language explanation per failure, in the same order
+    hints: list = dc_field(default_factory=list)
 
     @property
     def ok(self):
         return not self.failures
 
+    def explain(self):
+        """What failed and why, one paragraph per failure.
+
+        For a U(1) it lists the monomials that carry a net charge; for a
+        non-abelian group it says when the group's gauge bosons are simply
+        missing from ``Model(fields=...)``; for hermiticity it names the
+        sector that lacks its ``+ h.c.``.
+        """
+        if self.ok:
+            return "all invariance checks passed"
+        out = []
+        for k, (term, name, _details) in enumerate(self.failures):
+            label = term.name or f"<{term.sector} term>"
+            hint = self.hints[k] if k < len(self.hints) else ""
+            out.append(f"[{name}] {label}: {hint or 'not invariant'}")
+        return "\n".join(out)
+
     def raise_on_failure(self):
         if not self.ok:
-            lines = [f"  [{name}] term {term.name or term.expr}: {details}"
-                     for term, name, details in self.failures]
+            lines = []
+            for k, (term, name, details) in enumerate(self.failures):
+                hint = self.hints[k] if k < len(self.hints) else ""
+                lines.append(f"  [{name}] term {term.name or term.expr}: "
+                             f"{hint + ' — ' if hint else ''}{details}")
             raise ValueError("invariance check failed:\n" + "\n".join(lines))
         return self
 
@@ -299,6 +321,60 @@ class Model:
         self.rotations = []
         self._tadpole_solutions = {}
         self._cache = {}
+
+    @classmethod
+    def most_general(cls, name, fields, gauge_groups=(), discrete_groups=(),
+                     parameters=(), names=None, max_dim=4, **kwargs):
+        """A model with the most general Lagrangian its symmetries allow.
+
+        Every invariant operator of the scalars and fermions in ``fields``
+        gets a named coupling (:func:`feynlag.general.most_general_lagrangian`),
+        and the kinetic terms are added.  The result is an ordinary
+        :class:`Model`; the generated operators and couplings are listed by
+        ``model.general``.
+
+        Args:
+            fields: scalars and fermions (and optionally the gauge bosons;
+                any group's bosons not listed are added).
+            parameters: parameters that already exist (gauge couplings, VEVs);
+                the generated couplings are appended.
+            names: ``{operator label: coupling name}`` overrides.
+            max_dim: ``4`` or ``5`` (Weinberg operator).
+            **kwargs: forwarded to :class:`Model` (``global_groups``).
+        """
+        from .general import most_general_lagrangian
+
+        from .fields import GaugeBoson
+
+        general = most_general_lagrangian(
+            fields, gauge_groups, discrete_groups, names=names,
+            max_dim=max_dim)
+        # the kinetic terms contain the gauge bosons, which must be among the
+        # model's fields for the invariance check: add any not listed
+        fields = list(fields)
+        for g in gauge_groups:
+            if not any(isinstance(f, GaugeBoson) and f.group is g
+                       for f in fields):
+                fields.append(g.bosons())
+        model = cls(name, gauge_groups=gauge_groups,
+                    discrete_groups=discrete_groups, fields=fields,
+                    parameters=list(parameters) + general.parameters,
+                    lagrangian=general.lagrangian, **kwargs)
+        model.general = general
+        return model
+
+    def term_coverage(self, max_dim=4):
+        """Which invariants allowed by the declared symmetries this model's
+        potential and Yukawa sector contain, which they leave out, and what
+        they contain beyond them (:func:`feynlag.general.term_coverage`)."""
+        from .general import term_coverage
+        return term_coverage(self, max_dim=max_dim)
+
+    def missing_terms(self, max_dim=4):
+        """The allowed invariants this model does not contain, as
+        :class:`~feynlag.suggest.SuggestedTerm` objects (see
+        :meth:`term_coverage`)."""
+        return self.term_coverage(max_dim=max_dim).missing
 
     def _invalidate(self):
         """Drop cached pipeline results after a state mutation."""
@@ -564,7 +640,36 @@ class Model:
         Returns:
             :class:`InvarianceReport`.
         """
+        from .fields import GaugeBoson
+        from .invariance import u1_charge_breakdown
+
         report = InvarianceReport()
+
+        def fail(term, name, details, hint):
+            report.failures.append((term, name, details))
+            report.hints.append(hint)
+
+        def gauge_hint(term, group, violations):
+            if group.abelian:
+                charged = u1_charge_breakdown(term.expr, self.fields, group)
+                if charged:
+                    shown = "; ".join(f"{m} has charge {q}"
+                                      for m, q in charged[:4])
+                    more = (f" (and {len(charged) - 4} more)"
+                            if len(charged) > 4 else "")
+                    return (f"{group.name} charges do not cancel: "
+                            f"{shown}{more}")
+                return f"not invariant under {group.name}"
+            listed = any(isinstance(f, GaugeBoson) and f.group is group
+                         for f in self.fields)
+            if not listed and term.expr.has(*group.bosons().components):
+                return (f"the term contains {group.name} gauge bosons, but "
+                        f"they are not in Model(fields=...); add "
+                        f"{group.name}.bosons() to the model's fields so they "
+                        f"transform in the adjoint")
+            return (f"the {group.name} indices are not contracted to a "
+                    f"singlet (generators violated: "
+                    f"{[a for a, _c in violations]})")
 
         for term in self.lagrangian:
             for group in self.gauge_groups:
@@ -572,28 +677,31 @@ class Model:
                     term.expr, self.fields, group)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, f"gauge:{group.name}", violations))
+                    fail(term, f"gauge:{group.name}", violations,
+                         gauge_hint(term, group, violations))
             for group in self.discrete_groups:
                 ok, violations = check_discrete_invariance(term.expr, group)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, f"discrete:{group.name}", violations))
+                    fail(term, f"discrete:{group.name}", violations,
+                         f"changes under {group.name} generator(s) "
+                         f"{[a for a, _r in violations]}")
             for group in self.global_groups:
                 ok, violations = check_global_invariance(term.expr, group)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, f"global:{group.name}", violations))
+                    fail(term, f"global:{group.name}", violations,
+                         f"carries a net {group.name} charge")
             if dimension:
                 ok, worst = check_mass_dimension(
                     term.expr, self.fields, self.parameters, max_dim=max_dim)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, "mass-dimension",
-                         f"dimension {worst} > {max_dim}"))
+                    fail(term, "mass-dimension",
+                         f"dimension {worst} > {max_dim}",
+                         f"mass dimension {worst} exceeds {max_dim}: declare "
+                         f"the coupling's unit_dim, or raise max_dim for an "
+                         f"effective operator")
 
         if hermiticity:
             for sector in SECTORS:
@@ -605,8 +713,10 @@ class Model:
                 if not ok:
                     fake_term = LagrangianTerm(expr, sector=sector,
                                                name=f"<sector {sector}>")
-                    report.failures.append(
-                        (fake_term, "hermiticity", residual))
+                    fail(fake_term, "hermiticity", residual,
+                         f"the {sector} sector is not hermitian: a term is "
+                         f"missing its '+ h.c.' (or a coupling that should "
+                         f"be real is complex)")
 
         if raise_on_failure:
             report.raise_on_failure()

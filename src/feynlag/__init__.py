@@ -63,6 +63,9 @@ from .terms import (
     FL_I, FL_J, dirac_mass, eps, inner, kinetic, majorana_mass, tilde,
     weinberg, yukawa,
 )
+from .general import (
+    GeneralLagrangian, TermCoverage, most_general_lagrangian, term_coverage,
+)
 from .anomalies import (
     AnomalyReport, anomaly_coefficients, check_anomaly_free,
 )
@@ -88,6 +91,8 @@ from .suggest import (
 )
 
 __all__ = [
+    "GeneralLagrangian", "TermCoverage", "most_general_lagrangian",
+    "term_coverage",
     "MassBlock", "Diagonalization", "PhysicalRegistry", "goldstone_directions",
     "ModelSummary", "ParameterReport",
     "FL_I", "FL_J", "inner", "eps", "tilde", "yukawa", "dirac_mass",
