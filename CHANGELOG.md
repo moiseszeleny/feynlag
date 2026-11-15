@@ -97,6 +97,31 @@ All notable changes to feynlag are documented here. The format follows
   unchanged (the intermediate `(Z0, X)` matrix is no longer printed).
 - `examples/sm_vll.py` is written with the new constructors; its printed
   physics is unchanged.
+- The remaining model-building examples use the new API: `sm_scalar_gauge`,
+  `sm_u1x` (now throughout: Yukawas, kinetic terms, parameters, and the h–s
+  portal block through `diagonalize`), `sm_vll` (gauge and charged-lepton
+  rotations through `diagonalize`), `sm_seesaw`, `sm_weinberg` (which also
+  prints `term_coverage(max_dim=5)`), `thdm_s3` and `sm_decays`. Their physics
+  output is unchanged. The differences are flavour indices printed as
+  `fl_i`/`fl_j`, added summaries and mass-block listings, and larger
+  invariance-check counts (`add_kinetic` adds one term per field).
+  `fermi_theory`, `sm_ckm`, `ee_to_ff` and `sm_higgs_decays` keep their
+  component-level terms (see `examples/README.md`).
+- Tutorials: `SM_VLL`, `SM_U1X`, `SM_Seesaw` and `THDM_S3` follow the migrated
+  scripts, with the same printed physics. `SM_U1X` replaces the hand-chained
+  Weinberg → Z–Z′ rotations with `diagonalize` and checks that the composed
+  rotation equals `R₂(θ′)·R₁(θ_W)`. `ModelBuilding` gains a section on
+  `Model.most_general`, `term_coverage` and `report.explain()`.
+  `SM_Feynman_Rules` keeps its hand-built model and ends with a section that
+  asserts the constructors reproduce it.
+
+### Fixed
+- `term_coverage` with a flavour-matrix Weinberg coefficient `c[i, j]`: the
+  coefficient came back as `(3c_ij + c_ji)/4` with a spurious remainder
+  ∝ `c_ij − c_ji`. `ν_iᵀCP_Lν_j` is symmetric in `i ↔ j`, so only the
+  symmetric part `(c_ij + c_ji)/2` is physical, and that is now returned with
+  no remainder. The basis operators are also put in the same canonical
+  flavour-index form as the model terms. Pinned in `tests/test_general.py`.
 
 ## [0.3.0] — 2026-10-07
 

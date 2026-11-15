@@ -196,7 +196,12 @@ model.rotate(Rotation([W1, W2], [Wp, Wm], U, kind="unitary"))
   `diagonalize_orthogonal_2x2(M, old, new, angle=...)`, which *derives* the
   angle from `tan 2θ = 2M₁₂/(M₁₁−M₂₂)` and attaches it as
   `rot.angle_relation` — the CONVENTIONS.md rule that any mixing angle must
-  be checked against its `tan 2θ` source, not just `sin²+cos²=1`.
+  be checked against its `tan 2θ` source, not just `sin²+cos²=1`. Or let
+  the model find the block and the rotation: `model.mass_blocks()` lists
+  which fields mix (with their derived charge and Goldstone directions), and
+  `model.diagonalize(block, names=[...])` builds and registers the rotation —
+  for the gauge bosons it gives exactly the `W±` and `(Z, A)` rotations
+  written by hand here (see `examples/sm_scalar_gauge.py`).
 - `kind="unitary"` tells `Rotation` to use `R†` (not `Rᵀ`) as the inverse
   when it builds the weak→physical substitution — needed here because the
   charged combination `W± = (W1 ∓ iW2)/√2` is complex.
@@ -296,8 +301,13 @@ eR = WeylFermion("eR", reps={U1Y: -1}, chirality="R", nflavors=3,
 current = fermion_gauge_current(Ll, i) + fermion_gauge_current(eR, i)
 ```
 
-Yukawa terms are written by hand as `Bilinear(ψ̄[i], Γ, χ[j])` sandwiches
-(`Γ` built from `diracPL`/`diracPR`), and `extract_fermion_vertices` +
+Yukawa terms are `Bilinear(ψ̄[i], Γ, χ[j])` sandwiches (`Γ` built from
+`diracPL`/`diracPR`). They can be written by hand, as in the notebook, or in
+one call with a field-level constructor that does the gauge contraction, the
+flavour indices and the `+ h.c.` and returns the same expression —
+`yukawa(Ye, Ll, H, eR)`, `yukawa(Yu, QL, tilde(H), uR)`, `dirac_mass`,
+`majorana_mass`, `weinberg`; `L.add_kinetic(H, Ll, eR)` adds the kinetic
+terms and gauge currents (`docs/manual/lagrangian.md`). Either way, `extract_fermion_vertices` +
 `fermion_mass_matrix` peel off the boson legs / build the mass matrix the
 same way the bosonic extractor does. See `tests/test_fermion_sector.py` for
 the full SM-lepton worked example (Yukawa mass, `W`/`Z`/`γ` currents with the
@@ -323,10 +333,14 @@ discrete `S₃` flavor symmetry) — read them alongside this checklist:
    Clebsch–Gordan contractions to build invariant terms without doing the
    group theory by hand — `thdm_s3.py` builds its entire potential this way.
 3. **Extend the potential/Yukawas**: write the new invariant contractions
-   (`dag(H1)*H2.mat`, CG products, …) and add them to a `Lagrangian` sector.
+   (`dag(H1)*H2.mat` or `inner(H1, H2)`, CG products, …) and add them to a
+   `Lagrangian` sector. `Model.most_general(...)` builds every allowed
+   operator with a coupling attached, and `model.term_coverage()` lists the
+   invariants a hand-written Lagrangian leaves out.
    Call `model.check_invariance()` immediately — a forbidden term (wrong
    representation, missing `+ h.c.`, wrong discrete charge) fails loudly
-   instead of silently producing wrong Feynman rules downstream.
+   instead of silently producing wrong Feynman rules downstream, and
+   `report.explain()` says why (for a U(1), the charge of each piece).
 4. **VEVs on every scalar that gets one**, then `solve_tadpoles([...])` for
    as many mass parameters as you have independent tadpole conditions. If
    the system is *over*-constrained (more tadpole equations than free mass

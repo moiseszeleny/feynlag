@@ -7,7 +7,8 @@ import sympy as sp
 from feynlag import (
     Bilinear, ExternalParameter, FL_I, FL_J, GaugeBoson, Lagrangian, Model,
     SU2, Scalar, U1, WeylFermion, ZN, diracPR, electroweak_scaffold,
-    expand_bilinear, hc, inner, most_general_lagrangian, tilde, yukawa,
+    expand_bilinear, hc, inner, most_general_lagrangian, tilde, weinberg,
+    yukawa,
 )
 from feynlag.invariance import u1_charge_breakdown
 
@@ -163,6 +164,31 @@ def test_coverage_of_the_most_general_model_is_complete():
     # each operator comes back with its own coupling
     assert {str(c) for _t, c in cov.present} == {
         str(c.name) for c, _t in model.general.terms}
+
+
+def test_coverage_of_the_weinberg_operator_with_a_flavour_matrix():
+    """ν_iᵀCP_Lν_j is symmetric in i↔j, so only the symmetric part of c_ij
+    is physical: it must come back as the coefficient, with no remainder
+    (the antisymmetric part used to show up as an unmatched term)."""
+    SU2L, U1Y, _ = _groups()
+    H = Scalar("H", reps={SU2L: 2, U1Y: half}, component_names=["Gp", "H0"])
+    Ll, eR = _leptons(SU2L, U1Y, 2)
+    c, Lam = sp.IndexedBase("c"), sp.Symbol("Lam", positive=True)
+    model = Model("W5", gauge_groups=[SU2L, U1Y], fields=[H, Ll],
+                  lagrangian=Lagrangian().add(weinberg(c, Ll, H) / Lam,
+                                              sector="other"))
+    cov = model.term_coverage(max_dim=5)
+    assert cov.unmatched == {}
+    (term, coeff), = [(t, k) for t, k in cov.present if t.dim == 5]
+    assert sp.simplify(coeff - (c[FL_I, FL_J] + c[FL_J, FL_I]) / (2 * Lam)) == 0
+    # the same operator with its dummy indices relabelled reads the same
+    swapped = weinberg(c, Ll, H, indices=(FL_J, FL_I)) / Lam
+    model2 = Model("W5b", gauge_groups=[SU2L, U1Y], fields=[H, Ll],
+                   lagrangian=Lagrangian().add(swapped, sector="other"))
+    cov2 = model2.term_coverage(max_dim=5)
+    assert cov2.unmatched == {}
+    (_t, coeff2), = [(t, k) for t, k in cov2.present if t.dim == 5]
+    assert sp.simplify(coeff2 - coeff) == 0
 
 
 def test_coverage_flags_a_complex_coupling_and_a_noninvariant_term():

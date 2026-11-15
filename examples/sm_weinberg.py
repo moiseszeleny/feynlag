@@ -28,27 +28,28 @@ Run:  python examples/sm_weinberg.py
 import sympy as sp
 
 from feynlag import (
-    ExternalParameter, InternalParameter, Lagrangian, Model, Scalar, SU2, U1,
-    WeylFermion, Dmu, dag, diracC, diracPL, MajoranaBilinear,
-    diagonalize_takagi, extract_majorana_vertices, majorana_feynman_rule,
-    majorana_mass_matrix, suggest_yukawa,
+    FL_I, FL_J, Lagrangian, Model, ParameterSet, Scalar, SU2, U1,
+    WeylFermion, diagonalize_takagi, diracC, diracPL,
+    extract_majorana_vertices, inner, majorana_feynman_rule,
+    majorana_mass_matrix, suggest_yukawa, weinberg,
 )
 
 
 def main():
     # --- symmetries, parameters, fields ---------------------------------
-    gw = ExternalParameter("gw", 0.6535, positive=True)
-    g1 = ExternalParameter("g1", 0.3580, positive=True)
+    P = ParameterSet()
+    gw = P.external("gw", 0.6535, positive=True)
+    g1 = P.external("g1", 0.3580, positive=True)
     SU2L, U1Y = SU2("SU2L", coupling=gw), U1("U1Y", coupling=g1)
 
-    v = ExternalParameter("v", 246.0, positive=True, unit_dim=1)
-    Lam = ExternalParameter("Lam", 1.0e14, positive=True, unit_dim=1)  # seesaw scale
-    lam = ExternalParameter("lam", 0.129)
-    mu2 = InternalParameter("mu2", unit_dim=2)
+    v = P.external("v", 246.0, positive=True, unit_dim=1)
+    Lam = P.external("Lam", 1.0e14, positive=True, unit_dim=1)  # seesaw scale
+    lam = P.external("lam", 0.129)
+    mu2 = P.internal("mu2", unit_dim=2)
 
     H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2)},
                component_names=["Gp", "H0"])
-    H.expand_vev({H.components[1]: v})
+    H.expand_vev({H.H0: v})
     # two lepton generations (enough to show the mixing / Takagi)
     Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
                      chirality="L", nflavors=2, component_names=["nuL", "eL"])
@@ -63,31 +64,30 @@ def main():
     for t in suggest_yukawa([Ll, eR], [H], [SU2L, U1Y], max_dim=5):
         print("   ", t)
 
-    # --- write the Weinberg operator explicitly (symmetric c_ij) --------
-    i, j = sp.symbols("i j", integer=True)
+    # --- the Weinberg operator at field level (symmetric c_ij) ---------
+    # weinberg() does the (L ε H)(L ε H) contraction, the flavour indices
+    # (c[fl_i, fl_j]) and the + h.c.; it enters with +c.  The component-level
+    # form it expands to is pinned in tests/test_terms.py.
     c = sp.IndexedBase("c")            # symmetric Weinberg Wilson coefficient
-    Gp, H0 = H.components
-    nuL, eL = Ll.components
-    CPL = diracC * diracPL
-    epsH = [H0, -Gp]                    # (εH)_a = ε_ab H^b
-    comp = [nuL, eL]
-    O = sp.S.Zero
-    for a in range(2):
-        for b in range(2):
-            O += (c[i, j] / Lam.s) * epsH[a] * epsH[b] * \
-                MajoranaBilinear(comp[a][i], CPL, comp[b][j])
-    O = sp.expand(O)
+    i, j = FL_I, FL_J
+    O = weinberg(c, Ll, H) / Lam.s     # c/Λ (L ε H)(L ε H) + h.c.
 
-    HdH = (dag(H) * H.mat)[0]
-    V = -mu2.s * HdH + lam.s * HdH**2
+    HdH = inner(H, H)
+    V = -mu2 * HdH + lam * HdH**2
     L = Lagrangian()
-    L.add((dag(Dmu(H)) * Dmu(H))[0], sector="kinetic")
+    L.add_kinetic(H)
     L.add(-V, sector="potential")
-    L.add(O + sp.conjugate(O), sector="other")
+    L.add(O, sector="other")
 
     model = Model("SM-Weinberg", gauge_groups=[SU2L, U1Y],
                   fields=[H, Ll, eR, SU2L.bosons("W"), U1Y.bosons("B")],
-                  parameters=[gw, g1, v, Lam, lam, mu2], lagrangian=L)
+                  parameters=P, lagrangian=L)
+
+    # which allowed operators up to dim 5 does this Lagrangian contain?  The
+    # Weinberg operator is matched; the charged-lepton Yukawa is reported
+    # missing (this example leaves e_R massless on purpose).
+    cov = model.term_coverage(max_dim=5)
+    print("\nterm coverage (max_dim=5):", cov)
 
     # --- validate (dim-5 needs max_dim=5) --------------------------------
     report = model.check_invariance(max_dim=5)
@@ -96,6 +96,7 @@ def main():
     print("tadpole:", model.solve_tadpoles([mu2]))
 
     # --- Majorana neutrino mass + Takagi diagonalization -----------------
+    nuL, CPL = Ll.nuL, diracC * diracPL
     Mnu = majorana_mass_matrix(O, nuL, model.vacuum, 2, (i, j), gamma=CPL)
     print("\nMajorana mass matrix  m_ν = −c v²/Λ:")
     sp.pprint(Mnu)
@@ -113,8 +114,7 @@ def main():
 
     # --- ν̄νh coupling ----------------------------------------------------
     Lphys = sp.expand(model.physical_lagrangian(sector="other"))
-    h = sp.Symbol("H0_r", real=True)
-    G0 = sp.Symbol("H0_i", real=True)
+    h, G0 = H.H0_r, H.H0_i
     table = extract_majorana_vertices(Lphys, [h, G0])
     key = (nuL[i], CPL, nuL[j])
     c_h = table.get(key, {}).get(1, {}).get((h,), 0)
