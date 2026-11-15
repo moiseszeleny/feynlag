@@ -14,6 +14,9 @@ from feynlag import (
     dirac_mass, electroweak_scaffold, hc, inner, numeric_equal, rotation_2x2,
     standard_model, yukawa,
 )
+from feynlag import (
+    SU3, charged_current_rotation, weinberg_rotation,
+)
 from feynlag.vacuum.physical import goldstone_directions
 
 half = sp.Rational(1, 2)
@@ -73,7 +76,7 @@ def test_sm_blocks_charges_and_goldstones():
                   parameters=ew.parameters, lagrangian=L)
     model.solve_tadpoles([ew.mu2])
     H = ew.H
-    even, odd, charged = model.mass_blocks()
+    even, odd, charged = model.mass_blocks(kind="scalar")
     assert (even.fields, even.cp, even.charge) == ([H.H0_r], "even", 0)
     assert (odd.fields, odd.cp, len(odd.goldstones)) == ([H.H0_i], "odd", 1)
     assert (charged.fields, charged.charge, charged.complex) == ([H.Gp], 1, True)
@@ -520,3 +523,321 @@ def test_flavoured_and_majorana_blocks_are_reported_not_rotated():
     assert not nu.diagonalizable and "diagonalize_takagi" in nu.note
     with pytest.raises(NotImplementedError, match="diagonalize_takagi"):
         model.diagonalize(nu, names=["n"])
+
+
+# ---------------------------------------------------------- gauge bosons
+
+def _sm():
+    ew = electroweak_scaffold(lam=0.129)
+    L = Lagrangian()
+    ew.add_higgs(L)
+    model = Model("SM", gauge_groups=ew.gauge_groups, fields=ew.fields,
+                  parameters=ParameterSet(*ew.parameters), lagrangian=L)
+    model.solve_tadpoles([ew.mu2])
+    return model, ew
+
+
+def test_sm_gauge_blocks_and_default_order():
+    model, ew = _sm()
+    g, gp, v = ew.gw.s, ew.g1.s, ew.v.s
+    W1, W2, W3 = ew.W.components
+    B = ew.B.components[0]
+    blocks = model.mass_blocks()
+    assert [b.kind for b in blocks] == ["scalar"] * 3 + ["gauge"] * 2
+    charged, neutral = model.mass_blocks(kind="gauge")
+    assert charged.fields == [W1, W2] and charged.charge == 1
+    assert charged.pairs == [(W1, W2, 1)]
+    assert charged.matrix == sp.Matrix([[g**2 * v**2 / 4]])
+    assert neutral.fields == [W3, B] and neutral.charge == 0
+    # the photon direction, from Q = T3 + Y: (g' W3 + g B)/sqrt(g² + g'²)
+    a = neutral.massless[0]
+    assert (a - sp.Matrix([gp, g]) / sp.sqrt(g**2 + gp**2)).applyfunc(
+        sp.simplify) == sp.zeros(2, 1)
+    assert "massless: 1" in repr(neutral) and "massless: 0" in repr(charged)
+
+
+def test_sm_generic_rotations_equal_the_validated_helpers():
+    """The generic route registers the same matrices as weinberg_rotation /
+    charged_current_rotation — the ones the UFO sign conventions were
+    validated with — so every downstream vertex is unchanged."""
+    model, ew = _sm()
+    g, gp, v = ew.gw.s, ew.g1.s, ew.v.s
+    charged, neutral = model.mass_blocks(kind="gauge")
+    dW = model.diagonalize(charged, names=["Wp"], conjugate_names=["Wm"])
+    dZ = model.diagonalize(neutral, names=["Z", "A"])
+
+    ref, ew_ref = _sm()
+    Z, A = weinberg_rotation(ref, ew_ref.SU2L, ew_ref.U1Y)
+    Wp, Wm = charged_current_rotation(ref, ew_ref.SU2L)
+    rot_weinberg, rot_w = ref.rotations
+
+    assert dW.rotation.matrix == rot_w.matrix
+    assert dW.rotation.kind == "unitary"
+    assert (dZ.rotation.matrix - rot_weinberg.matrix).applyfunc(
+        sp.simplify) == sp.zeros(2, 2)
+    assert dW.masses_squared == [g**2 * v**2 / 4]
+    assert sp.simplify(dZ.masses_squared[0] - (g**2 + gp**2) * v**2 / 4) == 0
+    assert dZ.masses_squared[1] == 0                     # the photon, exactly
+
+    phys = model.physical
+    assert [str(b) for b in phys.bosons] == ["Wp", "Wm", "Z", "A"]
+    assert {str(k): q for k, q in phys.charges.items()} == {
+        "Wp": 1, "Wm": -1, "Z": 0, "A": 0}
+    assert phys.conjugates[dW.new_fields[0]] == dW.new_right[0]
+    assert phys.cmap == {}                               # real components
+
+    # the symbols are equal by name+assumptions, so compare directly:
+    # same physical kinetic Lagrangian ⟹ same hWW, hZZ, VSS, VVSS vertices
+    diff = sp.expand(model.physical_lagrangian("kinetic")
+                     - ref.physical_lagrangian("kinetic"))
+    assert sp.simplify(diff) == 0
+    # and the same Yang–Mills cubics and quartics (AWW, ZWW, WWWW, …)
+    mine = {tuple(map(str, vx.particles)): vx for vx in model.gauge_vertices()}
+    theirs = {tuple(map(str, vx.particles)): vx for vx in ref.gauge_vertices()}
+    assert mine.keys() == theirs.keys() and len(mine) >= 6
+    for key, vx in mine.items():
+        other = theirs[key]
+        assert sp.simplify(vx.coupling - other.coupling) == 0, key
+        for c1, c2 in zip(vx.meta.get("structures", {}).values(),
+                          other.meta.get("structures", {}).values()):
+            assert sp.simplify(c1 - c2) == 0, key
+
+
+def test_weinberg_angle_form():
+    """angle= writes the photon-fixed 2×2 as rotation_2x2(−θ_W), literally
+    the matrix weinberg_rotation uses, with tan θ_W = g'/g attached."""
+    model, ew = _sm()
+    neutral = model.mass_blocks(kind="gauge")[1]
+    d = model.diagonalize(neutral, names=["Z", "A"], angle="thetaW")
+    thw = sp.Symbol("thetaW", real=True)
+    assert d.rotation.matrix == rotation_2x2(-thw)
+    assert d.angle_relation == sp.Eq(sp.tan(thw), ew.g1.s / ew.gw.s)
+    assert model.parameters["thetaW"].expr == sp.atan(ew.g1.s / ew.gw.s)
+    with pytest.raises(ValueError, match="need 2 names"):
+        model.diagonalize(neutral, names=["Z"], register=False)
+
+
+def test_gauge_guards():
+    # gauge fields but no kinetic sector: no mass matrix to read
+    ew = electroweak_scaffold()
+    H = ew.H
+    V = -ew.mu2 * inner(H, H) + ew.lam * inner(H, H)**2
+    model = Model("nokin", gauge_groups=ew.gauge_groups, fields=ew.fields,
+                  parameters=ew.parameters,
+                  lagrangian=Lagrangian().add(-V, sector="potential"))
+    model.solve_tadpoles([ew.mu2])
+    with pytest.raises(ValueError, match="no 'kinetic' sector"):
+        model.mass_blocks(kind="gauge")
+
+    # the negative-charge partner is never auto-named
+    model, _ = _sm()
+    charged = model.mass_blocks(kind="gauge")[0]
+    with pytest.raises(ValueError, match="conjugate_names"):
+        model.diagonalize(charged, names=["Wp"])
+
+    # an unbroken group (colour) has no block and is never rotated
+    ew = electroweak_scaffold()
+    SU3c = SU3("SU3c", coupling=sp.Symbol("gs", positive=True))
+    G = SU3c.bosons("G")
+    L = Lagrangian()
+    ew.add_higgs(L)
+    model = Model("SMc", gauge_groups=ew.gauge_groups + [SU3c],
+                  fields=ew.fields + [G], parameters=ew.parameters,
+                  lagrangian=L)
+    model.solve_tadpoles([ew.mu2])
+    blocks = model.mass_blocks(kind="gauge")
+    assert len(blocks) == 2
+    assert not any(set(b.fields) & set(G.components) for b in blocks)
+
+
+def _u1x():
+    """SM × U(1)_X with an X-charged Higgs (charge a/2) and a singlet S:
+    the gauge sector of examples/sm_u1x.py."""
+    P = ParameterSet()
+    SU2L, U1Y = _ew(P)
+    gX = P.external("gX", 0.5, positive=True)
+    U1X = U1("U1X", coupling=gX)
+    aX = P.external("aX", 0.4)
+    qS = P.external("qS", 1.0)
+    v = P.external("v", 246.0, positive=True, unit_dim=1)
+    vX = P.external("vX", 2000.0, positive=True, unit_dim=1)
+    H = Scalar("H", reps={SU2L: 2, U1Y: half, U1X: aX.s / 2},
+               component_names=["Gp", "H0"])
+    S = Scalar("S", reps={U1X: qS.s}, component_names=["S0"])
+    H.expand_vev({H.H0: v})
+    S.expand_vev({S.S0: vX})
+    W, B, X = SU2L.bosons("W"), U1Y.bosons("B"), U1X.bosons("X")
+    L = Lagrangian()
+    L.add_kinetic(H, S)
+    model = Model("U1X", gauge_groups=[SU2L, U1Y, U1X],
+                  fields=[H, S, W, B, X], parameters=P, lagrangian=L)
+    return model, P, (W, B, X)
+
+
+def test_u1x_neutral_block_photon_and_z_zprime_mixing():
+    model, P, (W, B, X) = _u1x()
+    g, gp, gx, a, qs, v, vX = (P[n].s for n in
+                               ("gw", "g1", "gX", "aX", "qS", "v", "vX"))
+    W3, B0, X0 = W.components[2], B.components[0], X.components[0]
+    charged, neutral = model.mass_blocks(kind="gauge")
+    assert neutral.fields == [W3, B0, X0] and len(neutral.massless) == 1
+    # the photon has no X component: Q = T3 + Y, the singlet VEV breaks X
+    photon = neutral.massless[0]
+    assert (photon - sp.Matrix([gp, g, 0]) / sp.sqrt(g**2 + gp**2)).applyfunc(
+        sp.simplify) == sp.zeros(3, 1)
+
+    d = model.diagonalize(neutral, names=["Z", "Zp", "A"], angle="thetap")
+    thp = sp.Symbol("thetap", real=True)
+    gZ = sp.sqrt(g**2 + gp**2)
+    # tan 2θ′ pinned in test_u1x.py::test_zx_block_and_mixing_angle
+    expected_tan2 = 2 * a * gZ * gx * v**2 / (
+        a**2 * gx**2 * v**2 + 4 * gx**2 * qs**2 * vX**2 - gZ**2 * v**2)
+    assert sp.simplify(d.angle_relation.rhs - expected_tan2) == 0
+    ok, diff = numeric_equal(d.angle_relation.rhs, expected_tan2,
+                             [g, gp, gx, a, qs, v, vX], seed=5)
+    assert ok, diff
+
+    # ONE composed rotation = (Z–Z′ rotation) · (Weinberg rotation), the
+    # two chained steps examples/sm_u1x.py used to take by hand
+    thw = sp.atan(gp / g)
+    cw, sw = sp.cos(thw), sp.sin(thw)
+    R1 = sp.Matrix([[cw, -sw, 0], [0, 0, 1], [sw, cw, 0]])   # (Z0, X, A)
+    R2 = sp.diag(rotation_2x2(thp), 1)
+    assert (d.rotation.matrix - R2 * R1).applyfunc(sp.simplify) \
+        == sp.zeros(3, 3)
+    assert d.masses_squared[2] == 0
+
+    # numerically: diagonal, with the sum of m² equal to the trace
+    values = _values(P)
+    th = float(d.angle_solution.subs(values))
+    Rn = d.rotation.matrix.subs(thp, th).subs(values)
+    Mn = neutral.matrix.subs(values)
+    D = Rn * Mn * Rn.T
+    assert max(abs(D[i, j]) for i in range(3) for j in range(3)
+               if i != j) < 1e-6
+    assert abs(D[2, 2]) < 1e-6 and abs(D.trace() - Mn.trace()) < 1e-6
+
+
+def test_u1x_values_order_the_z_and_zprime():
+    model, P, _ = _u1x()
+    neutral = model.mass_blocks(kind="gauge")[1]
+    values = _values(P)
+    d = model.diagonalize(neutral, names=["Z", "Zp", "A"], angle="thetap",
+                          values=values, order="light_first", register=False)
+    thp = sp.Symbol("thetap", real=True)
+    th = float(d.angle_solution.subs(values))
+    m2 = [float(m.subs(thp, th).subs(values)) for m in d.masses_squared]
+    assert 0 < m2[0] < m2[1] and m2[2] == 0
+    assert 85 < m2[0] ** 0.5 < 95 and m2[1] ** 0.5 > 900   # Z and a TeV Z′
+    assert d.branch_valid_for is not None
+
+    heavy = model.diagonalize(neutral, names=["Zp", "Z", "A"], values=values,
+                              register=False)
+    th2 = float(heavy.angle_solution.subs(values))
+    R = heavy.rotation.matrix.subs(values)
+    D = R * neutral.matrix.subs(values) * R.T
+    assert D[0, 0] > D[1, 1] > 0 and abs(D[2, 2]) < 1e-6
+    assert abs(th2 - th) > 1                      # the other tan(2θ) branch
+
+
+def _left_right():
+    """SU(2)_L × SU(2)_R × U(1)_{B−L} with a bidoublet (κ1, κ2) and a
+    right-handed doublet (v_R): no SM-specific code path applies."""
+    P = ParameterSet()
+    gL = P.external("gL", 0.65, positive=True)
+    gR = P.external("gR", 0.60, positive=True)
+    gB = P.external("gB", 0.40, positive=True)
+    SU2L, SU2R = SU2("SU2L", coupling=gL), SU2("SU2R", coupling=gR)
+    U1B = U1("U1BL", coupling=gB)
+    k1 = P.external("k1", 240.0, positive=True, unit_dim=1)
+    k2 = P.external("k2", 30.0, positive=True, unit_dim=1)
+    vR = P.external("vR", 5000.0, positive=True, unit_dim=1)
+    Phi = Scalar("Phi", reps={SU2L: 2, SU2R: 2},
+                 component_names=["p11", "p12", "p21", "p22"])
+    Chi = Scalar("Chi", reps={SU2R: 2, U1B: half},
+                 component_names=["chip", "chi0"])
+    Phi.expand_vev({Phi.p12: k1, Phi.p21: k2})
+    Chi.expand_vev({Chi.chi0: vR})
+    WL, WR, B = SU2L.bosons("WL"), SU2R.bosons("WR"), U1B.bosons("B")
+    L = Lagrangian()
+    L.add_kinetic(Phi, Chi)
+    model = Model("LR", gauge_groups=[SU2L, SU2R, U1B],
+                  fields=[Phi, Chi, WL, WR, B], parameters=P, lagrangian=L)
+    return model, P, (WL, WR, B)
+
+
+def test_left_right_charged_mixing_and_photon():
+    model, P, (WL, WR, B) = _left_right()
+    gL, gR, gB, k1, k2, vR = (P[n].s for n in
+                              ("gL", "gR", "gB", "k1", "k2", "vR"))
+    charged, neutral = model.mass_blocks(kind="gauge")
+
+    # W_L–W_R mix through κ1 κ2 (the mass matrix in the W⁺ basis)
+    assert charged.fields == list(WL.components[:2]) + list(WR.components[:2])
+    assert len(charged.pairs) == 2 and charged.charge == 1
+    expected = sp.Matrix([
+        [gL**2 * (k1**2 + k2**2) / 4, gL * gR * k1 * k2 / 2],
+        [gL * gR * k1 * k2 / 2, gR**2 * (k1**2 + k2**2 + vR**2) / 4]])
+    assert (charged.matrix - expected).applyfunc(sp.simplify) \
+        == sp.zeros(2, 2)
+
+    # the photon of Q = T3L + T3R + (B−L): ∝ W3L/gL + W3R/gR + B/gB
+    assert neutral.fields == [WL.components[2], WR.components[2],
+                              B.components[0]]
+    raw = sp.Matrix([1 / gL, 1 / gR, 1 / gB])
+    photon = neutral.massless[0]
+    assert (photon - raw / sp.sqrt(raw.dot(raw))).applyfunc(sp.simplify) \
+        == sp.zeros(3, 1)
+    assert (neutral.matrix * raw).applyfunc(sp.simplify) == sp.zeros(3, 1)
+
+    d = model.diagonalize(charged, names=["W1p", "W2p"],
+                          conjugate_names=["W1m", "W2m"], angle="xi")
+    xi = sp.Symbol("xi", real=True)
+    tan2xi = 4 * gL * gR * k1 * k2 / (
+        gL**2 * (k1**2 + k2**2) - gR**2 * (k1**2 + k2**2 + vR**2))
+    assert sp.simplify(d.angle_relation.rhs - tan2xi) == 0
+    # rows: W1⁺ = cξ W_L⁺ + sξ W_R⁺ with W_X⁺ = (W_X¹ − i W_X²)/√2, then
+    # W2⁺, then the conjugates
+    c, s_, r2 = sp.cos(xi), sp.sin(xi), sp.sqrt(2)
+    plus = sp.Matrix([[c, -sp.I * c, s_, -sp.I * s_],
+                      [-s_, sp.I * s_, c, -sp.I * c]]) / r2
+    assert (d.rotation.matrix - sp.Matrix.vstack(plus, plus.conjugate())
+            ).applyfunc(sp.simplify) == sp.zeros(4, 4)
+
+    # independent numeric check on the full 4×4 real-basis mass matrix
+    values = _values(P)
+    M4 = model.gauge_mass_matrix(charged.fields).subs(values)
+    th = float(d.angle_solution.subs(values))
+    R = d.rotation.matrix.subs(xi, th)
+    D = (R * M4 * R.H).applyfunc(lambda e: complex(sp.N(e)))
+    assert max(abs(D[i, j]) for i in range(4) for j in range(4)
+               if i != j) < 1e-6
+    assert abs(D[0, 0] - D[2, 2]) < 1e-6           # W1⁺ and W1⁻: same mass
+    assert abs(D.trace() - M4.trace()) < 1e-6
+    assert {str(k): q for k, q in model.physical.charges.items()} == {
+        "W1p": 1, "W2p": 1, "W1m": -1, "W2m": -1}
+
+
+def test_left_right_neutral_block():
+    model, P, _ = _left_right()
+    neutral = model.mass_blocks(kind="gauge")[1]
+    with pytest.raises(ValueError, match="need 3 names"):
+        model.diagonalize(neutral, names=["Z", "A"])
+    values = _values(P)
+    d = model.diagonalize(neutral, names=["Z1", "Z2", "A"], angle="phi",
+                          values=values, order="light_first")
+    phi = sp.Symbol("phi", real=True)
+    th = float(d.angle_solution.subs(values))
+    Mn = neutral.matrix.subs(values)
+    R = d.rotation.matrix.subs(phi, th).subs(values)
+    D = R * Mn * R.T
+    assert max(abs(D[i, j]) for i in range(3) for j in range(3)
+               if i != j) < 1e-5
+    assert 0 < D[0, 0] < D[1, 1] and abs(D[2, 2]) < 1e-6
+    assert (R * R.T - sp.eye(3)).norm() < 1e-9
+    # det of the massive 2×2 = product of the two masses² (sum of principal
+    # 2×2 minors of M, the massless mode contributing nothing)
+    minors = sum(Mn.extract(idx, idx).det() for idx in
+                 ([0, 1], [0, 2], [1, 2]))
+    assert abs(D[0, 0] * D[1, 1] - minors) / minors < 1e-9
+    assert {str(k) for k in model.physical.bosons} == {"Z1", "Z2", "A"}

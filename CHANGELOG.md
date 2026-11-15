@@ -53,6 +53,17 @@ All notable changes to feynlag are documented here. The format follows
   and `to_physical_basis` record into it too. A symbolic block with no closed
   form, a field mixing with a conjugate field, and flavoured or Majorana
   fermion blocks are refused or reported with the route to use instead.
+- Gauge bosons in the guided physical basis. `Model.mass_blocks(kind="gauge")`
+  returns the charged and neutral gauge blocks of every group that acts on a
+  VEV, and `Model.diagonalize` rotates them: the charge eigenstates
+  `(A_a − iA_b)/√2` are read off the unbroken charge, and the photon is fixed
+  exactly as `A ∝ Σ (c_k/g_k) A_k`, with no diagonalization. One massive
+  neutral state is then fixed too (`angle=` gives `rotation_2x2(−θ_W)`); two
+  that mix (`Z`–`Z′`) take the `tan 2θ` route in the photon's complement and
+  are registered as one composed rotation; two charged states that mix
+  (`W_L`–`W_R`) likewise. For the SM the result equals `weinberg_rotation` /
+  `charged_current_rotation` exactly, which remain available.
+  `mass_blocks()` with no `kind` now returns scalar, gauge and fermion blocks.
 - A scalar component can be expanded around a zero VEV
   (`expand_vev({comp: 0})`, e.g. the neutral component of an inert doublet):
   `Model.tadpoles()` / `solve_tadpoles` used to raise on it. Its stationarity
@@ -63,6 +74,9 @@ All notable changes to feynlag are documented here. The format follows
 - `examples/thdm.py` uses the guided physical basis; its previous output is
   unchanged and it now also prints the blocks, `tan β`, `m_A²`, `m_{H±}²` and
   the derived charges.
+- `examples/sm_u1x.py` gets its gauge rotations from `mass_blocks` /
+  `diagonalize` instead of two hand-chained rotations; its physics output is
+  unchanged (the intermediate `(Z0, X)` matrix is no longer printed).
 - `examples/sm_vll.py` is written with the new constructors; its printed
   physics is unchanged.
 

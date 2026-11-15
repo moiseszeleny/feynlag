@@ -21,14 +21,15 @@ New states and the pinned physics (validated in tests/test_u1x.py):
   out exactly massless: two Goldstones for two massive neutral bosons);
 - Higgs-portal coupling λ_HS|H|²|S|² mixes h and s with
       tan 2θ_s = λ_HS v v_X / (λ v² − λ_S v_X²)   [(h, s) ordering];
-- the 3×3 neutral gauge mass matrix over (W3, B, X) is diagonalized by TWO
-  chained 2×2 rotations — Weinberg first, then Z–Z′ with
+- the 3×3 neutral gauge block over (W3, B, X) is found by
+  ``model.mass_blocks`` and rotated by ``model.diagonalize``: the photon is
+  fixed by the unbroken charge, and the remaining Z–Z′ pair mixes with
       tan 2θ′ = 2a g_Z g_X v² / (a²g_X²v² + 4g_X²q_S²v_X² − g_Z²v²),
   m_Z²·m_Z′² = g_Z²g_X²q_S²v²v_X²/4;  a → 0 is the pure B−L limit (θ′ → 0);
 - three right-handed neutrinos (required for the B−L anomaly to cancel)
   with a Dirac Yukawa via H̃, giving M_ν = Y_ν v/√2;
 - Z′ff couplings = −sinθ′·g_Z(T³ − Q sin²θ_W) + cosθ′·g_X·q_f; the photon
-  couplings are exactly the SM ones (the second rotation never touches A).
+  couplings are exactly the SM ones (the Z–Z′ mixing never touches A).
 
 The X-charges are kept SYMBOLIC (a, b, q_S) — every pipeline stage handles
 that (U(1) generators, invariance checking, gauge currents, extraction);
@@ -42,11 +43,10 @@ import sympy as sp
 
 from feynlag import (
     Bilinear, DiracGamma, Dmu, ExternalParameter, InternalParameter,
-    Lagrangian, Model, Rotation, SU3, Scalar, U1, WeylFermion,
-    charged_current_rotation, conjugate_pair, dag,
+    Lagrangian, Model, SU3, Scalar, U1, WeylFermion, conjugate_pair, dag,
     diagonalize_orthogonal_2x2, diracPL, diracPR, electroweak_gauge,
     extract_fermion_vertices, fermion_feynman_rule, fermion_gauge_current,
-    fermion_mass_matrix, rotation_2x2,
+    fermion_mass_matrix,
 )
 
 
@@ -227,54 +227,38 @@ def main():
     print("scalar mixing:", rot_s.angle_relation)
     model.rotate(rot_s)
 
-    # --- gauge sector: 3×3 neutral block, chained Weinberg + Z–Z′ rotations -
-    W1, W2, W3 = W.components
-    B0 = B.components[0]
-    X0 = X.components[0]
-
-    M3 = model.gauge_mass_matrix([W3, B0, X0])
+    # --- gauge sector: the model finds the blocks and their rotations ------
+    # (charged: W¹,W² → W±; neutral: the 3×3 (W3, B, X) block, whose
+    # massless vector — the photon — is fixed by the unbroken charge
+    # Q = T3 + Y, leaving the Z–Z′ pair to mix through one tan 2θ′ angle)
+    charged_block, neutral_block = model.mass_blocks(kind="gauge")
+    print("\ngauge blocks:")
+    print("  ", charged_block)
+    print("  ", neutral_block)
+    M3 = neutral_block.matrix
     print("\nneutral gauge M² (W3, B, X):")
     sp.pprint(M3)
     assert sp.simplify(M3.det()) == 0     # exactly one massless state
 
-    # rotation 1 — Weinberg, exactly as in the SM: leaves the massless
-    # photon and an intermediate Z0 that still mixes with X
-    Z0, A, Z, Zp = sp.symbols("Z0 A Z Zp", real=True)
-    thetaW = sp.atan(g1.s / gw.s)
-    model.rotate(Rotation([W3, B0], [Z0, A], rotation_2x2(-thetaW)))
-
-    cw, sw = sp.cos(thetaW), sp.sin(thetaW)
-    R1e = sp.Matrix([[cw, -sw, 0], [sw, cw, 0], [0, 0, 1]])
-    M3r = sp.simplify(R1e * M3 * R1e.T)          # rows/cols: (Z0, A, X)
-    assert M3r[1, :] == sp.zeros(1, 3)           # photon decoupled exactly
-
-    # rotation 2 — Z–Z′ mixing of the surviving (Z0, X) block.  Chained
-    # rotations work because physical_lagrangian applies them sequentially
-    # in registration order: the second xreplace consumes the Z0 the first
-    # one produced.
-    blockZX = M3r.extract([0, 2], [0, 2])
-    print("\n(Z0, X) mass block:")
-    sp.pprint(blockZX)
+    Wp, Wm = model.diagonalize(charged_block, names=["Wp"],
+                               conjugate_names=["Wm"]).rotation.new_fields
+    # names: massive states first, the photon last.  The result is ONE
+    # composed rotation (Z–Z′ mixing on top of the Weinberg rotation); it
+    # is verified against the mass matrix before being registered.
     thetap = sp.Symbol("thetap", real=True)
-    rot_zzp = diagonalize_orthogonal_2x2(blockZX, [Z0, X0], [Z, Zp],
-                                         angle=thetap)
-    print("Z–Z′ mixing:", rot_zzp.angle_relation)
-    model.rotate(rot_zzp)
+    d_neutral = model.diagonalize(neutral_block, names=["Z", "Zp", "A"],
+                                  angle=thetap)
+    Z, Zp, A = d_neutral.new_fields
+    print("Z–Z′ mixing:", d_neutral.angle_relation)
 
-    # dual verification (CONVENTIONS.md): exact check with the explicit
-    # atan angle, and physical masses at the benchmark point
-    check_rot = Rotation([Z0, X0], [Z, Zp],
-                         rotation_2x2(rot_zzp.angle_solution))
-    ok, residuals = check_rot.check(blockZX)
-    assert ok, residuals
+    # physical masses at the benchmark point
     bench = {gw.s: 0.6535, g1.s: 0.3580, gX.s: 0.5, aX.s: 0.4,
              qS.s: 1.0, v.s: 246.0, vX.s: 2000.0}
-    mZ2, mZp2 = [complex(m.subs(bench)).real
-                 for m in check_rot.masses_squared(blockZX.subs(bench),
-                                                   simplifier=sp.nsimplify)]
+    th_num = d_neutral.angle_solution.subs(bench)
+    mZ2, mZp2, mA2 = [float(m.subs(thetap, th_num).subs(bench))
+                      for m in d_neutral.masses_squared]
+    assert mA2 == 0                       # the photon, exactly
     print(f"benchmark: m_Z = {mZ2**0.5:.2f} GeV, m_Z' = {mZp2**0.5:.2f} GeV")
-
-    Wp, Wm = charged_current_rotation(model, SU2L)
 
     # --- bosonic Feynman rules -----------------------------------------------
     Gm, cmap = conjugate_pair(Gp, "Gm")

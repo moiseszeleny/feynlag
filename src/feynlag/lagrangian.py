@@ -370,11 +370,12 @@ class Model:
         Scalars are partitioned by what actually mixes (so the CP-even/odd
         split appears when CP is conserved and not otherwise), tagged with
         the electric charge derived from the vacuum and with their Goldstone
-        directions; Dirac fermion legs likewise.  See
-        :func:`feynlag.vacuum.physical.mass_blocks`.
+        directions; gauge bosons are split into charge eigenstates and
+        neutral blocks carrying the photon direction; Dirac fermion legs
+        likewise.  See :func:`feynlag.vacuum.physical.mass_blocks`.
 
         Args:
-            kind: ``"scalar"``, ``"fermion"`` or ``None`` for both.
+            kind: ``"scalar"``, ``"gauge"``, ``"fermion"`` or ``None`` (all).
         """
         from .vacuum.physical import mass_blocks
         return mass_blocks(self, kind=kind)
