@@ -240,6 +240,36 @@ whose dimension compensates the operator's (e.g. $G_F$ is $u^{-2}$), making the
 convention, where the coefficient is kept dimensionless and the operator's
 field content ($u^6$ for four fermions) shows through.
 
+## 4.5 Reading a failure: `InvarianceReport.explain()`
+
+`check_invariance()` returns the raw violation of each failed check (the
+O(α) coefficient, a residual). `report.explain()` adds one sentence per
+failure saying what it means, and `raise_on_failure()` includes it:
+
+```text
+[gauge:SU2L] <kinetic term>: the term contains SU2L gauge bosons, but they
+    are not in Model(fields=...); add SU2L.bosons() to the model's fields
+[gauge:U1Y] bad yukawa: U1Y charges do not cancel:
+    H0**2*Bilinear(eLbar[fl_i], PR, eRc[fl_i]) has charge 1/2
+[gauge:SU2L] bad yukawa: the SU2L indices are not contracted to a singlet
+[mass-dimension] bad yukawa: mass dimension 5 exceeds 4: declare the
+    coupling's unit_dim, or raise max_dim for an effective operator
+[hermiticity] <sector yukawa>: the yukawa sector is not hermitian: a term
+    is missing its '+ h.c.' (or a coupling that should be real is complex)
+```
+
+For a U(1) the explanation comes from `u1_charge_breakdown(term, fields,
+group)`: it expands the term into monomials and sums the charges of the
+factors (a conjugated scalar and a bar leg with the opposite sign, powers
+multiplying), returning the monomials whose total is not zero. The first
+message covers the most common false alarm: a `Dmu`-built kinetic term fails
+the non-abelian check when the group's gauge bosons are not listed in the
+model's fields, because the global transformation must rotate them in the
+adjoint.
+
+`report.failures` keeps its `(term, check name, details)` entries; the
+sentences are in `report.hints`, in the same order.
+
 ## Design gotchas summary
 
 - **Never differentiate through `PartialMu`/`Bilinear`.** Both are custom
@@ -260,6 +290,9 @@ field content ($u^6$ for four fermions) shows through.
   with index-preserving builder) split described above.
 
 ## Validation
+
+- `tests/test_general.py::test_invariance_failures_explain_themselves`,
+  `::test_u1_charge_breakdown` — the explanations of 4.5.
 
 - `tests/test_invariance.py::TestGaugeInvariance`,
   `::TestFermionGaugeInvariance` — the $O(\alpha)$ coefficient extraction,
