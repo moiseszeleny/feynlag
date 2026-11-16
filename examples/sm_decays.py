@@ -17,8 +17,8 @@ Run with::
 import sympy as sp
 
 from feynlag import (
-    Bilinear, ExternalParameter, Lagrangian, Model, SU2, U1, WeylFermion,
-    diracPR, electroweak_scaffold, fermion_gauge_current, to_physical_basis,
+    FL_I, Lagrangian, Model, ParameterSet, WeylFermion,
+    electroweak_scaffold, to_physical_basis, yukawa,
 )
 from feynlag.pheno import DecayCalculator
 
@@ -37,29 +37,22 @@ def build_model():
     ew = electroweak_scaffold(gw=GW, g1=G1, v=VEV, mh=MH)
     SU2L, U1Y, H = ew.SU2L, ew.U1Y, ew.H
     # y = √2 m_τ / v  reproduces the τ mass after EWSB
-    ytau = ExternalParameter("ytau", sp.sqrt(2) * MTAU / VEV, positive=True)
+    P = ParameterSet(*ew.parameters)
+    ytau = P.external("ytau", sp.sqrt(2) * MTAU / VEV, positive=True)
 
     Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
                      chirality="L", nflavors=1, component_names=["nuL", "tauL"])
     tauR = WeylFermion("tauR", reps={U1Y: -1}, chirality="R", nflavors=1,
                        component_names=["tauR"])
 
-    i = sp.Symbol("i", integer=True)
     L = Lagrangian()
     ew.add_higgs(L)                                    # kinetic + potential
-    L.add(fermion_gauge_current(Ll, i) + fermion_gauge_current(tauR, i),
-          sector="gauge")
-
-    nuLb, tauLb = Ll.bar_components
-    nuL, tauL = Ll.components
-    tauRb, tauRc = tauR.bar_components[0], tauR.components[0]
-    yuk = -ytau.s * (Bilinear(nuLb[i], diracPR, tauRc[i]) * H.components[0]
-                     + Bilinear(tauLb[i], diracPR, tauRc[i]) * H.components[1])
-    L.add(yuk + sp.conjugate(yuk), sector="yukawa")
+    L.add_kinetic(Ll, tauR)                            # the gauge currents
+    L.add(yukawa(ytau, Ll, H, tauR), sector="yukawa")  # −y L̄ H τ_R + h.c.
 
     model = Model("SM_lepton", gauge_groups=ew.gauge_groups,
                   fields=ew.fields + [Ll, tauR],
-                  parameters=ew.parameters + [ytau], lagrangian=L)
+                  parameters=P, lagrangian=L)
     model.solve_tadpoles([ew.mu2])
 
     # physical basis: the standard Weinberg + W± rotations
@@ -68,6 +61,9 @@ def build_model():
     # A Dirac fermion is two WeylFermions in feynlag, so state which legs are
     # the same physical particle — otherwise the τ's L and R currents would be
     # counted as two separate decay channels.
+    i = FL_I                  # the flavour index every constructor uses
+    nuL, tauL, nuLb, tauLb = Ll.nuL, Ll.tauL, Ll.nuLbar, Ll.tauLbar
+    tauRc, tauRb = tauR.tauR, tauR.tauRbar
     tau, taubar, nu, nubar = sp.symbols("tau taubar nu nubar")
     particle_map = {tauL[i]: tau, tauRc[i]: tau,
                     tauLb[i]: taubar, tauRb[i]: taubar,

@@ -30,12 +30,11 @@ Run:  python examples/sm_seesaw.py
 import sympy as sp
 
 from feynlag import (
-    Bilinear, DiracGamma, ExternalParameter, Lagrangian,
-    MajoranaBilinear, MajoranaRotation, Model, SU2, U1,
-    WeylFermion, diagonalize_takagi, diracC, diracPL, diracPR,
-    electroweak_scaffold, extract_fermion_vertices, fermion_gauge_current,
-    fermion_mass_matrix, majorana_mass_matrix, seesaw_light_mass,
-    seesaw_mass_matrix, to_physical_basis,
+    FL_I, FL_J, DiracGamma, Lagrangian, MajoranaRotation, Model,
+    ParameterSet, WeylFermion, diagonalize_takagi, diracC, diracPL, diracPR,
+    electroweak_scaffold, extract_fermion_vertices, fermion_mass_matrix,
+    majorana_mass, majorana_mass_matrix, seesaw_light_mass,
+    seesaw_mass_matrix, tilde, yukawa,
 )
 
 
@@ -47,9 +46,10 @@ def main():
     # --- symmetries, parameters, fields (1 generation) ------------------
     ew = electroweak_scaffold(lam=0.129)
     SU2L, U1Y, H = ew.SU2L, ew.U1Y, ew.H
-    gw, g1, v, lam, mu2 = ew.gw, ew.g1, ew.v, ew.lam, ew.mu2
-    yv = ExternalParameter("yv", 0.01, positive=True)          # Dirac Yukawa
-    MR = ExternalParameter("MR", 1.0e3, positive=True, unit_dim=1)  # seesaw scale
+    gw, g1, v, mu2 = ew.gw, ew.g1, ew.v, ew.mu2
+    P = ParameterSet(*ew.parameters)
+    yv = P.external("yv", 0.01, positive=True)                  # Dirac Yukawa
+    MR = P.external("MR", 1.0e3, positive=True, unit_dim=1)     # seesaw scale
 
     Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
                      chirality="L", nflavors=1, component_names=["nuL", "eL"])
@@ -58,39 +58,35 @@ def main():
     nuR = WeylFermion("nuR", reps={}, chirality="R", nflavors=1,
                       component_names=["nuR"])
 
-    i, j = sp.symbols("i j", integer=True)
-    Gp, H0 = H.components
-    nuL, eL = Ll.components
-    nuLbar, eLbar = Ll.bar_components
-    nR, nRbar = nuR.components[0], nuR.bar_components[0]
-    CPL = diracC * diracPL
-
-    # Dirac Yukawa via H̃ = (H0*, −Gp*):  −Y_ν L̄ H̃ ν_R + h.c.
-    LYukD = -(yv.s * sp.conjugate(H0) * Bilinear(nuLbar[i], diracPR, nR[j])
-              + yv.s * (-sp.conjugate(Gp)) * Bilinear(eLbar[i], diracPR, nR[j]))
-    LYukD += -(sp.conjugate(yv.s) * H0 * Bilinear(nRbar[j], diracPL, nuL[i])
-               + sp.conjugate(yv.s) * (-Gp) * Bilinear(nRbar[j], diracPL, eL[i]))
-    # Right-handed Majorana mass:  −½ M_R ν_Rᵀ C ν_R + h.c.
-    op = -sp.Rational(1, 2) * MR.s * MajoranaBilinear(nR[i], CPL, nR[j])
-    LMaj = op + sp.conjugate(op)
-    current = fermion_gauge_current(Ll, i) + fermion_gauge_current(eR, i)
+    # field level: the constructors do the H̃ = iσ₂H* contraction, the
+    # flavour index and the + h.c.
+    LYukD = yukawa(yv, Ll, tilde(H), nuR)     # −Y_ν L̄ H̃ ν_R + h.c.
+    LMaj = majorana_mass(MR, nuR)             # −½ M_R ν_Rᵀ C ν_R + h.c.
 
     L = Lagrangian()
     ew.add_higgs(L)                                    # kinetic + potential
-    L.add(LYukD + current, sector="yukawa")
+    L.add(LYukD, sector="yukawa")
+    L.add_kinetic(Ll, eR)                              # the gauge currents
     L.add(LMaj, sector="other")     # kept separate: the Majorana mass, not a vertex
 
     model = Model("SM-seesaw", gauge_groups=ew.gauge_groups,
                   fields=ew.fields + [Ll, eR, nuR],
-                  parameters=ew.parameters + [yv, MR], lagrangian=L)
+                  parameters=P, lagrangian=L)
 
     print("invariance:", model.check_invariance())
     model.check_invariance().raise_on_failure()
     print("tadpole:   ", model.solve_tadpoles([mu2]))
 
-    # gauge rotations (Weinberg + W±) from feynlag.models
-    phys = to_physical_basis(model, ew)
-    Z, A, Wp, Wm = phys.Z, phys.A, phys.Wp, phys.Wm
+    # gauge rotations: the model finds the blocks (W¹,W² → W±; W³,B → Z,γ)
+    charged, neutral = model.mass_blocks(kind="gauge")
+    Z, A = model.diagonalize(neutral, names=["Z", "A"]).new_fields
+    Wp, Wm = model.diagonalize(charged, names=["Wp"],
+                               conjugate_names=["Wm"]).rotation.new_fields
+
+    i, j = FL_I, FL_J
+    nuL, nuLbar, eLbar = Ll.nuL, Ll.nuLbar, Ll.eLbar
+    nR, nRbar = nuR.nuR, nuR.nuRbar
+    CPL = diracC * diracPL
 
     # --- the seesaw mass matrix -----------------------------------------
     mD = fermion_mass_matrix(LYukD, nuLbar, nR, model.vacuum, 1, (i, j),

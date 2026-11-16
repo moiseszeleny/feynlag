@@ -287,6 +287,17 @@ def _canonical_fermion_half(expr):
         else:
             sub = {idx[0]: FL_I, idx[1]: FL_J}
             canon = type(b)(legs[0].base[FL_I], b.gamma, legs[1].base[FL_J])
+            coeff = coeff.xreplace(sub)
+            if isinstance(b, MajoranaBilinear) \
+                    and legs[0].base == legs[1].base:
+                # ψ_iᵀ C P_L ψ_j = ψ_jᵀ C P_L ψ_i (symmetry sign +1) and both
+                # indices are summed, so only the symmetric part of the
+                # coefficient is physical: keep that, or c_ij − c_ji would
+                # look like a separate monomial
+                swap = {FL_I: FL_J, FL_J: FL_I}
+                coeff = (coeff + coeff.xreplace(swap)) / 2
+            out += coeff * canon
+            continue
         out += coeff.xreplace(sub) * canon
     return out
 
@@ -364,7 +375,10 @@ def term_coverage(model, max_dim=4):
                                verify=False)
         sector = sp.Add(*[t.expr for t in model.lagrangian.terms
                           if t.sector in ("yukawa", "other")])
-        halves = [_fermion_halves(t.expr)[0] for t in basis]
+        # the basis goes through the same canonical form as the model, so
+        # a relabelled dummy index cannot leave a spurious remainder
+        halves = [_canonical_fermion_half(_fermion_halves(t.expr)[0])
+                  for t in basis]
         # L ⊃ −c·O for dim ≤ 4, +c·O for the dim-5 operator
         signed = [(-1 if t.dim <= 4 else 1) for t in basis]
         model_half = _canonical_fermion_half(sector)

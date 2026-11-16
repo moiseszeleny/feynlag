@@ -42,11 +42,10 @@ Run:  python examples/sm_u1x.py
 import sympy as sp
 
 from feynlag import (
-    Bilinear, DiracGamma, Dmu, ExternalParameter, InternalParameter,
-    Lagrangian, Model, SU3, Scalar, U1, WeylFermion, conjugate_pair, dag,
-    diagonalize_orthogonal_2x2, diracPL, diracPR, electroweak_gauge,
-    extract_fermion_vertices, fermion_feynman_rule, fermion_gauge_current,
-    fermion_mass_matrix,
+    FL_I, FL_J, DiracGamma, Lagrangian, Model, ParameterSet, SU3, Scalar,
+    U1, WeylFermion, conjugate_pair, diracPL, diracPR, electroweak_gauge,
+    extract_fermion_vertices, fermion_feynman_rule, fermion_mass_matrix,
+    inner, tilde, yukawa,
 )
 
 
@@ -55,23 +54,24 @@ def main():
     # SM electroweak gauge groups from feynlag.models; the U(1)_X extension
     # (and QCD colour) are this example's own additions.
     SU2L, U1Y, gw, g1 = electroweak_gauge()
-    gX = ExternalParameter("gX", 0.5, positive=True)
-    gs = ExternalParameter("gs", 1.22, positive=True)
+    P = ParameterSet(gw, g1)            # declare once: create + register
+    gX = P.external("gX", 0.5, positive=True)
+    gs = P.external("gs", 1.22, positive=True)
     U1X = U1("U1X", coupling=gX)
     SU3c = SU3("SU3c", coupling=gs)
 
     # the two X-charge parameters (symbolic everywhere) and the singlet charge
-    aX = ExternalParameter("aX", 0.4)
-    bX = ExternalParameter("bX", -0.7)
-    qS = ExternalParameter("qS", 1.0)
+    aX = P.external("aX", 0.4)
+    bX = P.external("bX", -0.7)
+    qS = P.external("qS", 1.0)
 
-    v = ExternalParameter("v", 246.0, positive=True, unit_dim=1)
-    vX = ExternalParameter("vX", 2000.0, positive=True, unit_dim=1)
-    lam = ExternalParameter("lam", 0.129)
-    lamS = ExternalParameter("lamS", 0.2)
-    lamHS = ExternalParameter("lamHS", 0.05)
-    mu2 = InternalParameter("mu2", unit_dim=2)
-    muS2 = InternalParameter("muS2", unit_dim=2)
+    v = P.external("v", 246.0, positive=True, unit_dim=1)
+    vX = P.external("vX", 2000.0, positive=True, unit_dim=1)
+    lam = P.external("lam", 0.129)
+    lamS = P.external("lamS", 0.2)
+    lamHS = P.external("lamHS", 0.05)
+    mu2 = P.internal("mu2", unit_dim=2)
+    muS2 = P.internal("muS2", unit_dim=2)
 
     def qcharge(Y, BmL):
         """The anomaly-free charge map X = a·Y + b·(B−L)."""
@@ -81,11 +81,11 @@ def main():
     H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2),
                           U1X: qcharge(sp.Rational(1, 2), 0)},
                component_names=["Gp", "H0"])
-    H.expand_vev({H.components[1]: v})
+    H.expand_vev({H.H0: v})
 
     # SM-singlet complex scalar: breaks U(1)_X at v_X, gives the Z′ its mass
     S = Scalar("S", reps={U1X: qS.s}, component_names=["S0"])
-    S.expand_vev({S.components[0]: vX})
+    S.expand_vev({S.S0: vX})
 
     Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2),
                                  U1X: qcharge(-sp.Rational(1, 2), -1)},
@@ -118,90 +118,40 @@ def main():
     X = U1X.bosons("X")
     G = SU3c.bosons("G")
 
-    # --- Lagrangian (user-written, FeynRules style) ------------------------
-    HdH = (dag(H) * H.mat)[0]
-    SdS = (dag(S) * S.mat)[0]
-    V = (-mu2.s * HdH + lam.s * HdH**2
-         - muS2.s * SdS + lamS.s * SdS**2
-         + lamHS.s * HdH * SdS)
-    DH = Dmu(H)      # includes W, B AND X — the Higgs carries all three
-    DS = Dmu(S)      # X only
+    # --- Lagrangian (field level) -------------------------------------------
+    HdH, SdS = inner(H, H), inner(S, S)
+    V = (-mu2 * HdH + lam * HdH**2
+         - muS2 * SdS + lamS * SdS**2
+         + lamHS * HdH * SdS)
 
-    i, j = sp.symbols("i j", integer=True)
-    Ye, Yv = sp.IndexedBase("Ye"), sp.IndexedBase("Yv")
-    Gp, H0 = H.components
-    nuL, eL = Ll.components
-    nuLbar, eLbar = Ll.bar_components
-    eRc, eRbar = eR.components[0], eR.bar_components[0]
-    nuRc, nuRbar = nuR.components[0], nuR.bar_components[0]
-
-    # charged-lepton Yukawa: -Ye[i,j] Lbar_i H e_R[j] + h.c.
-    LYuk = -(Ye[i, j] * Gp * Bilinear(nuLbar[i], diracPR, eRc[j])
-             + Ye[i, j] * H0 * Bilinear(eLbar[i], diracPR, eRc[j]))
-    LYuk += -(sp.conjugate(Ye[i, j]) * sp.conjugate(Gp)
-              * Bilinear(eRbar[j], diracPL, nuL[i])
-              + sp.conjugate(Ye[i, j]) * sp.conjugate(H0)
-              * Bilinear(eRbar[j], diracPL, eL[i]))
-
-    # neutrino Yukawa via the conjugate doublet H̃ = (H0*, −Gp*), the same
-    # inline pattern the up-quark Yukawa uses: -Yv[i,j] Lbar_i H̃ nu_R[j] + h.c.
-    LYukN = -(Yv[i, j] * sp.conjugate(H0)
-              * Bilinear(nuLbar[i], diracPR, nuRc[j])
-              + Yv[i, j] * (-sp.conjugate(Gp))
-              * Bilinear(eLbar[i], diracPR, nuRc[j]))
-    LYukN += -(sp.conjugate(Yv[i, j]) * H0
-               * Bilinear(nuRbar[j], diracPL, nuL[i])
-               + sp.conjugate(Yv[i, j]) * (-Gp)
-               * Bilinear(nuRbar[j], diracPL, eL[i]))
-
-    # quark Yukawas: verbatim from sm_scalar_gauge.py (color summed in
-    # Python; flavor-generic, undiagonalized — no CKM here; the CKM
-    # insertion route is in examples/sm_ckm.py)
-    Yu, Yd = sp.IndexedBase("Yu"), sp.IndexedBase("Yd")
-    qL_u, qL_d = QL.components[:3], QL.components[3:]
-    qLbar_u, qLbar_d = QL.bar_components[:3], QL.bar_components[3:]
-    uRc, uRbar = uR.components, uR.bar_components
-    dRc, dRbar = dR.components, dR.bar_components
-
-    def qcolor(bar_list, gamma, field_list, idx1, idx2):
-        return sum(Bilinear(bar_list[c][idx1], gamma, field_list[c][idx2])
-                   for c in range(3))
-
-    LYuk_d = -(Yd[i, j] * Gp * qcolor(qLbar_u, diracPR, dRc, i, j)
-               + Yd[i, j] * H0 * qcolor(qLbar_d, diracPR, dRc, i, j))
-    LYuk_d += -(sp.conjugate(Yd[i, j]) * sp.conjugate(Gp)
-                * qcolor(dRbar, diracPL, qL_u, j, i)
-                + sp.conjugate(Yd[i, j]) * sp.conjugate(H0)
-                * qcolor(dRbar, diracPL, qL_d, j, i))
-
-    LYuk_u = -(Yu[i, j] * sp.conjugate(H0) * qcolor(qLbar_u, diracPR, uRc, i, j)
-               + Yu[i, j] * (-sp.conjugate(Gp))
-               * qcolor(qLbar_d, diracPR, uRc, i, j))
-    LYuk_u += -(sp.conjugate(Yu[i, j]) * H0
-                * qcolor(uRbar, diracPL, qL_u, j, i)
-                + sp.conjugate(Yu[i, j]) * (-Gp)
-                * qcolor(uRbar, diracPL, qL_d, j, i))
-
-    # gauge currents — Dmu/fermion_gauge_current pick up the X boson
-    # automatically for every field with U1X in its reps
-    current = (fermion_gauge_current(Ll, i) + fermion_gauge_current(eR, i)
-               + fermion_gauge_current(nuR, i))
-    current_quarks = (fermion_gauge_current(QL, i)
-                      + fermion_gauge_current(uR, i)
-                      + fermion_gauge_current(dR, i))
+    # Yukawas: each constructor does the gauge contraction, the flavour
+    # indices (Y[fl_i, fl_j]) and the + h.c.; colour is a spectator index,
+    # and the U(1)_X charges are checked to balance (symbolically) as well
+    Ye, Yv, Yu, Yd = (sp.IndexedBase(n) for n in ("Ye", "Yv", "Yu", "Yd"))
+    LYuk = yukawa(Ye, Ll, H, eR)                 # −Ye L̄ H e_R + h.c.
+    LYukN = yukawa(Yv, Ll, tilde(H), nuR)        # −Yv L̄ H̃ ν_R + h.c.
+    LYuk_d = yukawa(Yd, QL, H, dR)               # −Yd Q̄ H d_R + h.c.
+    LYuk_u = yukawa(Yu, QL, tilde(H), uR)        # −Yu Q̄ H̃ u_R + h.c.
 
     L = Lagrangian()
-    L.add((dag(DH) * DH)[0] + (dag(DS) * DS)[0], sector="kinetic")
+    # (D_μφ)†(D^μφ) for H (W, B and X: it carries all three) and S (X only),
+    # and the gauge currents, which pick up X for every field with U1X
+    L.add_kinetic(H, S, Ll, eR, nuR, QL, uR, dR)
     L.add(-V, sector="potential")
-    L.add(LYuk + LYukN, sector="yukawa")
-    L.add(current, sector="yukawa")
-    L.add(LYuk_d + LYuk_u, sector="yukawa")
-    L.add(current_quarks, sector="yukawa")
+    L.add(LYuk + LYukN + LYuk_d + LYuk_u, sector="yukawa")
 
     model = Model("SM-U1X", gauge_groups=[SU2L, U1Y, U1X, SU3c],
                   fields=[H, S, Ll, eR, nuR, QL, uR, dR, W, B, X, G],
-                  parameters=[gw, g1, gX, gs, aX, bX, qS, v, vX,
-                              lam, lamS, lamHS, mu2, muS2], lagrangian=L)
+                  parameters=P, lagrangian=L)
+    print(model.summary())
+    print()
+
+    i, j = FL_I, FL_J
+    Gp = H.Gp
+    nuL, eL, nuLbar, eLbar = Ll.nuL, Ll.eL, Ll.nuLbar, Ll.eLbar
+    eRc, eRbar = eR.eR, eR.eRbar
+    nuRc, nuRbar = nuR.nuR, nuR.nuRbar
+    uL1, uL1bar = QL.uL_1, QL.uL_1bar
 
     # --- pipeline -----------------------------------------------------------
     report = model.check_invariance()
@@ -210,22 +160,27 @@ def main():
     print("tadpoles:  ", model.solve_tadpoles([mu2, muS2]))
 
     # --- scalar sector: portal h–s mixing, Goldstone pseudoscalars ----------
-    h0, G0 = sp.Symbol("H0_r", real=True), sp.Symbol("H0_i", real=True)
-    s0, aX0 = sp.Symbol("S0_r", real=True), sp.Symbol("S0_i", real=True)
-
-    Meven = model.mass_matrix([h0, s0])
+    print("\nscalar mass blocks:")
+    for block in model.mass_blocks(kind="scalar"):
+        print("  ", block)
+    scalar_blocks = model.mass_blocks(kind="scalar")
+    even = scalar_blocks[0]
     print("\nCP-even scalar M² (h0, s0):")
-    sp.pprint(Meven)
-    Modd = model.mass_matrix([G0, aX0])
-    assert Modd == sp.zeros(2, 2), Modd
+    sp.pprint(even.matrix)
+    # the CP-odd directions H0_i and S0_i have no mass term at all: each is a
+    # Goldstone (two of them, eaten by Z and Z′), so they form two 1×1 blocks
+    odd = [b for b in scalar_blocks if b.cp == "odd"]
+    assert all(b.matrix == sp.zeros(1, 1) and b.goldstones for b in odd)
     print("CP-odd (G0, S0_i) block ≡ 0 — two Goldstones, eaten by Z and Z′")
+    G0, aX0 = (b.fields[0] for b in odd)
 
-    h1, h2 = sp.symbols("h1 h2", real=True)
+    # h–s portal mixing through the tan 2θ route; names light first, so h1
+    # is the SM-like state at this benchmark (v_X ≫ v)
     thetas = sp.Symbol("thetas", real=True)
-    rot_s = diagonalize_orthogonal_2x2(Meven, [h0, s0], [h1, h2],
-                                       angle=thetas)
-    print("scalar mixing:", rot_s.angle_relation)
-    model.rotate(rot_s)
+    d_s = model.diagonalize(even, names=["h1", "h2"], angle=thetas,
+                            order="light_first")
+    h1, h2 = d_s.new_fields
+    print("scalar mixing:", d_s.angle_relation)
 
     # --- gauge sector: the model finds the blocks and their rotations ------
     # (charged: W¹,W² → W±; neutral: the 3×3 (W3, B, X) block, whose
@@ -297,7 +252,7 @@ def main():
     show("Z' eR eR", eRbar[i], gammaR, eRc[i], Zp)
     show("Z' nuL nuL", nuLbar[i], gammaL, nuL[i], Zp)
     show("Z' nuR nuR", nuRbar[i], gammaR, nuRc[i], Zp)
-    show("Z' uL uL", qLbar_u[0][i], gammaL, qL_u[0][i], Zp)
+    show("Z' uL uL", uL1bar[i], gammaL, uL1[i], Zp)
 
     print("\nmodified Z couplings (SM recovered at θ′ → 0):")
     show("Z eR eR", eRbar[i], gammaR, eRc[i], Z)
