@@ -6,6 +6,12 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-15
+
+Model building for particle physicists: terms written at field level, the
+physical basis found by the model, and a front door that starts from every
+allowed operator (#46–#50). All additive; 0.3.0 code runs unchanged.
+
 ### Added
 - Field-level term constructors (`feynlag.terms`): `yukawa(y, FL, S, FR)`,
   `dirac_mass(M, FL, FR)`, `majorana_mass(M, F)` and `weinberg(c, F, S)` build
