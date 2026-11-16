@@ -25,6 +25,18 @@ Froggatt–Nielsen-type horizontal symmetries. These close feynlag-models gaps
 FG-6 and FG-7. The SU(N) and Particle Decays tutorials are rebuilt in the
 derive-then-check style. 549 tests green. See `CHANGELOG.md`.
 
+**v0.4.0** makes model building friendlier. Terms are written at field level
+(`yukawa`, `tilde`, `inner`, `dirac_mass`, `majorana_mass`, `weinberg`,
+`L.add_kinetic`), parameters are declared once (`P.external`/`P.internal`)
+and components are addressed by name (`H.H0`). The model finds its own
+physical basis: `Model.mass_blocks()` reports which fields mix, with charges
+derived from the vacuum and Goldstone directions from the broken generators,
+and `Model.diagonalize()` builds and registers the rotation for scalars,
+one-flavour Dirac fermions and gauge bosons (photon from the unbroken charge).
+`Model.most_general` / `term_coverage` start or audit a model from every
+allowed operator, and invariance failures explain themselves. The examples
+and tutorials use the new layer. 601 tests green. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
