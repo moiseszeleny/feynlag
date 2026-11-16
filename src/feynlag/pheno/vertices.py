@@ -211,6 +211,11 @@ def collect_decay_vertices(model, boson_fields, fermion_sectors=(),
         L = sp.expand(model.physical_lagrangian(sector=sector))
         if L == 0:
             continue
+        if conjugate_map:
+            # conjugate(φ) -> the physical φ̄ symbol, as the bosonic track
+            # does: otherwise the ψ̄ψφ† half of a charged-scalar Yukawa has
+            # no boson leg and is silently dropped
+            L = L.xreplace(conjugate_map)
         table = extract_fermion_vertices(L, list(boson_fields))
         for vertex in fermion_decay_vertices(table, spin_map=spins,
                                              particle_map=particle_map):

@@ -21,6 +21,7 @@ executed tutorial notebooks that walk these models step by step are in
 | [`sm_higgs_decays.py`](sm_higgs_decays.py) | Full Higgs BR table: tree `f f̄` via `DiracParticle`, off-shell `WW*/ZZ*`, loop `gg/γγ/Zγ` | [`Particle_Decays_Tutorial`](../docs/tutorials/Particle_Decays_Tutorial.ipynb) | `test_pheno.py`, `test_offshell.py`, `test_loop.py` |
 | [`ee_to_ff.py`](ee_to_ff.py) | 2→2 `e⁺e⁻→μ⁺μ⁻` through the Z: `dσ/dcosθ`, forward–backward asymmetry | [`Scattering_Tutorial`](../docs/tutorials/Scattering_Tutorial.ipynb) | `test_scattering.py` |
 | [`ee_scattering.py`](ee_scattering.py) | Full tree-level `e⁺e⁻→μ⁺μ⁻` (γ+Z interference, MadGraph benchmark inside `\|η\|<2.5`), `A_FB`, and Bhabha via `ScatteringCalculator` | [`Scattering_Tutorial`](../docs/tutorials/Scattering_Tutorial.ipynb) | `test_interference.py` |
+| [`scalar_qed.py`](scalar_qed.py) | Scalar QED with a Yukawa (an unbroken model): the `VSS` derivative coupling, `e⁺e⁻→φ⁺φ⁻` vs `πα²β³/(3s)`, and `e⁻γ→χφ⁻` with its Ward identity | [`Scattering_Tutorial`](../docs/tutorials/Scattering_Tutorial.ipynb) | `test_vss.py` |
 | [`ee_to_ww.py`](ee_to_ww.py) | `e⁺e⁻→W⁺W⁻` (ν exchange + γ/Z through the triple-gauge vertices; MadGraph benchmark and the high-energy cancellation) and `e⁺e⁻→Zh` | [`Scattering_Tutorial`](../docs/tutorials/Scattering_Tutorial.ipynb) | `test_ww.py`, `test_line_scattering.py` |
 
 **Two styles.** The model-building scripts (`sm_scalar_gauge`, `sm_vll`,

@@ -194,14 +194,15 @@ the ε (γ₅) algebra 2→2 needs and 1→2 never did (the forward–backward
 asymmetry), and multi-diagram interference with s/t/u topology enumeration
 and a `ScatteringCalculator` — which reproduces the MadGraph
 $e^+e^-\to\mu^+\mu^-$ benchmark from the extracted γ and Z couplings, plus
-the Bhabha and Møller closed forms. Tier 4's first two stages are delivered
+the Bhabha and Møller closed forms. Tier 4 is delivered
 too: external bosons on one fermion line by fermion exchange
 ($e^+e^-\to\gamma\gamma$, $ZZ$, Compton), and boson exchange through the
 triple-gauge and `VVS` vertices — $e^+e^-\to W^+W^-$ reproduces the second
 MadGraph benchmark (19.447 pb against $19.498\pm0.058$) with the gauge
 cancellation pinned exactly, and $e^+e^-\to Zh$ the Higgsstrahlung closed
-form. Remaining: `VSS` derivative couplings (small), and parton-level QCD 2→2
-(medium–large, no PDFs).
+form, and the `VSS` derivative coupling gives scalar pair production
+($e^+e^-\to\phi^+\phi^-$ in scalar QED, with the sign fixed by a Ward
+identity). Remaining: parton-level QCD 2→2 (medium–large, no PDFs).
 See {doc}`manual/scattering_roadmap`.
 
 ## Suggested order

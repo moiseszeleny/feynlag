@@ -58,6 +58,13 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
   `∂_μ → −i p_μ`). A leg is attached by its field symbol (the outgoing W⁺ is
   on the `Wm` leg), so the UFO field→particle relabelling sign of
   `export/ufo/legs.py` plays no role in `pheno`.
+- **`VSS` momentum tags.** A `VSS` coupling is `Σ_φ c_φ p(φ)` over its two
+  scalar legs, written with feynlag's `∂_μφ → +i p(φ) φ`. In a diagram each
+  tag is replaced by `VSS_KAPPA × p_in(φ)^μ` with `VSS_KAPPA = −1`
+  (`pheno.boson_vertices`) and `p_in(φ)` the momentum flowing **into** the
+  vertex on field leg `φ` (physical plane waves, `∂_μ → −i p_μ` — the same
+  origin as `VVV_KAPPA`). For a scalar of charge `Q` this is the textbook
+  `i g Q (p_φ − p_φ†)^μ`.
 - **Polarization sums.** `−g_{μμ'} + k_μk_{μ'}/m²` for a massive external
   vector; `−g_{μμ'}` for a massless one, used only after the Ward identity
   `k_μM^μ = 0` has been checked on that amplitude. Mediators are in unitary

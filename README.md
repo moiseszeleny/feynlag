@@ -131,8 +131,8 @@ Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszel
 - Majorana vertices are symbolic-only, not yet exported to UFO;
 - 2→2 scattering covers four-fermion processes (with interference and
   s/t/u topologies) and two-fermion + two-boson processes (`e+e-→γγ`,
-  `e+e-→ZZ`, Compton, `e+e-→W+W-`, `e+e-→Zh`): `VSS` derivative couplings,
-  four-point contact vertices, boson–boson scattering and coloured external
+  `e+e-→ZZ`, Compton, `e+e-→W+W-`, `e+e-→Zh`, scalar pairs through a `VSS`
+  vertex): four-point contact vertices, boson–boson scattering and coloured external
   states are not yet supported, and `VVV` decays are not implemented;
 - no NLO / UFO 2.0 extensions.
 

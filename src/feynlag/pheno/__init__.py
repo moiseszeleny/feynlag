@@ -54,7 +54,9 @@ from .scattering import (
     ffs_s_channel_squared, ffv_s_channel_squared, forward_backward_asymmetry,
 )
 from .scattering_calculator import ScatteringCalculator, ScatteringProcess
-from .boson_vertices import VVV_KAPPA, sss_tensor, vvs_tensor, vvv_tensor
+from .boson_vertices import (
+    VSS_KAPPA, VVV_KAPPA, sss_tensor, vss_tensor, vvs_tensor, vvv_tensor,
+)
 from .line import (
     LineAmplitude, LineTerm, VectorLeg, boson_exchange_terms,
     fermion_exchange_term,
@@ -70,9 +72,9 @@ __all__ = [
     "DecayChannel", "DecayVertex", "Diagram", "DiagramInfo", "DiracParticle",
     "ExternalBoson", "ExternalFermion", "ExternalState", "Leg",
     "LineAmplitude", "LineDiagramInfo", "LineTerm", "ScatteringCalculator",
-    "VVV_KAPPA", "VectorLeg", "boson_exchange_terms",
+    "VSS_KAPPA", "VVV_KAPPA", "VectorLeg", "boson_exchange_terms",
     "enumerate_line_diagrams", "fermion_exchange_term", "sss_tensor",
-    "vvs_tensor", "vvv_tensor",
+    "vss_tensor", "vvs_tensor", "vvv_tensor",
     "fermion_propagator_phase", "line_amplitude",
     "ScatteringProcess", "SpinorChain",
     "TwoBodyKinematics", "ThreeBodyKinematics", "TwoToTwoKinematics",
