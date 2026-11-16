@@ -50,7 +50,8 @@ import sympy as sp
 from .contraction import contract_trace
 from .epsilon import assert_epsilon_single_vanishes
 
-__all__ = ["LineAmplitude", "LineTerm", "VectorLeg", "fermion_exchange_term"]
+__all__ = ["LineAmplitude", "LineTerm", "VectorLeg", "boson_exchange_terms",
+           "fermion_exchange_term"]
 
 _dummy_counter = itertools.count()
 
@@ -183,6 +184,49 @@ def fermion_exchange_term(vertex_bar, vertex_field, q, q2, mass, width=0):
     mass = sp.sympify(mass)
     coeff = fermion_propagator_phase() / propagator_denominator(q2, mass, width)
     return LineTerm(coeff, (vertex_bar, ("Q", tuple(q), mass), vertex_field))
+
+
+def boson_exchange_terms(line_factor, spin, q, q2, mass, width, line_index,
+                         vertex_index, vertex_pieces):
+    """``Γ_ρ × propagator × V^{ρ…}`` as :class:`LineTerm`\\ s: the fermion line
+    emits one boson, which ends on a bosonic three-point vertex.
+
+    Args:
+        line_factor: the ``('G', …)`` factor of the line's single vertex (its
+            index is ``line_index`` for a vector mediator, ``None`` for a
+            scalar one).
+        spin: the mediator's spin, ``0`` or ``1``.
+        q: the mediator momentum as a combo (its sign is irrelevant: the
+            numerator is quadratic in it).
+        q2, mass, width: for the denominator ``q² − m² + imΓ``.
+        line_index, vertex_index: the index names at the two ends of a
+            vector propagator (ignored for a scalar).
+        vertex_pieces: the bosonic vertex as ``[(coeff, tensors)]``
+            (:mod:`~feynlag.pheno.boson_vertices`), its mediator leg on
+            ``vertex_index``.
+
+    The propagator is ``i/D`` (scalar) or ``−i(g_{ρσ} − q_ρq_σ/m²)/D``
+    (vector; unitary gauge when massive, Feynman gauge when massless).
+    """
+    from .propagator import propagator_denominator
+    mass = sp.sympify(mass)
+    denominator = propagator_denominator(q2, mass, width)
+    if spin == 0:
+        phase, numerator = sp.I, [(sp.S.One, ())]
+    elif spin == 1:
+        phase = -sp.I
+        numerator = [(sp.S.One, (("g", line_index, vertex_index),))]
+        if mass != 0:
+            numerator.append((-1 / mass**2, (("v", tuple(q), line_index),
+                                              ("v", tuple(q), vertex_index))))
+    else:
+        raise NotImplementedError(f"boson_exchange_terms: spin {spin}")
+    terms = []
+    for c_num, t_num in numerator:
+        for c_vertex, t_vertex in vertex_pieces:
+            terms.append(LineTerm(phase * c_num * c_vertex / denominator,
+                                  (line_factor,), t_num + t_vertex))
+    return tuple(terms)
 
 
 def _is_zero(expr, reference, symbols):

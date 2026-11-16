@@ -49,7 +49,11 @@ from sympy.combinatorics import Permutation
 from .diagrams import (
     BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain, _chain_indices,
 )
-from .line import LineAmplitude, VectorLeg, fermion_exchange_term
+from .boson_vertices import sss_tensor, vvs_tensor, vvv_tensor
+from .line import (
+    LineAmplitude, VectorLeg, boson_exchange_terms, fermion_exchange_term,
+    fresh_name,
+)
 
 __all__ = ["DiagramInfo", "ExternalBoson", "ExternalFermion",
            "LineDiagramInfo", "enumerate_diagrams", "enumerate_line_diagrams",
@@ -259,10 +263,14 @@ class LineDiagramInfo:
     Attributes:
         channel: ``'s'``, ``'t'`` or ``'u'`` — the invariant carried by the
             internal propagator.
-        mediator: the particle symbol of the exchanged fermion.
-        kind: ``'fermion'`` (two vertices on the line, a fermion propagator).
-        vertices: the :class:`~feynlag.pheno.vertices.DecayVertex` used, in
-            line order (bar-slot end first).
+        mediator: the particle symbol of the exchanged fermion, or the
+            boson field symbol on the line's vertex.
+        kind: ``'fermion'`` (two vertices on the line, a fermion propagator)
+            or ``'boson'`` (one vertex on the line, a boson propagator and a
+            bosonic three-point vertex).
+        vertices: the :class:`~feynlag.pheno.vertices.DecayVertex` used — in
+            line order (bar-slot end first) for ``'fermion'``; the line
+            vertex then the bosonic vertex for ``'boson'``.
         terms: the diagram's :class:`~feynlag.pheno.line.LineTerm`\\ s.
     """
 
@@ -300,11 +308,12 @@ def _split_externals(externals):
 
 
 def enumerate_line_diagrams(externals, vertices, kin, species,
-                            conjugates=None, fermion_mass=None):
-    """Every tree diagram of a two-fermion + two-boson 2→2 process in which
-    both bosons attach to the fermion line (a fermion is exchanged).
+                            conjugates=None, fermion_mass=None,
+                            mass_of=None, width_of=None):
+    """Every tree diagram of a two-fermion + two-boson 2→2 process.
 
-    The line runs from the field slot ``Y`` to the bar slot ``X``:
+    **Fermion exchange** — both bosons attach to the fermion line.  The line
+    runs from the field slot ``Y`` to the bar slot ``X``:
     ``ψ̄_X Γ₁ S_F(q) Γ₂ ψ_Y`` with vertex 2 ``(F̄, Y, B)`` next to the field
     slot and vertex 1 ``(X̄, F, B')`` next to the bar slot, for both
     assignments of the two bosons and every declared intermediate species
@@ -317,6 +326,15 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
     along the fermion arrow: ``q = p_in(Y) + p_in(B)`` with ``p_in = +k`` for
     an incoming and ``−k`` for an outgoing leg.
 
+    **Boson exchange** — the line has one vertex ``(X̄, Y, M)``; the boson
+    ``M`` propagates to a bosonic three-point vertex carrying ``M†`` and the
+    two external bosons' fields (``VVV`` from
+    :meth:`~feynlag.lagrangian.Model.gauge_vertices`, ``VVS``, ``SSS``).
+    Each leg enters that vertex with its own incoming momentum — ``p_in`` for
+    an external boson, ``p_in(X) + p_in(Y)`` for the mediator — which is all
+    that fixes the triple-gauge sign
+    (:mod:`~feynlag.pheno.boson_vertices`).
+
     Args:
         externals: four :class:`ExternalFermion`/:class:`ExternalBoson`, in
             the order of the kinematics' momenta ``k1..k4``.
@@ -327,6 +345,9 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
         conjugates: ``{boson: antiboson}`` for charged bosons.
         fermion_mass: optional callable ``DiracParticle -> mass`` (default:
             its ``mass``).
+        mass_of, width_of: callables ``boson -> mass`` / ``-> width`` for a
+            boson mediator (``mass_of`` is required once a boson-exchange
+            diagram exists; ``width_of`` defaults to ``0``).
 
     Returns:
         list of :class:`LineDiagramInfo`.
@@ -336,9 +357,14 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
             slot) and two bosons, or a vertex that would complete a diagram
             has an intermediate fermion leg no declared species claims —
             dropping it silently would lose a diagram.
+        NotImplementedError: a charged external vector with no ``VVV``
+            vertex among ``vertices`` (its triple-gauge diagrams would be
+            missing), or a boson-exchange diagram through a ``VSS`` vertex
+            (derivative coupling, stage 4c).
     """
     conjugates = dict(conjugates or {})
     fermion_mass = fermion_mass or (lambda dp: dp.mass)
+    width_of = width_of or (lambda boson: sp.S.Zero)
     bar, field, bosons = _split_externals(externals)
     heads = (kin.k1, kin.k2, kin.k3, kin.k4)
     by_antiparticle = {dp.antiparticle: dp for dp in species}
@@ -362,8 +388,7 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
         name = _external_index(j) if externals[j].spin == 1 else None
         return ("G", name, vertex.g_left, vertex.g_right)
 
-    _refuse_boson_exchange(externals, bosons, vertices, conjugates,
-                           bar_symbol, field_symbol, vertex_boson)
+    _require_gauge_vertices(externals, bosons, vertices, conjugates)
 
     out = []
     for first, second in (bosons, bosons[::-1]):
@@ -408,56 +433,102 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
                     f"{vertex_1.particles[1]!r}, which no declared "
                     f"DiracParticle claims; declare that species (use "
                     f"right=None for a left-handed-only one)")
-    return out
 
-
-def _refuse_boson_exchange(externals, bosons, vertices, conjugates,
-                           bar_symbol, field_symbol, vertex_boson):
-    """Raise if the process also has a diagram in which the two external
-    bosons meet at a **bosonic** three-point vertex (a boson is exchanged).
-
-    Those diagrams are not assembled yet, and returning the fermion-exchange
-    ones alone would be a wrong cross section, not a partial one — for
-    ``e⁺e⁻→W⁺W⁻`` it is the ν exchange without the γ/Z s channel that
-    cancels its high-energy growth.
-
-    Two tests.  A charged external vector always has a triple-gauge coupling
-    to the photon, and the gauge self-couplings are not part of ``vertices``
-    (they come from :meth:`~feynlag.lagrangian.Model.gauge_vertices`), so it
-    is refused outright.  Otherwise the bosonic vertices that *are* in
-    ``vertices`` (``VVS``, ``VSS``, ``SSS``, ``VVV``) are searched for one
-    joining the two external bosons to a mediator the fermion line couples to.
-    """
-    for j in bosons:
-        symbol = externals[j].symbol
-        if externals[j].spin == 1 and conjugates.get(symbol, symbol) != symbol:
-            raise NotImplementedError(
-                f"enumerate_line_diagrams: the charged external vector "
-                f"{symbol} couples through a triple-gauge vertex; "
-                f"boson-exchange diagrams with a bosonic three-point vertex "
-                f"are stage 4b of Tier 4 of the scattering roadmap")
+    # ---- boson exchange: line vertex -> propagator -> bosonic 3-point vertex
+    q = (p_in(bar), p_in(field))
+    q2 = sp.expand(sum(ca * cb * kin.dot(ha, hb)
+                       for ca, ha in q for cb, hb in q))
+    channel = _CHANNELS[frozenset({bar, field})]
     wanted = [vertex_boson(j) for j in bosons]
-    for vertex in vertices:
-        if vertex.vertex_type not in ("VVV", "VVS", "VSS", "SSS"):
+    for boson_vertex in vertices:
+        if boson_vertex.vertex_type not in ("VVV", "VVS", "VSS", "SSS"):
             continue
-        rest = list(vertex.particles)
+        rest = list(boson_vertex.particles)
         try:
             for symbol in wanted:
                 rest.remove(symbol)
         except ValueError:
             continue
-        (mediator,) = rest
-        partner = conjugates.get(mediator, mediator)
+        (at_vertex,) = rest
+        line_boson = conjugates.get(at_vertex, at_vertex)
         for line_vertex in vertices:
-            if (line_vertex.vertex_type in ("FFV", "FFS")
+            if not (line_vertex.vertex_type in ("FFV", "FFS")
                     and line_vertex.particles[0] == bar_symbol
                     and line_vertex.particles[1] == field_symbol
-                    and line_vertex.particles[2] == partner):
+                    and line_vertex.particles[2] == line_boson):
+                continue
+            spin = 1 if line_vertex.vertex_type == "FFV" else 0
+            n_vectors = spin + sum(externals[j].spin == 1 for j in bosons)
+            if boson_vertex.vertex_type != {3: "VVV", 2: "VVS", 1: "VSS",
+                                            0: "SSS"}[n_vectors]:
+                continue
+            if boson_vertex.vertex_type == "VSS":
                 raise NotImplementedError(
-                    f"enumerate_line_diagrams: the bosonic vertex {vertex!r} "
-                    f"joins the two external bosons to {mediator}, which the "
-                    f"fermion line couples to — a boson-exchange diagram, "
-                    f"stage 4b of Tier 4 of the scattering roadmap")
+                    f"enumerate_line_diagrams: the diagram through "
+                    f"{boson_vertex!r} needs a VSS vertex, whose derivative "
+                    f"coupling is stage 4c of Tier 4 of the scattering "
+                    f"roadmap")
+            if mass_of is None:
+                raise ValueError(
+                    "enumerate_line_diagrams: a boson-exchange diagram "
+                    "exists; pass `mass_of` for its mediator")
+            line_index = fresh_name("r") if spin == 1 else None
+            vertex_index = fresh_name("s") if spin == 1 else None
+            # legs of the bosonic vertex: (field symbol, index, momentum in)
+            legs = [(at_vertex, vertex_index, q)]
+            for j in bosons:
+                legs.append((vertex_boson(j),
+                             _external_index(j) if externals[j].spin == 1 else None,
+                             (p_in(j),)))
+            pieces = _boson_vertex_pieces(boson_vertex, legs)
+            terms = boson_exchange_terms(
+                ("G", line_index, line_vertex.g_left, line_vertex.g_right),
+                spin, q, q2, mass_of(line_boson), width_of(line_boson),
+                line_index, vertex_index, pieces)
+            out.append(LineDiagramInfo(
+                channel=channel, mediator=line_boson, kind="boson",
+                vertices=(line_vertex, boson_vertex), terms=terms))
+    return out
+
+
+def _boson_vertex_pieces(vertex, legs):
+    """The bosonic vertex as loose tensors, its legs ``(symbol, index,
+    momentum)`` matched to ``vertex.particles`` by field symbol."""
+    if vertex.vertex_type == "SSS":
+        return sss_tensor(vertex.coupling)
+    if vertex.vertex_type == "VVS":
+        index_a, index_b = [index for _, index, _ in legs if index is not None]
+        return vvs_tensor(vertex.coupling, index_a, index_b)
+    remaining = list(legs)
+    ordered = []
+    for symbol in vertex.particles:
+        match = next(leg for leg in remaining if leg[0] == symbol)
+        remaining.remove(match)
+        ordered.append((match[1], match[2]))
+    return vvv_tensor(vertex.coupling, ordered)
+
+
+def _require_gauge_vertices(externals, bosons, vertices, conjugates):
+    """Raise for a charged external vector when no ``VVV`` vertex was given.
+
+    A charged vector always has a triple-gauge coupling to the photon, and
+    the gauge self-couplings are not part of the extractor's output (they
+    come from :meth:`~feynlag.lagrangian.Model.gauge_vertices`).  Without
+    them the enumeration would return the fermion-exchange diagrams alone —
+    for ``e⁺e⁻→W⁺W⁻`` the ν exchange without the γ/Z s channel that cancels
+    its high-energy growth: a wrong cross section, not a partial one.
+    """
+    if any(vertex.vertex_type == "VVV" for vertex in vertices):
+        return
+    for j in bosons:
+        symbol = externals[j].symbol
+        if externals[j].spin == 1 and conjugates.get(symbol, symbol) != symbol:
+            raise NotImplementedError(
+                f"enumerate_line_diagrams: the charged external vector "
+                f"{symbol} couples through a triple-gauge vertex, but no VVV "
+                f"vertex was supplied; pass `gauge_groups=[...]` to "
+                f"ScatteringCalculator (or add Model.gauge_vertices() "
+                f"output to `vertices`)")
 
 
 def line_amplitude(externals, infos, kin):

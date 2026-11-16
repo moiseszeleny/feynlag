@@ -44,6 +44,12 @@ matters. feynlag's native 2→2 engine (Tier 3 of
 it. Compare to the full-angle number only after removing the cut
 (`set etal -1`).
 
+For $e^+e^-\to W^+W^-$ no default cut acts on the W bosons, so the table
+entry is the full-angle cross section. The native engine (Tier 4, stage 4b)
+gives **19.447 pb**, 0.9σ below it, from the ν exchange and the γ and Z
+s channel with every coupling extracted from the model
+(`examples/ee_to_ww.py`).
+
 ## What each process validates
 
 - **$e^+e^-\to\mu^+\mu^-$** exercises the photon and $Z$ FFV couplings and the

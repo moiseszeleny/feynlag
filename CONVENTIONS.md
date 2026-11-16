@@ -50,6 +50,14 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
   A fermion propagator is `i(q̸ + m)/(q² − m²)` with `q` **along the fermion
   arrow** (from the field slot towards the bar slot): `q = p_in(ψ) + p_in(B)`
   with `p_in = +k` for an incoming leg and `−k` for an outgoing one.
+- **Triple-gauge vertex.** For a `VVV` vertex with field legs
+  `(V₁, V₂, V₃)` and coupling `c` (`Model.gauge_vertices`, `c = −g F₁₂₃`),
+  the rule is `κ c [g^{μν}(p₁−p₂)^ρ + g^{νρ}(p₂−p₃)^μ + g^{ρμ}(p₃−p₁)^ν]`
+  with `κ = −1` (`pheno.boson_vertices.VVV_KAPPA`) and `p_i` the momentum
+  flowing **into** the vertex with field leg `i` (physical plane waves,
+  `∂_μ → −i p_μ`). A leg is attached by its field symbol (the outgoing W⁺ is
+  on the `Wm` leg), so the UFO field→particle relabelling sign of
+  `export/ufo/legs.py` plays no role in `pheno`.
 - **Polarization sums.** `−g_{μμ'} + k_μk_{μ'}/m²` for a massive external
   vector; `−g_{μμ'}` for a massless one, used only after the Ward identity
   `k_μM^μ = 0` has been checked on that amplitude. Mediators are in unitary
