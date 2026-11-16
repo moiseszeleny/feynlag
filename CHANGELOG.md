@@ -7,6 +7,17 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- 2→2 scattering, Tier 4 stage 4b: **boson exchange through a bosonic
+  three-point vertex** — `e⁺e⁻→W⁺W⁻` and `e⁺e⁻→Zh`.
+  `ScatteringCalculator(gauge_groups=[SU2L])` collects the triple-gauge
+  vertices from `Model.gauge_vertices`; `feynlag.pheno.boson_vertices`
+  (`vvv_tensor`, `vvs_tensor`, `sss_tensor`, `VVV_KAPPA`) holds the Lorentz
+  structures and `line.boson_exchange_terms` assembles the diagrams.
+  `σ(e⁺e⁻→W⁺W⁻) = 19.447 pb` at √s = 200 GeV against MadGraph's
+  19.498 ± 0.058 pb; the high-energy cancellation between the ν exchange and
+  the γ/Z s channel is pinned exactly at a rational parameter point;
+  `σ(e⁺e⁻→Zh)` matches the Higgsstrahlung closed form.
+  `examples/ee_to_ww.py`.
 - 2→2 scattering, Tier 4 stage 4a: **external bosons** on one open fermion
   line, by fermion exchange. `ScatteringCalculator.process` now takes two
   fermions and two bosons (`e⁺e⁻→γγ`, `e⁺e⁻→ZZ`, `e⁺e⁻→Zγ`, Compton);
@@ -42,6 +53,16 @@ All notable changes to feynlag are documented here. The format follows
   `examples/ee_scattering.py`.
 - `cross_section(..., cos_range=)` angular acceptance;
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
+
+### Changed
+- `ScatteringCalculator` evaluates bosonic vertex couplings at zero for
+  fields left out of `boson_fields`, dropping the three-leg "vertices" the
+  extractor reports for four-leg terms with a Goldstone (`A h W⁺ ∝ G⁻`).
+  Four-fermion processes never used a bosonic vertex, so no earlier result
+  changes.
+- A two-fermion + two-boson process with a boson-exchange diagram no longer
+  raises (stage 4a refused it). A charged external vector still raises when
+  `gauge_groups` is not given; a `VSS` vertex raises until stage 4c.
 
 ### Fixed
 - `ExternalState.spin_states()` returned 1 for a massless vector; it is 2, as

@@ -386,7 +386,8 @@ $|\eta|<2.5$).
 ## 17.4 Tier 4 — external bosons, fermion exchange and derivative couplings
 
 **Channels**: $e^+e^-\to\gamma\gamma$, Compton scattering, $e^+e^-\to ZZ/Z\gamma$
-(stage 4a, delivered); $e^+e^-\to Zh$ and $e^+e^-\to W^+W^-$ (stage 4b);
+(stage 4a, delivered); $e^+e^-\to Zh$ and $e^+e^-\to W^+W^-$ (stage 4b,
+delivered);
 any process needing a `VSS` vertex (stage 4c). **Effort: large.**
 
 The target is $e^+e^-\to W^+W^-$, and it needs four things Tiers 1–3 do not
@@ -444,10 +445,9 @@ fermion or scalar propagator, $-i$ for a vector one).
   the propagator momentum along the fermion arrow.
 - {class}`~feynlag.pheno.particles.DiracParticle` accepts `right=None`, so
   the left-handed neutrino is a declarable species.
-- **Refused, not approximated**: a process that also has a boson-exchange
-  diagram ($e^+e^-\to W^+W^-$, $e^+e^-\to Zh$) raises until stage 4b, because
-  the fermion-exchange diagrams alone are a wrong answer, not a partial one.
-  An exchanged fermion no `DiracParticle` claims raises as well.
+- **Refused, not approximated**: an exchanged fermion no `DiracParticle`
+  claims raises instead of dropping its diagram. (Stage 4a also refused any
+  process with a boson-exchange diagram; stage 4b computes those.)
 
 **Verified** (`tests/test_line_scattering.py`): $e^+e^-\to\gamma\gamma$ and
 Compton scattering with a **massive** electron match the Klein–Nishina form
@@ -458,19 +458,58 @@ evaluator that shares no code with the engine; from the SM model,
 $e^+e^-\to\gamma\gamma$, $ZZ$, $Z\gamma$, $\nu\bar\nu\to ZZ$ and Compton match the
 same references evaluated with textbook couplings.
 
-### Stage 4b — bosonic three-point vertices and the acid test
+### Stage 4b — bosonic three-point vertices and the acid test ✅ (delivered)
 
-`VVS` ($e^+e^-\to Zh$), then `VVV`. The triple-gauge sign must come from the
-diagram construction — the external-boson Wick rule above and the
-momentum-incoming-with-the-field convention — not from the UFO export's
-field→particle relabelling. The relative sign between the $W\bar\nu e$
-current and the triple-gauge coupling is what separates $\approx19.5$ pb from
-the $\approx98$ pb a flipped sign gives (`docs/benchmark.md`).
+The fermion line emits one boson, which meets the two external bosons at a
+bosonic three-point vertex.
 
-**Oracle**: $\sigma(e^+e^-\to W^+W^-) = 19.498\pm0.058$ pb at $\sqrt s=200$
-GeV, plus a direct pin that $|\mathcal M|^2$ does not grow like $s^2$ at high
-energy — the gauge-cancellation signature itself, checked directly rather
-than only through one integrated number.
+- {mod}`feynlag.pheno.boson_vertices` writes the Lorentz structures out as
+  loose tensors: `sss_tensor`, `vvs_tensor` ($g^{\mu\nu}$) and `vvv_tensor`.
+- **The triple-gauge rule.**
+  {meth}`~feynlag.lagrangian.Model.gauge_vertices` returns
+  $c=-gF_{ijk}$ for one canonical ordering of the field legs. Differentiating
+  $-\tfrac14F^a_{\mu\nu}F^{a\mu\nu}$ with $D_\mu=\partial_\mu-igT^aA^a_\mu$ and
+  incoming plane waves gives
+  $i\,\delta^3\mathcal L=gF_{ijk}\,[g^{\mu\nu}(p_1-p_2)^\rho+\text{cyclic}]$, so the
+  vertex is $\kappa\,c\,[\dots]$ with $\kappa=-1$ (`VVV_KAPPA`), each $p_i$ the
+  momentum flowing into the vertex with field leg $i$. A test redoes the
+  differentiation and finds the same $\kappa$ for $AWW$ and $ZWW$.
+- **No sign is chosen by hand.** A leg is attached by the field symbol it
+  carries (stage 4a's Wick rule: the outgoing $W^+$ sits on the $W^-$ field
+  leg) with its own incoming momentum; the mediator leg carries
+  $p_{\rm in}(\bar\psi)+p_{\rm in}(\psi)$. This is not the field→particle
+  relabelling of `export/ufo/legs.py`, which is a statement about UFO leg
+  names and is not used here.
+- {func}`~feynlag.pheno.line.boson_exchange_terms` multiplies the line's
+  vertex, the propagator ($i/D$ scalar; $-i(g_{\rho\sigma}-q_\rho q_\sigma/m^2)/D$
+  vector, unitary gauge) and the vertex tensor;
+  {func}`~feynlag.pheno.topology.enumerate_line_diagrams` adds these
+  diagrams to the fermion-exchange ones.
+- `ScatteringCalculator(gauge_groups=[SU2L])` collects the `VVV` vertices. A
+  charged external vector **without** them raises: the ν exchange alone is
+  the unitarity-violating wrong answer.
+- The calculator now evaluates bosonic couplings **at zero fields**. With
+  the Goldstones left out of `boson_fields` (unitary gauge) the extractor
+  reported four-leg terms as three-leg "vertices" such as $A\,h\,W^+$ with a
+  coupling $\propto G^-$; these are dropped.
+
+**Verified** (`tests/test_ww.py`):
+
+- $\sigma(e^+e^-\to W^+W^-)=19.447$ pb at $\sqrt s=200$ GeV against
+  MadGraph's $19.498\pm0.058$ pb (0.9σ; `docs/benchmark.md`), with every
+  coupling extracted from the model.
+- $\sum|\mathcal M|^2$ matches an explicit spinor + polarization-vector
+  evaluator with hand-written Feynman rules, at three kinematic points.
+- **The gauge cancellation, exactly.** At a rational parameter point
+  ($g=4$, $g'=3$, $v=1$, so $s_w=3/5$, $M_W=2$, $M_Z=5/2$) and along $t=-s/3$,
+  $\sum|\mathcal M|^2$ is an exact rational function of $s$: the ν exchange
+  alone grows like $s^2$, the sum of the three diagrams is bounded. Flipping
+  $\kappa$ restores the $s^2$ growth and gives $\approx98$ pb at 200 GeV, the
+  failure the benchmark notes describe.
+- $\sigma(e^+e^-\to Zh)$ matches the Higgsstrahlung closed form
+  [Djouadi08, Eq. 4.18] to $10^{-7}$ (240 fb at $\sqrt s=250$ GeV).
+
+Worked example: `examples/ee_to_ww.py`.
 
 ### Stage 4c — `VSS` momentum tags and external scalars
 
@@ -506,21 +545,22 @@ the library (no proton structure anywhere).
 | 1 ✅ | $e^+e^-\to\mu^+\mu^-$ (γ only), $f\bar f\to f\bar f$ via a scalar | `TwoToTwoKinematics`; `SpinorChain`/`Diagram`/`Amplitude` (**done**); amplitude-level propagators; `ExternalState` averaging | small–medium | Peskin QED closed form + explicit-matrix oracle |
 | 2 ✅ | $e^+e^-\to\mu^+\mu^-$ (Z only); any single chiral-current diagram | ε (γ₅) algebra (`pheno.epsilon`): $\mathrm{Tr}[\gamma\gamma\gamma\gamma\gamma_5]$, ε·ε → Gram determinant, `forward_backward_asymmetry` | large | $d\sigma/d\cos\theta$ shape + $A_{FB}=\tfrac34A_eA_f$ vs [LEPEWWG06]; γ₅-carrying matrix oracle (massless + massive mediator) |
 | 3 ✅ | full $e^+e^-\to f\bar f$ (γ/Z interference); Bhabha, Møller, $\nu_ee$ | multi-diagram double sum (same-pairing product of traces; exchanged-pairing single trace); s/t/u topology enumeration; permutation-parity fermion signs; `ScatteringCalculator` | medium–large | **MadGraph 2.7878 pb** (inside $\lvert\eta\rvert<2.5$); Bhabha/Møller closed forms; explicit-spinor oracle |
-| 4 (4a ✅) | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: `VSS` | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors; 4c: `VSS` momentum tags | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb**, no $s^2$ growth |
+| 4 (4a, 4b ✅) | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: `VSS` | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors, boson exchange (**done**); 4c: `VSS` momentum tags | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb** (engine: 19.447), exact high-energy cancellation, Higgsstrahlung closed form [Djouadi08] |
 | 5 | $q\bar q\to q\bar q$, $qg\to qg$, $gg\to gg$ | colour-flow algebra; colour averaging; 4-point contact vertices | medium–large | ESW parton-level table (no PDFs) |
 
 The recommended order is the table order: Tier 1 gave the first native cross
 section for the cost of an object layer that reuses the existing covariant
 engine unchanged; Tier 2 was the genuinely new algebra 2→2 requires that 1→2
 never did; Tier 3 is where the first MadGraph benchmark stops being
-aspirational and is reproduced (the second, $e^+e^-\to W^+W^-$, waits on Tier 4); Tier 4 is the hardest single piece (derivative
+aspirational and is reproduced (the second, $e^+e^-\to W^+W^-$, by Tier 4's stage 4b); Tier 4 is the hardest single piece (derivative
 couplings); Tier 5 generalizes to QCD but adds no new *kind* of physics beyond
 colour bookkeeping.
 
 See {doc}`decays_roadmap` for the parallel decay-side roadmap and its
 `n_momenta`/ε-drop precedent, `tests/test_scattering.py` for what Tiers 1–2
 pin, `tests/test_interference.py` for Tier 3 and
-`tests/test_line_scattering.py` for Tier 4's stage 4a.
+`tests/test_line_scattering.py` and `tests/test_ww.py` for Tier 4's stages
+4a and 4b.
 
 ## 17.7 References
 
@@ -532,6 +572,11 @@ pin, `tests/test_interference.py` for Tier 3 and
   (and, crossed $s\leftrightarrow u$, Møller scattering); §5.5, "Compton
   Scattering," the Klein–Nishina $|\mathcal M|^2$ with a massive electron and
   its crossing to $e^+e^-\to\gamma\gamma$, which Tier 4's stage 4a reproduces.
+- **[Djouadi08]** A. Djouadi, "The Anatomy of Electro-Weak Symmetry
+  Breaking. I: The Higgs boson in the Standard Model," Phys. Rept. 457 (2008)
+  1–216, [arXiv:hep-ph/0503172](https://arxiv.org/abs/hep-ph/0503172) —
+  Eq. (4.18), the Higgsstrahlung cross section $\sigma(e^+e^-\to ZH)$ Tier 4's
+  stage 4b reproduces.
 - **[ESW96]** R. K. Ellis, W. J. Stirling and B. R. Webber, *QCD and Collider
   Physics*, Cambridge Monographs on Particle Physics, Nuclear Physics and
   Cosmology 8, Cambridge University Press (1996), ISBN 978-0-521-54589-1 —

@@ -49,6 +49,7 @@ page lists its public classes and functions with full signatures; cross-refs
    feynlag.pheno.topology
    feynlag.pheno.contraction
    feynlag.pheno.line
+   feynlag.pheno.boson_vertices
    feynlag.pheno.scattering_calculator
    feynlag.verify.checks
 ```

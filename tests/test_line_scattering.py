@@ -409,9 +409,11 @@ def test_compton_from_the_model_initial_average(sm):
         -8 * _EE**4 * (u / s + s / u), rel=1e-9)
 
 
-def test_ww_is_refused_until_the_triple_gauge_vertex_exists(sm):
-    """``e⁺e⁻→W⁺W⁻`` has the ν exchange *and* the γ/Z s channel; returning
-    the ν exchange alone would be the unitarity-violating wrong answer."""
+def test_ww_is_refused_without_the_triple_gauge_vertices(sm):
+    """``e⁺e⁻→W⁺W⁻`` has the ν exchange *and* the γ/Z s channel; this
+    calculator was built without ``gauge_groups``, so the triple-gauge
+    vertices are missing and returning the ν exchange alone would be the
+    unitarity-violating wrong answer.  (``tests/test_ww.py`` computes it.)"""
     ph, e = sm["ph"], sm["e"]
     calc = sm["calc"]([ph.A, ph.Z, ph.Wp, ph.Wm])
     with pytest.raises(NotImplementedError, match="triple-gauge"):

@@ -13,11 +13,12 @@ every tree diagram of a four-fermion process
 Scope, enforced rather than documented only:
 
 - external fermions are declared ``DiracParticle``\\ s; a process is either
-  four fermions, or **two fermions and two bosons** whose diagrams exchange
-  a fermion (``e⁺e⁻→γγ``, ``e⁺e⁻→ZZ``, Compton) — Tier 4, stage 4a.  A
-  process that also has a boson-exchange diagram through a bosonic
-  three-point vertex (``e⁺e⁻→W⁺W⁻``, ``e⁺e⁻→Zh``) raises rather than
-  returning the fermion-exchange diagrams alone;
+  four fermions, or **two fermions and two bosons** (Tier 4): fermion
+  exchange (``e⁺e⁻→γγ``, ``e⁺e⁻→ZZ``, Compton) and boson exchange through a
+  ``VVV``/``VVS``/``SSS`` vertex (``e⁺e⁻→W⁺W⁻``, ``e⁺e⁻→Zh``).  The
+  triple-gauge vertices are only collected when ``gauge_groups`` is given;
+  a charged external vector without them raises rather than returning the
+  fermion-exchange diagrams alone.  A ``VSS`` vertex raises (stage 4c);
 - **colour-singlet** external fermions only — a coloured one raises, since
   the colour-flow bookkeeping (``N_c`` per closed line, ``T^a`` traces for
   gluon exchange) is Tier 5's;
@@ -25,6 +26,8 @@ Scope, enforced rather than documented only:
   of ``boson_fields`` (a massive vector's propagator already carries their
   physics as ``q_μq_ν/m²``).
 """
+
+from dataclasses import replace as _replace
 
 import sympy as sp
 
@@ -38,7 +41,7 @@ from .topology import (
     ExternalBoson, ExternalFermion, enumerate_diagrams,
     enumerate_line_diagrams, line_amplitude,
 )
-from .vertices import collect_decay_vertices
+from .vertices import DecayVertex, collect_decay_vertices
 
 __all__ = ["ScatteringCalculator", "ScatteringProcess"]
 
@@ -60,11 +63,16 @@ class ScatteringCalculator:
             ``{Wp: Wm, Wm: Wp}``; unlisted bosons are self-conjugate.
         parameters: optional :class:`~feynlag.parameters.ParameterSet` for
             numeric evaluation (``process(..., numeric=True)``).
+        gauge_groups: the broken non-abelian groups whose triple-gauge
+            (``VVV``) vertices to collect through
+            :meth:`~feynlag.lagrangian.Model.gauge_vertices`, e.g.
+            ``[SU2L]`` — needed for ``e⁺e⁻→W⁺W⁻``.  An unbroken group
+            (colour) must not be listed.
     """
 
     def __init__(self, model, particles, masses, widths=None, boson_fields=(),
                  fermion_sectors=("gauge",), conjugate_map=None,
-                 conjugates=None, parameters=None):
+                 conjugates=None, parameters=None, gauge_groups=None):
         self.model = model
         self.particles = list(particles)
         self.masses = dict(masses)
@@ -74,18 +82,59 @@ class ScatteringCalculator:
         self.conjugate_map = conjugate_map
         self.conjugates = dict(conjugates or {})
         self.parameters = parameters
+        self.gauge_groups = list(gauge_groups or [])
         self.particle_map, _, _ = expand_particles(self.particles)
         self._vertices = None
 
     def vertices(self):
-        """All three-leg vertices, extracted once and cached."""
+        """All three-leg vertices, extracted once and cached: the
+        extractor's (:func:`~feynlag.pheno.vertices.collect_decay_vertices`)
+        plus, with ``gauge_groups``, the triple-gauge ones."""
         if self._vertices is None:
-            self._vertices = collect_decay_vertices(
+            vertices = collect_decay_vertices(
                 self.model, self.boson_fields,
                 fermion_sectors=self.fermion_sectors,
                 conjugate_map=self.conjugate_map,
                 particle_map=self.particle_map)
+            vertices = self._at_zero_fields(vertices)
+            if self.gauge_groups:
+                wanted = set(self.boson_fields)
+                for vertex in self.model.gauge_vertices(
+                        groups=self.gauge_groups, include=("VVV",)):
+                    if set(vertex.particles) <= wanted:
+                        vertices.append(DecayVertex(
+                            particles=tuple(vertex.particles),
+                            vertex_type="VVV", coupling=vertex.coupling,
+                            meta={"source": "gauge"}))
+            self._vertices = vertices
         return self._vertices
+
+    def _at_zero_fields(self, vertices):
+        """Bosonic vertices evaluated at zero for every field that is not an
+        extraction leg.
+
+        The extractor treats a field missing from ``boson_fields`` as a
+        parameter, so with the Goldstones left out (unitary gauge) a
+        four-leg term ``A h W⁺ G⁻`` shows up as a three-leg "vertex"
+        ``A h W⁺`` with coupling ``∝ G⁻``.  A vertex is a derivative **at
+        zero fields**: setting the stray field symbols to zero removes those
+        and leaves the genuine three-point couplings untouched.
+        """
+        fields = set(self.model.spin_map(conjugate_map=self.conjugate_map))
+        out = []
+        for vertex in vertices:
+            if vertex.vertex_type.startswith("FF"):
+                out.append(vertex)
+                continue
+            stray = [sym for sym in sp.sympify(vertex.coupling).free_symbols
+                     if sym in fields]
+            if stray:
+                coupling = vertex.coupling.subs({sym: 0 for sym in stray})
+                if coupling == 0:
+                    continue
+                vertex = _replace(vertex, coupling=coupling)
+            out.append(vertex)
+        return out
 
     def mass_of(self, boson):
         if boson in self.masses:
@@ -176,7 +225,9 @@ class ScatteringCalculator:
             diagrams = enumerate_line_diagrams(
                 externals, vertices, kin, self.particles,
                 conjugates=self.conjugates,
-                fermion_mass=lambda dp: num(dp.mass))
+                fermion_mass=lambda dp: num(dp.mass),
+                mass_of=lambda b: num(self.mass_of(b)),
+                width_of=lambda b: num(self.width_of(b)))
             if diagrams:
                 amplitude = line_amplitude(externals, diagrams, kin)
         else:
@@ -201,8 +252,7 @@ def _mass(external):
 
 
 def _substituted(vertex, values):
-    from dataclasses import replace
-    return replace(vertex,
+    return _replace(vertex,
                    g_left=sp.sympify(vertex.g_left).subs(values),
                    g_right=sp.sympify(vertex.g_right).subs(values),
                    coupling=sp.sympify(vertex.coupling).subs(values))
