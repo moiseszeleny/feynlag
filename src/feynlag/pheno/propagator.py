@@ -22,8 +22,8 @@ import sympy as sp
 from .lorentz import LorentzIndex
 
 __all__ = [
-    "breit_wigner", "propagator_denominator", "scalar_propagator",
-    "vector_propagator", "vector_propagator_numerator",
+    "breit_wigner", "fermion_propagator_phase", "propagator_denominator",
+    "scalar_propagator", "vector_propagator", "vector_propagator_numerator",
 ]
 
 
@@ -88,3 +88,15 @@ def vector_propagator(q, q2, mass, a, b, width=0):
         return -sp.I * metric(-a, -b) / sp.sympify(q2)
     num = vector_propagator_numerator(q, m, a, b)
     return -sp.I * num / propagator_denominator(q2, mass, width)
+
+
+def fermion_propagator_phase():
+    """The constant phase ``+i`` of the fermion propagator
+    ``i(q̸ + m)/(q² − m² + i m Γ)``, with ``q`` the momentum **along the
+    fermion arrow**.  The numerator ``q̸ + m`` lives inside the Dirac string
+    (a ``('Q', q, m)`` factor of :mod:`~feynlag.pheno.contraction`) and the
+    denominator is :func:`propagator_denominator`; this is the remaining
+    factor, kept as a named function so the three propagator phases
+    (``+i`` scalar, ``−i`` vector, ``+i`` fermion) are stated in one module.
+    """
+    return sp.I

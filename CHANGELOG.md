@@ -7,6 +7,23 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- 2→2 scattering, Tier 4 stage 4a: **external bosons** on one open fermion
+  line, by fermion exchange. `ScatteringCalculator.process` now takes two
+  fermions and two bosons (`e⁺e⁻→γγ`, `e⁺e⁻→ZZ`, `e⁺e⁻→Zγ`, Compton);
+  `feynlag.pheno.line` (`LineAmplitude`, `LineTerm`, `VectorLeg`,
+  `fermion_exchange_term`) holds the amplitude and
+  `topology.enumerate_line_diagrams` builds it from the extracted vertices.
+  Massive vectors use the full polarization sum; a massless one uses `−g`
+  only after its Ward identity has been checked on the amplitude. A process
+  that also has a boson-exchange diagram (`e⁺e⁻→W⁺W⁻`, `e⁺e⁻→Zh`) raises
+  until stage 4b. Checked against the Klein–Nishina form with a massive
+  electron and an explicit spinor + polarization-vector evaluator.
+- `feynlag.pheno.contraction.contract_trace`: a fully contracted Dirac trace
+  with loose metrics and momentum vectors, reduced to dot products without
+  SymPy tensors.
+- `DiracParticle(..., right=None)`: a left-handed-only species (the SM
+  neutrino).
+- `ExternalBoson`, `fermion_propagator_phase`.
 - 2→2 scattering, Tier 3: multi-diagram **interference**.
   `Amplitude.squared` sums `Σ_{d,d'} M_d M̄_{d'}`. A pair of diagrams that
   pair the external fermions the same way (γ/Z s channel) gives a product of
@@ -27,6 +44,9 @@ All notable changes to feynlag are documented here. The format follows
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Fixed
+- `ExternalState.spin_states()` returned 1 for a massless vector; it is 2, as
+  its docstring said. No shipped process had a vector in the initial state,
+  so no published number changes.
 - The scattering docs called Tier 1's QED-only 2.322 pb "the photon-only
   fraction" of MadGraph's 2.7878 pb. That number includes MadGraph's default
   `|η_ℓ|<2.5` cut; the full-angle γ+Z value is 2.8443 pb.

@@ -49,8 +49,11 @@ from sympy.combinatorics import Permutation
 from .diagrams import (
     BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain, _chain_indices,
 )
+from .line import LineAmplitude, VectorLeg, fermion_exchange_term
 
-__all__ = ["DiagramInfo", "ExternalFermion", "enumerate_diagrams"]
+__all__ = ["DiagramInfo", "ExternalBoson", "ExternalFermion",
+           "LineDiagramInfo", "enumerate_diagrams", "enumerate_line_diagrams",
+           "line_amplitude"]
 
 _diagram_counter = itertools.count()
 
@@ -79,6 +82,36 @@ class ExternalFermion:
         """``'field'`` (ψ: incoming particle / outgoing antiparticle) or
         ``'bar'`` (ψ̄: outgoing particle / incoming antiparticle)."""
         return "field" if self.incoming != self.anti else "bar"
+
+    @property
+    def spin(self):
+        return sp.Rational(1, 2)
+
+
+@dataclass(frozen=True)
+class ExternalBoson:
+    """One external boson of a 2→2 process.
+
+    Args:
+        symbol: the boson's **particle** symbol — the field symbol that
+            annihilates it (``Wp`` for a W⁺).
+        spin: ``0`` or ``1``.
+        mass: its mass.
+        incoming: ``True`` for an initial-state particle.
+    """
+
+    symbol: sp.Expr
+    spin: int
+    mass: sp.Expr
+    incoming: bool
+
+    def __post_init__(self):
+        object.__setattr__(self, "symbol", sp.sympify(self.symbol))
+        object.__setattr__(self, "spin", sp.sympify(self.spin))
+        object.__setattr__(self, "mass", sp.sympify(self.mass))
+        if self.spin not in (0, 1):
+            raise NotImplementedError(
+                f"ExternalBoson: unsupported spin {self.spin}")
 
 
 @dataclass(frozen=True)
@@ -213,3 +246,231 @@ def _build(channel, sign, boson, vertex_a, vertex_b, line_a, line_b, kin,
     diagram = Diagram(chains=tuple(chains), propagators=(prop,), coefficient=sign)
     return DiagramInfo(channel=channel, mediator=boson, sign=sign,
                        vertices=(vertex_a, vertex_b), diagram=diagram)
+
+
+# --------------------------------------------------------------------------
+# two external fermions + two external bosons: one open fermion line (Tier 4)
+# --------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class LineDiagramInfo:
+    """One enumerated fermion-line diagram and how it was built.
+
+    Attributes:
+        channel: ``'s'``, ``'t'`` or ``'u'`` — the invariant carried by the
+            internal propagator.
+        mediator: the particle symbol of the exchanged fermion.
+        kind: ``'fermion'`` (two vertices on the line, a fermion propagator).
+        vertices: the :class:`~feynlag.pheno.vertices.DecayVertex` used, in
+            line order (bar-slot end first).
+        terms: the diagram's :class:`~feynlag.pheno.line.LineTerm`\\ s.
+    """
+
+    channel: str
+    mediator: sp.Expr
+    kind: str
+    vertices: tuple
+    terms: tuple
+
+    def __repr__(self):
+        return f"LineDiagramInfo({self.channel}-channel {self.mediator})"
+
+
+def _external_index(j):
+    """The open Lorentz-index name of external leg ``j`` (0-based)."""
+    return f"x{j + 1}"
+
+
+def _split_externals(externals):
+    fermions = [j for j, ext in enumerate(externals)
+                if isinstance(ext, ExternalFermion)]
+    bosons = [j for j, ext in enumerate(externals)
+              if isinstance(ext, ExternalBoson)]
+    if len(externals) != 4 or len(fermions) != 2 or len(bosons) != 2:
+        raise ValueError(
+            "enumerate_line_diagrams: needs two external fermions and two "
+            "external bosons")
+    slots = {externals[j].slot: j for j in fermions}
+    if set(slots) != {"bar", "field"}:
+        raise ValueError(
+            "enumerate_line_diagrams: the two external fermions must fill one "
+            "ψ̄ (bar) and one ψ (field) slot — fermion number is not conserved "
+            f"for {[str(externals[j].symbol) for j in fermions]}")
+    return slots["bar"], slots["field"], bosons
+
+
+def enumerate_line_diagrams(externals, vertices, kin, species,
+                            conjugates=None, fermion_mass=None):
+    """Every tree diagram of a two-fermion + two-boson 2→2 process in which
+    both bosons attach to the fermion line (a fermion is exchanged).
+
+    The line runs from the field slot ``Y`` to the bar slot ``X``:
+    ``ψ̄_X Γ₁ S_F(q) Γ₂ ψ_Y`` with vertex 2 ``(F̄, Y, B)`` next to the field
+    slot and vertex 1 ``(X̄, F, B')`` next to the bar slot, for both
+    assignments of the two bosons and every declared intermediate species
+    ``F``.
+
+    External bosons follow the Wick rule the four-fermion enumerator uses for
+    mediators: an incoming particle ``B`` is annihilated by the field ``B``,
+    an outgoing one is created by ``B† = conjugates[B]`` — so that is the
+    boson symbol its vertex must carry.  The propagator momentum is taken
+    along the fermion arrow: ``q = p_in(Y) + p_in(B)`` with ``p_in = +k`` for
+    an incoming and ``−k`` for an outgoing leg.
+
+    Args:
+        externals: four :class:`ExternalFermion`/:class:`ExternalBoson`, in
+            the order of the kinematics' momenta ``k1..k4``.
+        vertices: :class:`~feynlag.pheno.vertices.DecayVertex` list.
+        kin: a :class:`~feynlag.pheno.kinematics.TwoToTwoKinematics`.
+        species: the declared :class:`~feynlag.pheno.particles.DiracParticle`\\ s
+            (candidates for the exchanged fermion).
+        conjugates: ``{boson: antiboson}`` for charged bosons.
+        fermion_mass: optional callable ``DiracParticle -> mass`` (default:
+            its ``mass``).
+
+    Returns:
+        list of :class:`LineDiagramInfo`.
+
+    Raises:
+        ValueError: the externals are not two fermions (one bar, one field
+            slot) and two bosons, or a vertex that would complete a diagram
+            has an intermediate fermion leg no declared species claims —
+            dropping it silently would lose a diagram.
+    """
+    conjugates = dict(conjugates or {})
+    fermion_mass = fermion_mass or (lambda dp: dp.mass)
+    bar, field, bosons = _split_externals(externals)
+    heads = (kin.k1, kin.k2, kin.k3, kin.k4)
+    by_antiparticle = {dp.antiparticle: dp for dp in species}
+    by_particle = {dp.particle: dp for dp in species}
+    bar_symbol = externals[bar].particle.antiparticle
+    field_symbol = externals[field].particle.particle
+
+    def p_in(j):
+        return (sp.S.One if externals[j].incoming else -sp.S.One, heads[j])
+
+    def vertex_boson(j):
+        symbol = externals[j].symbol
+        return symbol if externals[j].incoming else conjugates.get(symbol, symbol)
+
+    def carries(vertex, j):
+        wanted = "FFV" if externals[j].spin == 1 else "FFS"
+        return (vertex.vertex_type == wanted
+                and vertex.particles[2] == vertex_boson(j))
+
+    def factor(vertex, j):
+        name = _external_index(j) if externals[j].spin == 1 else None
+        return ("G", name, vertex.g_left, vertex.g_right)
+
+    _refuse_boson_exchange(externals, bosons, vertices, conjugates,
+                           bar_symbol, field_symbol, vertex_boson)
+
+    out = []
+    for first, second in (bosons, bosons[::-1]):
+        q = (p_in(field), p_in(second))
+        q2 = sp.expand(sum(ca * cb * kin.dot(ha, hb)
+                           for ca, ha in q for cb, hb in q))
+        channel = _CHANNELS[frozenset({field, second})]
+        for vertex_2 in vertices:
+            if not (carries(vertex_2, second)
+                    and vertex_2.particles[1] == field_symbol):
+                continue
+            exchanged = by_antiparticle.get(vertex_2.particles[0])
+            if exchanged is None:
+                raise ValueError(
+                    f"enumerate_line_diagrams: the vertex {vertex_2!r} joins "
+                    f"{field_symbol} to the fermion leg "
+                    f"{vertex_2.particles[0]!r}, which no declared "
+                    f"DiracParticle claims; declare that species (use "
+                    f"right=None for a left-handed-only one) so its "
+                    f"exchange diagram is not lost")
+            for vertex_1 in vertices:
+                if not (carries(vertex_1, first)
+                        and vertex_1.particles[0] == bar_symbol
+                        and vertex_1.particles[1] == exchanged.particle):
+                    continue
+                term = fermion_exchange_term(
+                    factor(vertex_1, first), factor(vertex_2, second), q, q2,
+                    fermion_mass(exchanged))
+                out.append(LineDiagramInfo(
+                    channel=channel, mediator=exchanged.particle,
+                    kind="fermion", vertices=(vertex_1, vertex_2),
+                    terms=(term,)))
+        # the mirror-image check: a vertex next to the bar slot whose other
+        # fermion leg is undeclared would also complete a diagram
+        for vertex_1 in vertices:
+            if (carries(vertex_1, first)
+                    and vertex_1.particles[0] == bar_symbol
+                    and vertex_1.particles[1] not in by_particle):
+                raise ValueError(
+                    f"enumerate_line_diagrams: the vertex {vertex_1!r} joins "
+                    f"{bar_symbol} to the fermion leg "
+                    f"{vertex_1.particles[1]!r}, which no declared "
+                    f"DiracParticle claims; declare that species (use "
+                    f"right=None for a left-handed-only one)")
+    return out
+
+
+def _refuse_boson_exchange(externals, bosons, vertices, conjugates,
+                           bar_symbol, field_symbol, vertex_boson):
+    """Raise if the process also has a diagram in which the two external
+    bosons meet at a **bosonic** three-point vertex (a boson is exchanged).
+
+    Those diagrams are not assembled yet, and returning the fermion-exchange
+    ones alone would be a wrong cross section, not a partial one — for
+    ``e⁺e⁻→W⁺W⁻`` it is the ν exchange without the γ/Z s channel that
+    cancels its high-energy growth.
+
+    Two tests.  A charged external vector always has a triple-gauge coupling
+    to the photon, and the gauge self-couplings are not part of ``vertices``
+    (they come from :meth:`~feynlag.lagrangian.Model.gauge_vertices`), so it
+    is refused outright.  Otherwise the bosonic vertices that *are* in
+    ``vertices`` (``VVS``, ``VSS``, ``SSS``, ``VVV``) are searched for one
+    joining the two external bosons to a mediator the fermion line couples to.
+    """
+    for j in bosons:
+        symbol = externals[j].symbol
+        if externals[j].spin == 1 and conjugates.get(symbol, symbol) != symbol:
+            raise NotImplementedError(
+                f"enumerate_line_diagrams: the charged external vector "
+                f"{symbol} couples through a triple-gauge vertex; "
+                f"boson-exchange diagrams with a bosonic three-point vertex "
+                f"are stage 4b of Tier 4 of the scattering roadmap")
+    wanted = [vertex_boson(j) for j in bosons]
+    for vertex in vertices:
+        if vertex.vertex_type not in ("VVV", "VVS", "VSS", "SSS"):
+            continue
+        rest = list(vertex.particles)
+        try:
+            for symbol in wanted:
+                rest.remove(symbol)
+        except ValueError:
+            continue
+        (mediator,) = rest
+        partner = conjugates.get(mediator, mediator)
+        for line_vertex in vertices:
+            if (line_vertex.vertex_type in ("FFV", "FFS")
+                    and line_vertex.particles[0] == bar_symbol
+                    and line_vertex.particles[1] == field_symbol
+                    and line_vertex.particles[2] == partner):
+                raise NotImplementedError(
+                    f"enumerate_line_diagrams: the bosonic vertex {vertex!r} "
+                    f"joins the two external bosons to {mediator}, which the "
+                    f"fermion line couples to — a boson-exchange diagram, "
+                    f"stage 4b of Tier 4 of the scattering roadmap")
+
+
+def line_amplitude(externals, infos, kin):
+    """The :class:`~feynlag.pheno.line.LineAmplitude` of enumerated diagrams."""
+    bar, field, bosons = _split_externals(externals)
+    heads = (kin.k1, kin.k2, kin.k3, kin.k4)
+    masses = (kin.m1, kin.m2, kin.m3, kin.m4)
+
+    def leg(j):
+        return Leg(heads[j], masses[j], anti=externals[j].anti)
+
+    vectors = tuple(VectorLeg(_external_index(j), heads[j], masses[j])
+                    for j in bosons if externals[j].spin == 1)
+    return LineAmplitude(out=leg(bar), inn=leg(field),
+                         diagrams=tuple(info.terms for info in infos),
+                         vectors=vectors)

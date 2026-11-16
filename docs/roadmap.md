@@ -194,9 +194,11 @@ the ε (γ₅) algebra 2→2 needs and 1→2 never did (the forward–backward
 asymmetry), and multi-diagram interference with s/t/u topology enumeration
 and a `ScatteringCalculator` — which reproduces the MadGraph
 $e^+e^-\to\mu^+\mu^-$ benchmark from the extracted γ and Z couplings, plus
-the Bhabha and Møller closed forms. Remaining: derivative-coupling processes
-like $e^+e^-\to W^+W^-$ (large), and parton-level QCD 2→2 (medium–large, no
-PDFs).
+the Bhabha and Møller closed forms. Tier 4's first stage is delivered too:
+external bosons on one fermion line by fermion exchange
+($e^+e^-\to\gamma\gamma$, $ZZ$, Compton). Remaining: the bosonic three-point
+vertices and $e^+e^-\to W^+W^-$ (large), and parton-level QCD 2→2
+(medium–large, no PDFs).
 See {doc}`manual/scattering_roadmap`.
 
 ## Suggested order

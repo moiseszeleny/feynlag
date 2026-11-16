@@ -130,8 +130,10 @@ Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszel
   gauge-fixing terms, ghost vertices or ξ dependence);
 - Majorana vertices are symbolic-only, not yet exported to UFO;
 - 2→2 scattering covers four-fermion processes (with interference and
-  s/t/u topologies) only: external vector bosons (`e+e-→W+W-`) and coloured
-  external states are not yet supported, and `VVV` decays are not implemented;
+  s/t/u topologies) and two-fermion + two-boson processes by fermion exchange
+  (`e+e-→γγ`, `e+e-→ZZ`, Compton): processes with a bosonic three-point
+  vertex (`e+e-→W+W-`, `e+e-→Zh`) and coloured external states are not yet
+  supported, and `VVV` decays are not implemented;
 - no NLO / UFO 2.0 extensions.
 
 Unsupported cases raise `NotImplementedError` rather than returning a

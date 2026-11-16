@@ -44,6 +44,16 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
   `s` is `positive=True`; `t` is `real=True` (it is negative throughout the
   physical region — the "positive dummies under `sqrt`" rule does not apply
   to it).
+- **External bosons.** A boson is named by its particle symbol, the field
+  that annihilates it (`Wp` for a W⁺). An incoming particle `B` enters a
+  vertex through the field `B`; an outgoing one through `B† = conjugates[B]`.
+  A fermion propagator is `i(q̸ + m)/(q² − m²)` with `q` **along the fermion
+  arrow** (from the field slot towards the bar slot): `q = p_in(ψ) + p_in(B)`
+  with `p_in = +k` for an incoming leg and `−k` for an outgoing one.
+- **Polarization sums.** `−g_{μμ'} + k_μk_{μ'}/m²` for a massive external
+  vector; `−g_{μμ'}` for a massless one, used only after the Ward identity
+  `k_μM^μ = 0` has been checked on that amplitude. Mediators are in unitary
+  gauge.
 - Flux factor `1/(2√λ(s,m₁²,m₂²))`; `dσ/dt = ⟨|M|²⟩/(16πλ(s,m₁²,m₂²))`.
 - **Squared-amplitude functions/methods return the spin/colour-summed
   `|M|²`, never averaged.** Averaging over the initial state is declared

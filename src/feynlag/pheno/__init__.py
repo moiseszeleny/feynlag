@@ -37,7 +37,8 @@ from .epsilon import (
 from .lorentz import contract_to_dots, dirac_trace, reduce_projectors
 from .particles import DiracParticle, ExternalState, expand_particles
 from .propagator import (
-    breit_wigner, propagator_denominator, scalar_propagator,
+    breit_wigner, fermion_propagator_phase, propagator_denominator,
+    scalar_propagator,
     vector_propagator, vector_propagator_numerator,
 )
 from .integrate import dalitz_integral, have_scipy
@@ -53,13 +54,20 @@ from .scattering import (
     ffs_s_channel_squared, ffv_s_channel_squared, forward_backward_asymmetry,
 )
 from .scattering_calculator import ScatteringCalculator, ScatteringProcess
-from .topology import DiagramInfo, ExternalFermion, enumerate_diagrams
+from .line import LineAmplitude, LineTerm, VectorLeg, fermion_exchange_term
+from .topology import (
+    DiagramInfo, ExternalBoson, ExternalFermion, LineDiagramInfo,
+    enumerate_diagrams, enumerate_line_diagrams, line_amplitude,
+)
 from .vertices import DecayVertex, classify_gamma, collect_decay_vertices
 
 __all__ = [
     "Amplitude", "BosonPropagator", "ChainVertex", "DecayCalculator",
     "DecayChannel", "DecayVertex", "Diagram", "DiagramInfo", "DiracParticle",
-    "ExternalFermion", "ExternalState", "Leg", "ScatteringCalculator",
+    "ExternalBoson", "ExternalFermion", "ExternalState", "Leg",
+    "LineAmplitude", "LineDiagramInfo", "LineTerm", "ScatteringCalculator",
+    "VectorLeg", "enumerate_line_diagrams", "fermion_exchange_term",
+    "fermion_propagator_phase", "line_amplitude",
     "ScatteringProcess", "SpinorChain",
     "TwoBodyKinematics", "ThreeBodyKinematics", "TwoToTwoKinematics",
     "amplitude_squared", "assert_epsilon_single_vanishes", "average_factor",
