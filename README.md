@@ -93,7 +93,8 @@ tadpole conditions force the √3 vacuum alignment), `sm_ckm.py` (CKM quark
 mixing), `fermi_theory.py` (four-fermion muon decay), `sm_weinberg.py` and
 `sm_seesaw.py` (Majorana neutrino masses), `sm_decays.py` and
 `sm_higgs_decays.py` (widths and the full Higgs branching-ratio table), and
-`ee_to_ff.py` (2→2 scattering). The
+`ee_to_ff.py` and `ee_scattering.py` (2→2 scattering, the latter
+reproducing MadGraph's γ+Z `e+e-→μ+μ-` from the extracted couplings). The
 [docs site](https://moiseszeleny.github.io/feynlag/) walks these models
 stage by stage in ten executed tutorial notebooks.
 
@@ -128,8 +129,9 @@ Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszel
 - no R_ξ gauge fixing or ghosts (Goldstone bosons are kept, but no
   gauge-fixing terms, ghost vertices or ξ dependence);
 - Majorana vertices are symbolic-only, not yet exported to UFO;
-- 2→2 scattering handles single-diagram processes only (no interference yet),
-  and `VVV` decays are not implemented;
+- 2→2 scattering covers four-fermion processes (with interference and
+  s/t/u topologies) only: external vector bosons (`e+e-→W+W-`) and coloured
+  external states are not yet supported, and `VVV` decays are not implemented;
 - no NLO / UFO 2.0 extensions.
 
 Unsupported cases raise `NotImplementedError` rather than returning a

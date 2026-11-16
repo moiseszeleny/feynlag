@@ -65,12 +65,25 @@ def differential_cross_section(m2_summed, kin, initial, variable="t",
     return sp.expand(symmetry_factor * avg * m2_summed * factor)
 
 
-def cross_section(m2_summed, kin, initial, symmetry_factor=1):
+def cross_section(m2_summed, kin, initial, symmetry_factor=1, cos_range=None):
     """``σ = ∫ dσ/dt dt`` over :meth:`~feynlag.pheno.kinematics.TwoToTwoKinematics.t_bounds`
-    (symbolic)."""
+    (symbolic).
+
+    Args:
+        cos_range: optional ``(c_min, c_max)`` angular acceptance on the CM
+            angle between ``k1`` and ``k3`` — e.g. ``(-c, c)`` with
+            ``c = tanh(η_max)`` for a massless final state, the cut a
+            generator applies by default (MadGraph's lepton ``|η|<2.5``; see
+            ``docs/benchmark.md``).  ``None`` integrates the full range.  A
+            t-channel photon makes the full-range integral diverge, so a
+            Bhabha/Møller cross section *needs* one.
+    """
     dsdt = differential_cross_section(m2_summed, kin, initial, variable="t",
                                       symmetry_factor=symmetry_factor)
-    t_min, t_max = kin.t_bounds()
+    if cos_range is None:
+        t_min, t_max = kin.t_bounds()
+    else:
+        t_min, t_max = (kin.t_of_cos(c) for c in cos_range)
     return sp.integrate(dsdt, (kin.t, t_min, t_max))
 
 
