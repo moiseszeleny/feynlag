@@ -59,6 +59,9 @@ import sympy as sp
 from sympy.physics.hep.gamma_matrices import GammaMatrix, LorentzIndex
 from sympy.tensor.tensor import TensAdd, TensExpr, TensorHead
 
+from .contraction import (  # noqa: F401  (re-exported: the scalar trace helpers)
+    _contract_pairs, _expand_chiral_string, _flip, _scalar_trace, _slash_trace,
+)
 from .epsilon import (
     assert_epsilon_single_vanishes, epsilon_pair_tensor, gamma5_trace_coefficient,
 )
@@ -95,74 +98,6 @@ def _fresh_index(tag):
     return index(f"{tag}_{next(_fresh_counter)}")
 
 
-def _flip(chirality):
-    return {"L": "R", "R": "L", None: None}[chirality]
-
-
-def _expand_chiral_string(factors):
-    """Expand a cyclic Dirac string into projector-free strings.
-
-    ``factors`` is a sequence of
-
-    - ``('S', leg)`` — the spin sum ``p̸ ± m`` of a :class:`Leg`;
-    - ``('G', atom, w_L, w_R)`` — a vertex factor ``atom·(w_L P_L + w_R P_R)``
-      with ``atom`` ``None`` (a scalar vertex), a Lorentz ``TensorIndex``
-      (a ``γ^atom``), or an explicit slot ``('i', TensorIndex)`` /
-      ``('m', TensorHead)`` (a ``γ`` with that index / a slash).
-
-    Every spin sum is split into its slash and mass pieces and every vertex
-    into its two chiral pieces; each projector is then pushed to the right
-    end (``P γ = γ P̄`` past a γ, unchanged past a mass, ``P P' = δ_{PP'} P``)
-    and the surviving string ``X·P_χ`` is split with
-    ``Tr[X P_{L,R}] = ½Tr[X] ∓ ½Tr[Xγ₅]``.  This is the same algebra
-    :meth:`SpinorChain.trace` hand-derives for one ``Γ``/``Γ̄`` pair, done
-    mechanically so it covers any string.
-
-    Returns:
-        ``{atoms: (c_tr, c_g5)}`` — ``atoms`` the γ string as a tuple of
-        ``('m', TensorHead)`` (a slash) / ``('i', TensorIndex)`` (a ``γ^μ``)
-        slots, ``c_tr`` the coefficient of ``Tr[atoms]`` and ``c_g5`` that of
-        ``Tr[atoms·γ₅]``.  Odd-length strings are dropped (zero trace).
-    """
-    states = [((), None, sp.S.One)]
-    for factor in factors:
-        new = []
-        if factor[0] == "S":
-            leg = factor[1]
-            sigma = -1 if leg.anti else 1
-            for atoms, chi, c in states:
-                new.append((atoms + (("m", leg.momentum),), _flip(chi), c))
-                if leg.mass != 0:
-                    new.append((atoms, chi, c * sigma * leg.mass))
-        elif factor[0] == "G":
-            _, atom, w_left, w_right = factor
-            if atom is not None and not isinstance(atom, tuple):
-                atom = ("i", atom)
-            for atoms, chi, c in states:
-                if atom is not None:
-                    atoms, chi = atoms + (atom,), _flip(chi)
-                for proj, w in (("L", w_left), ("R", w_right)):
-                    if w == 0 or (chi is not None and chi != proj):
-                        continue
-                    new.append((atoms, proj, c * w))
-        else:
-            raise ValueError(f"_expand_chiral_string: unknown factor {factor!r}")
-        states = new
-
-    out = {}
-    for atoms, chi, c in states:
-        if len(atoms) % 2:
-            continue
-        c_tr, c_g5 = out.get(atoms, (sp.S.Zero, sp.S.Zero))
-        if chi is None:
-            c_tr += c
-        else:
-            c_tr += c / 2
-            c_g5 += c / 2 if chi == "R" else -c / 2
-        out[atoms] = (c_tr, c_g5)
-    return out
-
-
 def _string_tensor(atoms):
     """The γ-matrix product for an ``atoms`` tuple (fresh slash dummies).
 
@@ -187,90 +122,6 @@ def _string_tensor(atoms):
         else:
             expr = expr * slashed(value, _fresh_index("sl"))
     return expr
-
-
-def _contract_pairs(atoms):
-    """Remove every contracted ``γ^ρ … γ_ρ`` pair from a trace string.
-
-    The four-dimensional identities, valid for any γ-vectors ``a_i`` (so
-    further index atoms inside the pair are fine — they are removed in turn):
-
-    - ``γ^ρ γ_ρ = 4``;
-    - ``γ^ρ a₁⋯a_n γ_ρ = −2 a_n⋯a₁`` for odd ``n``;
-    - ``γ^ρ a₁⋯a_n γ_ρ = 2(a_n a₁⋯a_{n−1} + a_{n−1}⋯a₁ a_n)`` for even
-      ``n ≥ 2``.
-
-    Returns:
-        ``[(coefficient, atoms)]`` with only ``('m', head)`` atoms left.
-
-    Raises:
-        ValueError: an index without its contracted partner (a free index —
-            this helper is only for fully contracted strings).
-    """
-    position = next((k for k, atom in enumerate(atoms) if atom[0] == "i"), None)
-    if position is None:
-        return [(sp.S.One, tuple(atoms))]
-    rho = atoms[position][1]
-    partner = next((j for j in range(position + 1, len(atoms))
-                    if atoms[j][0] == "i" and atoms[j][1] == -rho), None)
-    if partner is None:
-        raise ValueError(f"_contract_pairs: index {rho} has no contracted partner")
-    head = tuple(atoms[:position])
-    inner = tuple(atoms[position + 1:partner])
-    tail = tuple(atoms[partner + 1:])
-    n = len(inner)
-    if n == 0:
-        pieces = [(sp.Integer(4), head + tail)]
-    elif n % 2:
-        pieces = [(sp.Integer(-2), head + inner[::-1] + tail)]
-    else:
-        pieces = [(sp.Integer(2), head + (inner[-1],) + inner[:-1] + tail),
-                  (sp.Integer(2), head + inner[:-1][::-1] + (inner[-1],) + tail)]
-    out = []
-    for coeff, piece in pieces:
-        for c2, reduced in _contract_pairs(piece):
-            out.append((coeff * c2, reduced))
-    return out
-
-
-def _slash_trace(heads, dot, memo):
-    """``Tr[h̸₁⋯h̸_n] = Σ_k (−1)^k (h₁·h_k) Tr[h̸₂⋯ĥ_k⋯h̸_n]`` — straight to
-    dot products, memoised on the head tuple."""
-    if len(heads) % 2:
-        return sp.S.Zero
-    if not heads:
-        return sp.Integer(4)
-    if heads in memo:
-        return memo[heads]
-    first, rest = heads[0], heads[1:]
-    total = sp.S.Zero
-    for k, other in enumerate(rest):
-        sign = 1 if k % 2 == 0 else -1
-        total += sign * dot(first, other) * _slash_trace(rest[:k] + rest[k + 1:],
-                                                          dot, memo)
-    memo[heads] = sp.expand(total)
-    return memo[heads]
-
-
-def _scalar_trace(factors, dot):
-    """γ₅-free ``Tr[factors]`` for a **fully contracted** string, as a scalar.
-
-    :func:`_expand_chiral_string` → :func:`_contract_pairs` →
-    :func:`_slash_trace`: no SymPy tensor objects at all, so neither of the
-    two SymPy 1.14 defects this route would otherwise meet (a repeated
-    slashed momentum, see :func:`_string_tensor`; ``kahane_simplify``'s
-    ``Repeated index`` error on interleaved contractions such as
-    ``γ^aγ^b k̸₃ γ_a k̸₄ γ_b``) can occur.  The γ₅ coefficients are
-    discarded — callers must have proven them zero.
-    """
-    memo, total = {}, sp.S.Zero
-    for atoms, (c_tr, _) in _expand_chiral_string(factors).items():
-        if c_tr == 0:
-            continue
-        for coeff, reduced in _contract_pairs(atoms):
-            total += c_tr * coeff * _slash_trace(
-                tuple(value for _, value in reduced), dot, memo)
-    return sp.expand(total)
 
 
 def _chiral_trace(factors):

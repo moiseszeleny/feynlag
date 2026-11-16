@@ -12,8 +12,12 @@ every tree diagram of a four-fermion process
 
 Scope, enforced rather than documented only:
 
-- external states are Dirac fermions declared as ``DiracParticle``\\ s;
-  external bosons (``e⁺e⁻→W⁺W⁻``) need derivative couplings — Tier 4;
+- external fermions are declared ``DiracParticle``\\ s; a process is either
+  four fermions, or **two fermions and two bosons** whose diagrams exchange
+  a fermion (``e⁺e⁻→γγ``, ``e⁺e⁻→ZZ``, Compton) — Tier 4, stage 4a.  A
+  process that also has a boson-exchange diagram through a bosonic
+  three-point vertex (``e⁺e⁻→W⁺W⁻``, ``e⁺e⁻→Zh``) raises rather than
+  returning the fermion-exchange diagrams alone;
 - **colour-singlet** external fermions only — a coloured one raises, since
   the colour-flow bookkeeping (``N_c`` per closed line, ``T^a`` traces for
   gluon exchange) is Tier 5's;
@@ -30,7 +34,10 @@ from .scattering import (
     cross_section, differential_cross_section, forward_backward_asymmetry,
 )
 from .diagrams import Amplitude
-from .topology import ExternalFermion, enumerate_diagrams
+from .topology import (
+    ExternalBoson, ExternalFermion, enumerate_diagrams,
+    enumerate_line_diagrams, line_amplitude,
+)
 from .vertices import collect_decay_vertices
 
 __all__ = ["ScatteringCalculator", "ScatteringProcess"]
@@ -83,6 +90,9 @@ class ScatteringCalculator:
     def mass_of(self, boson):
         if boson in self.masses:
             return sp.sympify(self.masses[boson])
+        partner = self.conjugates.get(boson)
+        if partner in self.masses:          # W⁻ has the mass declared for W⁺
+            return sp.sympify(self.masses[partner])
         raise KeyError(
             f"no mass declared for the mediator {boson!r}; add it to the "
             f"calculator's `masses` mapping (0 for a photon)")
@@ -110,10 +120,20 @@ class ScatteringCalculator:
                         f"colour-flow layer of Tier 5 of the scattering roadmap")
                 return ExternalFermion(dp, anti=(symbol == dp.antiparticle),
                                        incoming=incoming)
+        if symbol in self.boson_fields or symbol in self.conjugates:
+            spin = self.model.spin_map(conjugate_map=self.conjugate_map).get(symbol)
+            if spin is None:
+                spin = self.model.spin_map(
+                    conjugate_map=self.conjugate_map).get(
+                        self.conjugates.get(symbol, symbol))
+            if spin not in (0, 1):
+                raise KeyError(
+                    f"cannot determine the spin of the external boson "
+                    f"{symbol!r} from the model's spin map (got {spin!r})")
+            return ExternalBoson(symbol, spin, self.mass_of(symbol), incoming)
         raise KeyError(
-            f"{symbol!r} is not a declared DiracParticle (or its "
-            f"antiparticle); external bosons are Tier 4 of the scattering "
-            f"roadmap")
+            f"{symbol!r} is neither a declared DiracParticle (or its "
+            f"antiparticle) nor one of the calculator's `boson_fields`")
 
     def process(self, incoming, outgoing, numeric=False, extra=None):
         """The 2→2 process ``incoming → outgoing``.
@@ -140,21 +160,44 @@ class ScatteringCalculator:
             expr = sp.sympify(expr)
             return expr.subs(values) if values else expr
 
-        kin = TwoToTwoKinematics(*(num(ext.particle.mass) for ext in externals))
+        kin = TwoToTwoKinematics(*(num(_mass(ext)) for ext in externals))
         vertices = self.vertices()
         if values:
             vertices = [_substituted(v, values) for v in vertices]
-        diagrams = enumerate_diagrams(
-            externals, vertices, kin,
-            mass_of=lambda b: num(self.mass_of(b)),
-            width_of=lambda b: num(self.width_of(b)),
-            conjugates=self.conjugates)
+        n_bosons = sum(isinstance(ext, ExternalBoson) for ext in externals)
+        amplitude = None
+        if n_bosons == 0:
+            diagrams = enumerate_diagrams(
+                externals, vertices, kin,
+                mass_of=lambda b: num(self.mass_of(b)),
+                width_of=lambda b: num(self.width_of(b)),
+                conjugates=self.conjugates)
+        elif n_bosons == 2:
+            diagrams = enumerate_line_diagrams(
+                externals, vertices, kin, self.particles,
+                conjugates=self.conjugates,
+                fermion_mass=lambda dp: num(dp.mass))
+            if diagrams:
+                amplitude = line_amplitude(externals, diagrams, kin)
+        else:
+            raise NotImplementedError(
+                f"ScatteringCalculator: a process with {n_bosons} external "
+                f"boson(s) and {4 - n_bosons} external fermion(s) is not "
+                f"implemented (four fermions, or two fermions and two "
+                f"bosons)")
         if not diagrams:
             raise ValueError(
                 f"no tree diagram connects {tuple(map(str, incoming))} -> "
                 f"{tuple(map(str, outgoing))} through the extracted vertices "
                 f"(check `boson_fields`, `fermion_sectors` and `particles`)")
-        return ScatteringProcess(externals, kin, diagrams)
+        return ScatteringProcess(externals, kin, diagrams, amplitude=amplitude)
+
+
+def _mass(external):
+    """The mass of an external fermion (its species') or boson."""
+    if isinstance(external, ExternalFermion):
+        return external.particle.mass
+    return external.mass
 
 
 def _substituted(vertex, values):
@@ -177,12 +220,13 @@ class ScatteringProcess:
         symmetry_factor: ``1/2`` for identical final-state particles.
     """
 
-    def __init__(self, externals, kinematics, diagrams):
+    def __init__(self, externals, kinematics, diagrams, amplitude=None):
         self.externals = list(externals)
         self.kinematics = kinematics
         self.diagrams = list(diagrams)
+        self._amplitude = amplitude
         self.initial_states = tuple(
-            ExternalState(ext.symbol, kinematics_mass, sp.Rational(1, 2))
+            ExternalState(ext.symbol, kinematics_mass, ext.spin)
             for ext, kinematics_mass in zip(self.externals[:2],
                                             (kinematics.m1, kinematics.m2)))
         identical = self.externals[2].symbol == self.externals[3].symbol
@@ -195,6 +239,11 @@ class ScatteringProcess:
                 f"{names[3]}: {self.diagrams})")
 
     def amplitude(self):
+        """The four-fermion :class:`~feynlag.pheno.diagrams.Amplitude`, or
+        the :class:`~feynlag.pheno.line.LineAmplitude` of a process with two
+        external bosons."""
+        if self._amplitude is not None:
+            return self._amplitude
         return Amplitude(tuple(d.diagram for d in self.diagrams))
 
     def squared(self):

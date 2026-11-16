@@ -36,7 +36,11 @@ class DiracParticle:
         left: the left-handed Weyl leg base — the ``IndexedBase`` returned by
             ``fermion.components[k]`` (e.g. ``QL.components[1]`` for the
             down-type member of a quark doublet).
-        right: the right-handed Weyl leg base (e.g. ``bR.components[0]``).
+        right: the right-handed Weyl leg base (e.g. ``bR.components[0]``),
+            or ``None`` for a species with a single chirality — the SM's
+            left-handed neutrino.  Its propagator and spin sums are then the
+            ordinary ``q̸``/``p̸`` ones; the missing chirality never appears
+            because no vertex carries it.
         mass: the physical mass (symbol or number).
         color: colour multiplicity $N_c$ — ``3`` for a quark, ``1`` (default)
             for a lepton.  Applied **once** per channel by the calculator, so
@@ -72,8 +76,9 @@ class DiracParticle:
 
     @property
     def bar_right(self):
-        """The bar leg paired with ``right`` (from :func:`bar_partner`)."""
-        return bar_partner(self.right)
+        """The bar leg paired with ``right`` (from :func:`bar_partner`), or
+        ``None`` for a left-handed-only species."""
+        return None if self.right is None else bar_partner(self.right)
 
     def particle_map(self):
         """``{weyl_leg_base: physical_symbol}`` for this particle.
@@ -82,12 +87,11 @@ class DiracParticle:
         antiparticle.  Keyed by ``IndexedBase`` so every flavour index is
         covered (``resolve_leg`` falls back to a leg's ``.base``).
         """
-        return {
-            self.left: self.particle,
-            self.right: self.particle,
-            self.bar_left: self.antiparticle,
-            self.bar_right: self.antiparticle,
-        }
+        legs = {self.left: self.particle, self.bar_left: self.antiparticle}
+        if self.right is not None:
+            legs[self.right] = self.particle
+            legs[self.bar_right] = self.antiparticle
+        return legs
 
     def masses(self):
         """``{particle: mass, antiparticle: mass}``."""
@@ -140,7 +144,7 @@ class ExternalState:
         if self.spin == sp.Rational(1, 2):
             return 2
         if self.spin == 1:
-            return 1 if self.mass == 0 else 3
+            return 2 if self.mass == 0 else 3
         raise NotImplementedError(f"ExternalState: unsupported spin {self.spin}")
 
     def dof(self):
