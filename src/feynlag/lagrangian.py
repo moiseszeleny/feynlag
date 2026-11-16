@@ -481,7 +481,10 @@ class Model:
         if key not in self._cache:
             L = (self.lagrangian.total if sector is None
                  else self.lagrangian.sector(sector))
-            L = self.vacuum.shift(L)
+            # a model with no VEV'd scalar (QED, scalar QED) has nothing to
+            # shift: its physical Lagrangian is the one written
+            if any(getattr(sc, "vev_expansions", None) for sc in self.scalars):
+                L = self.vacuum.shift(L)
             if self._tadpole_solutions:
                 L = L.subs(self._tadpole_solutions)
             for rot in self.rotations:

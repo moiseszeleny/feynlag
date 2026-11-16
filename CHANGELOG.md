@@ -7,6 +7,14 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- 2→2 scattering, Tier 4 stage 4c: **the `VSS` derivative coupling**. A
+  vector meeting two scalars is now a diagram vertex: `e⁺e⁻→φ⁺φ⁻` through a
+  photon or Z, and a scalar mediator with one external vector and one
+  external scalar (`e⁻γ→χφ⁻`). `boson_vertices.vss_tensor` resolves each
+  `p(φ)` momentum tag of the extracted coupling to `VSS_KAPPA = −1` times
+  the momentum flowing into the vertex on field leg `φ`. Scalar QED
+  reproduces `σ(e⁺e⁻→φ⁺φ⁻) = πα²β³/(3s)`; the sign is pinned by the Ward
+  identity of `e⁻γ→χφ⁻`. `examples/scalar_qed.py`. This completes Tier 4.
 - 2→2 scattering, Tier 4 stage 4b: **boson exchange through a bosonic
   three-point vertex** — `e⁺e⁻→W⁺W⁻` and `e⁺e⁻→Zh`.
   `ScatteringCalculator(gauge_groups=[SU2L])` collects the triple-gauge
@@ -55,6 +63,14 @@ All notable changes to feynlag are documented here. The format follows
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Changed
+- `Model.physical_lagrangian` no longer raises for a model with no VEV'd
+  scalar (QED, scalar QED): there is nothing to shift, so it returns the
+  Lagrangian as written (with any rotations applied).
+- `collect_decay_vertices` applies `conjugate_map` on the fermion track too.
+  Before, the `ψ̄ψφ†` half of a charged-scalar Yukawa had no recognised
+  boson leg and was silently missing from the vertex list (so from
+  `DecayCalculator` and `ScatteringCalculator`). A model whose charged
+  scalars are all Goldstones left out of `boson_fields` is unaffected.
 - `ScatteringCalculator` evaluates bosonic vertex couplings at zero for
   fields left out of `boson_fields`, dropping the three-leg "vertices" the
   extractor reports for four-leg terms with a Goldstone (`A h W⁺ ∝ G⁻`).
@@ -62,9 +78,16 @@ All notable changes to feynlag are documented here. The format follows
   changes.
 - A two-fermion + two-boson process with a boson-exchange diagram no longer
   raises (stage 4a refused it). A charged external vector still raises when
-  `gauge_groups` is not given; a `VSS` vertex raises until stage 4c.
+  `gauge_groups` is not given.
 
 ### Fixed
+- `ScatteringCalculator`'s stray-field filter read the scalar symbols inside
+  a `VSS` coupling's `p(φ)` tags as field dependence and would have turned
+  them into `p(0)`.
+- `epsilon.gram_determinant` returned `nan` when a massless leg's mass was
+  given as the float `0.0` (Bareiss elimination pivoting on `k·k = 0.0`), so
+  the γ₅ guard refused a valid process. A float zero entry is now an exact
+  zero.
 - `ExternalState.spin_states()` returned 1 for a massless vector; it is 2, as
   its docstring said. No shipped process had a vector in the initial state,
   so no published number changes.

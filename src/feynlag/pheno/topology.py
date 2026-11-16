@@ -49,7 +49,7 @@ from sympy.combinatorics import Permutation
 from .diagrams import (
     BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain, _chain_indices,
 )
-from .boson_vertices import sss_tensor, vvs_tensor, vvv_tensor
+from .boson_vertices import sss_tensor, vss_tensor, vvs_tensor, vvv_tensor
 from .line import (
     LineAmplitude, VectorLeg, boson_exchange_terms, fermion_exchange_term,
     fresh_name,
@@ -329,7 +329,8 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
     **Boson exchange** — the line has one vertex ``(X̄, Y, M)``; the boson
     ``M`` propagates to a bosonic three-point vertex carrying ``M†`` and the
     two external bosons' fields (``VVV`` from
-    :meth:`~feynlag.lagrangian.Model.gauge_vertices`, ``VVS``, ``SSS``).
+    :meth:`~feynlag.lagrangian.Model.gauge_vertices`, ``VVS``, ``VSS``,
+    ``SSS``).
     Each leg enters that vertex with its own incoming momentum — ``p_in`` for
     an external boson, ``p_in(X) + p_in(Y)`` for the mediator — which is all
     that fixes the triple-gauge sign
@@ -359,8 +360,7 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
             dropping it silently would lose a diagram.
         NotImplementedError: a charged external vector with no ``VVV``
             vertex among ``vertices`` (its triple-gauge diagrams would be
-            missing), or a boson-exchange diagram through a ``VSS`` vertex
-            (derivative coupling, stage 4c).
+            missing).
     """
     conjugates = dict(conjugates or {})
     fermion_mass = fermion_mass or (lambda dp: dp.mass)
@@ -462,12 +462,6 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
             if boson_vertex.vertex_type != {3: "VVV", 2: "VVS", 1: "VSS",
                                             0: "SSS"}[n_vectors]:
                 continue
-            if boson_vertex.vertex_type == "VSS":
-                raise NotImplementedError(
-                    f"enumerate_line_diagrams: the diagram through "
-                    f"{boson_vertex!r} needs a VSS vertex, whose derivative "
-                    f"coupling is stage 4c of Tier 4 of the scattering "
-                    f"roadmap")
             if mass_of is None:
                 raise ValueError(
                     "enumerate_line_diagrams: a boson-exchange diagram "
@@ -499,6 +493,10 @@ def _boson_vertex_pieces(vertex, legs):
     if vertex.vertex_type == "VVS":
         index_a, index_b = [index for _, index, _ in legs if index is not None]
         return vvs_tensor(vertex.coupling, index_a, index_b)
+    if vertex.vertex_type == "VSS":
+        (index,) = [index for _, index, _ in legs if index is not None]
+        momenta = {symbol: combo for symbol, idx, combo in legs if idx is None}
+        return vss_tensor(vertex.coupling, index, momenta)
     remaining = list(legs)
     ordered = []
     for symbol in vertex.particles:

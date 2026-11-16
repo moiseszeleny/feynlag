@@ -15,10 +15,11 @@ Scope, enforced rather than documented only:
 - external fermions are declared ``DiracParticle``\\ s; a process is either
   four fermions, or **two fermions and two bosons** (Tier 4): fermion
   exchange (``e⁺e⁻→γγ``, ``e⁺e⁻→ZZ``, Compton) and boson exchange through a
-  ``VVV``/``VVS``/``SSS`` vertex (``e⁺e⁻→W⁺W⁻``, ``e⁺e⁻→Zh``).  The
+  ``VVV``/``VVS``/``VSS``/``SSS`` vertex (``e⁺e⁻→W⁺W⁻``, ``e⁺e⁻→Zh``,
+  ``e⁺e⁻→φ⁺φ⁻``).  The
   triple-gauge vertices are only collected when ``gauge_groups`` is given;
   a charged external vector without them raises rather than returning the
-  fermion-exchange diagrams alone.  A ``VSS`` vertex raises (stage 4c);
+  fermion-exchange diagrams alone;
 - **colour-singlet** external fermions only — a coloured one raises, since
   the colour-flow bookkeeping (``N_c`` per closed line, ``T^a`` traces for
   gluon exchange) is Tier 5's;
@@ -31,6 +32,7 @@ from dataclasses import replace as _replace
 
 import sympy as sp
 
+from ..operators import momentum
 from .kinematics import TwoToTwoKinematics
 from .particles import ExternalState, expand_particles
 from .scattering import (
@@ -126,13 +128,18 @@ class ScatteringCalculator:
             if vertex.vertex_type.startswith("FF"):
                 out.append(vertex)
                 continue
-            stray = [sym for sym in sp.sympify(vertex.coupling).free_symbols
-                     if sym in fields]
+            # a VSS coupling's momentum tags p(φ) name their legs: they are
+            # not field dependence, so hide them from the substitution
+            coupling = sp.sympify(vertex.coupling)
+            tags = {tag: sp.Dummy() for tag in coupling.atoms(momentum)}
+            hidden = coupling.xreplace(tags)
+            stray = [sym for sym in hidden.free_symbols if sym in fields]
             if stray:
-                coupling = vertex.coupling.subs({sym: 0 for sym in stray})
-                if coupling == 0:
+                hidden = hidden.subs({sym: 0 for sym in stray})
+                if hidden == 0:
                     continue
-                vertex = _replace(vertex, coupling=coupling)
+                vertex = _replace(vertex, coupling=hidden.xreplace(
+                    {dummy: tag for tag, dummy in tags.items()}))
             out.append(vertex)
         return out
 

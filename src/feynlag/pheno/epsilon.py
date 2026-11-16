@@ -192,7 +192,13 @@ def gram_determinant(heads, dot):
             :meth:`~feynlag.pheno.kinematics.TwoToTwoKinematics.dot`.
     """
     n = len(heads)
-    return sp.Matrix(n, n, lambda i, j: dot(heads[i], heads[j])).det()
+    def entry(i, j):
+        # a float-zero mass² (``k·k = 0.0``) must be an exact zero: the
+        # Bareiss elimination pivots on it and returns nan otherwise
+        value = sp.sympify(dot(heads[i], heads[j]))
+        return sp.S.Zero if value.is_zero else value
+
+    return sp.Matrix(n, n, entry).det()
 
 
 def assert_epsilon_single_vanishes(heads, dot):

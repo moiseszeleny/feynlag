@@ -387,8 +387,8 @@ $|\eta|<2.5$).
 
 **Channels**: $e^+e^-\to\gamma\gamma$, Compton scattering, $e^+e^-\to ZZ/Z\gamma$
 (stage 4a, delivered); $e^+e^-\to Zh$ and $e^+e^-\to W^+W^-$ (stage 4b,
-delivered);
-any process needing a `VSS` vertex (stage 4c). **Effort: large.**
+delivered); processes through a `VSS` vertex, e.g. $e^+e^-\to\phi^+\phi^-$
+(stage 4c, delivered). **Tier 4 is complete.**
 
 The target is $e^+e^-\to W^+W^-$, and it needs four things Tiers 1–3 do not
 have. Only the last is a derivative coupling:
@@ -511,11 +511,63 @@ bosonic three-point vertex.
 
 Worked example: `examples/ee_to_ww.py`.
 
-### Stage 4c — `VSS` momentum tags and external scalars
+### Stage 4c — `VSS` momentum tags and external scalars ✅ (delivered)
 
-Resolve each `p(φ)` tag to the momentum of the diagram leg `φ` is assigned
-to. **Oracle**: scalar-QED $e^+e^-\to\phi^+\phi^-$ built from a model with a
-charged scalar, so the vertex really comes from the extractor.
+`feynlag.pheno.boson_vertices.vss_tensor`, wired into
+{func}`~feynlag.pheno.topology.enumerate_line_diagrams`.
+
+**The rule.** The extractor's `VSS` coupling is linear in the momentum tags
+of its two scalar legs, $\sum_\phi c_\phi\,p(\phi)$, each $c_\phi$ already
+carrying the Feynman-rule $i$. The tags were written with feynlag's
+$\partial_\mu\phi\to+i\,p(\phi)\phi$; a physical particle entering on field
+leg $\phi$ with momentum $k$ is $e^{-ik\cdot x}$, so each tag becomes
+$\kappa_{VSS}\,k^\mu$ with $\kappa_{VSS}=-1$ (`VSS_KAPPA`), on the vector
+leg's index. For a scalar of charge $Q$ under $D_\mu=\partial_\mu-igQA_\mu$
+this is $i g Q\,(p_\phi-p_{\phi^\dagger})^\mu$ with both momenta flowing in.
+As for the triple-gauge vertex, a leg is attached by the field symbol it
+carries (the outgoing $\phi^+$ sits on the $\phi$ leg), so nothing else is
+chosen by hand. A coupling that is not exactly linear in the two legs' tags,
+or two scalar legs with the same symbol, raises.
+
+Two diagram shapes come out of the same code: a vector mediator with two
+external scalars ($e^+e^-\to\phi^+\phi^-$), and a scalar mediator with one
+external vector and one external scalar ($e^-\gamma\to\chi\phi^-$), where
+the mediator's tag resolves to $p_{\rm in}(\bar\psi)+p_{\rm in}(\psi)$.
+
+**Three things the test model exposed** (scalar QED with a Yukawa: a U(1),
+an electron, a neutral fermion $\chi$, a charged scalar):
+
+- `Model.physical_lagrangian` raised for a model with no VEV. An unbroken
+  model has nothing to shift; it now returns the Lagrangian as written.
+- `collect_decay_vertices` did not apply `conjugate_map` on the fermion
+  track, so the $\bar\psi\psi\phi^\dagger$ half of a charged-scalar Yukawa
+  was silently missing.
+- `ScatteringCalculator`'s stray-field filter (stage 4b) read the scalar
+  symbols inside the tags as field dependence; tags are now opaque to it.
+
+**Verified** (`tests/test_vss.py`):
+
+- **The tag rule**, by putting plane waves $e^{-ik\cdot x}$ on the kinetic
+  term directly ($\partial_\mu f\to-ik_f f$), bypassing
+  `to_momentum_space` and the extractor.
+- **$\sigma(e^+e^-\to\phi^+\phi^-)=\pi\alpha^2\beta^3/(3s)$**, the
+  point-like scalar Born cross section [BFIK05], to $10^{-9}$ at three
+  energies. One diagram: this fixes the normalisation and the $\beta^3$
+  threshold shape, not the sign.
+- **The sign, exactly, by the Ward identity.** $e^-\gamma\to\chi\phi^-$ has
+  an electron-exchange diagram and a $\phi$-exchange diagram through
+  $\gamma\phi\phi$; $k_\gamma\cdot\mathcal M=0$ only for the right relative
+  sign, and the engine checks it before using $-g$ for the photon. With
+  $\kappa_{VSS}$ flipped the check fails.
+- **An explicit spinor evaluator** with hand-written rules, for both
+  processes (massless and massive electron) and for a massive vector with a
+  width meeting two scalars of different mass, where the propagator's
+  $q_\mu q_\nu/M^2$ term contributes.
+
+Worked example: `examples/scalar_qed.py`.
+
+**Still outside Tier 4**: `VSS` in 1→2 decays (`amplitudes.py` raises),
+four-point contact vertices, boson–boson scattering.
 
 ## 17.5 Tier 5 — coloured / hadronic 2→2 (parton level)
 
@@ -545,7 +597,7 @@ the library (no proton structure anywhere).
 | 1 ✅ | $e^+e^-\to\mu^+\mu^-$ (γ only), $f\bar f\to f\bar f$ via a scalar | `TwoToTwoKinematics`; `SpinorChain`/`Diagram`/`Amplitude` (**done**); amplitude-level propagators; `ExternalState` averaging | small–medium | Peskin QED closed form + explicit-matrix oracle |
 | 2 ✅ | $e^+e^-\to\mu^+\mu^-$ (Z only); any single chiral-current diagram | ε (γ₅) algebra (`pheno.epsilon`): $\mathrm{Tr}[\gamma\gamma\gamma\gamma\gamma_5]$, ε·ε → Gram determinant, `forward_backward_asymmetry` | large | $d\sigma/d\cos\theta$ shape + $A_{FB}=\tfrac34A_eA_f$ vs [LEPEWWG06]; γ₅-carrying matrix oracle (massless + massive mediator) |
 | 3 ✅ | full $e^+e^-\to f\bar f$ (γ/Z interference); Bhabha, Møller, $\nu_ee$ | multi-diagram double sum (same-pairing product of traces; exchanged-pairing single trace); s/t/u topology enumeration; permutation-parity fermion signs; `ScatteringCalculator` | medium–large | **MadGraph 2.7878 pb** (inside $\lvert\eta\rvert<2.5$); Bhabha/Møller closed forms; explicit-spinor oracle |
-| 4 (4a, 4b ✅) | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: `VSS` | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors, boson exchange (**done**); 4c: `VSS` momentum tags | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb** (engine: 19.447), exact high-energy cancellation, Higgsstrahlung closed form [Djouadi08] |
+| 4 ✅ | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: $e^+e^-\to\phi^+\phi^-$ (`VSS`) | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors, boson exchange (**done**); 4c: `VSS` momentum tags (**done**) | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb** (engine: 19.447), exact high-energy cancellation, Higgsstrahlung closed form [Djouadi08]; 4c: scalar-QED closed form [BFIK05], Ward identity |
 | 5 | $q\bar q\to q\bar q$, $qg\to qg$, $gg\to gg$ | colour-flow algebra; colour averaging; 4-point contact vertices | medium–large | ESW parton-level table (no PDFs) |
 
 The recommended order is the table order: Tier 1 gave the first native cross
@@ -559,8 +611,8 @@ colour bookkeeping.
 See {doc}`decays_roadmap` for the parallel decay-side roadmap and its
 `n_momenta`/ε-drop precedent, `tests/test_scattering.py` for what Tiers 1–2
 pin, `tests/test_interference.py` for Tier 3 and
-`tests/test_line_scattering.py` and `tests/test_ww.py` for Tier 4's stages
-4a and 4b.
+`tests/test_line_scattering.py`, `tests/test_ww.py` and `tests/test_vss.py`
+for Tier 4's stages 4a, 4b and 4c.
 
 ## 17.7 References
 
@@ -572,6 +624,13 @@ pin, `tests/test_interference.py` for Tier 3 and
   (and, crossed $s\leftrightarrow u$, Møller scattering); §5.5, "Compton
   Scattering," the Klein–Nishina $|\mathcal M|^2$ with a massive electron and
   its crossing to $e^+e^-\to\gamma\gamma$, which Tier 4's stage 4a reproduces.
+- **[BFIK05]** Yu. M. Bystritskiy, G. V. Fedotovich, F. V. Ignatov and
+  E. A. Kuraev, "The cross sections of the muons and charged pions pairs
+  production at electron-positron annihilation near the threshold,"
+  Phys. Rev. D 72 (2005) 114019,
+  [arXiv:hep-ph/0505236](https://arxiv.org/abs/hep-ph/0505236) — the Born
+  cross section $\pi\alpha^2\beta^3/(3s)$ of a point-like charged scalar
+  pair (their pion formula at $F_\pi=1$), which Tier 4's stage 4c reproduces.
 - **[Djouadi08]** A. Djouadi, "The Anatomy of Electro-Weak Symmetry
   Breaking. I: The Higgs boson in the Standard Model," Phys. Rept. 457 (2008)
   1–216, [arXiv:hep-ph/0503172](https://arxiv.org/abs/hep-ph/0503172) —
