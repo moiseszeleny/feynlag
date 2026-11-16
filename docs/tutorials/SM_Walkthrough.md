@@ -1,8 +1,12 @@
 # Tutorial: Feynman rules of the Standard Model with feynlag
 
-This walks through `sm_scalar_gauge.py` line by line — declaring the SM
-electroweak sector, checking it, breaking the symmetry, diagonalizing, and
-extracting Feynman rules — then shows how to turn it into a BSM model.
+A prose companion to `examples/sm_scalar_gauge.py`: it walks the
+scalar + electroweak-gauge core of that script — declaring the SM electroweak
+sector, checking it, breaking the symmetry, diagonalizing, and extracting
+Feynman rules — sketches the fermion track, then shows how to turn it into a
+BSM model. (The script itself goes further, with the lepton and quark/QCD
+sectors; the {doc}`SM_Feynman_Rules_Tutorial` notebook walks all of it with
+executed output.)
 
 Run the finished script at any point with:
 
@@ -12,11 +16,13 @@ python examples/sm_scalar_gauge.py
 
 All conventions used below (metric, `P_L`, sign of `D_μ`, the explicit `1/√2`
 in VEVs, the vertex normalization) are fixed once in `CONVENTIONS.md` — that
-file is the source of truth if a sign looks unfamiliar.
+file is the source of truth if a sign looks unfamiliar. For how these choices
+compare with the rest of the literature, see [RS12].
 
 ## 0. What we're building
 
-The scalar + electroweak-gauge sector of the SM: an `SU(2)_L × U(1)_Y` Higgs
+The Standard Model's electroweak sector [Glashow61; Weinberg67]. Sections 1–8 build the scalar + electroweak-gauge sector of the SM (the
+script adds leptons and quarks on top; §9 sketches how): an `SU(2)_L × U(1)_Y` Higgs
 doublet with its potential and covariant kinetic term. This is enough to
 extract the Higgs self-couplings, the gauge-boson masses, the Weinberg
 rotation, and every `hVV`/`hhVV`/Goldstone vertex — the same pipeline stages
@@ -78,7 +84,7 @@ Lagrangian yet — `expand_vev` only *registers* the decomposition.
 
 ## 3. Write the Lagrangian — FeynRules style
 
-feynlag doesn't auto-generate the potential; you write it with library
+The input style follows FeynRules [FR14]: feynlag doesn't auto-generate the potential; you write it with library
 building blocks, and the library checks it's legal.
 
 ```python
@@ -127,6 +133,8 @@ variation `δφ = iαᵀφ` and requiring every generator's coefficient to vanis
 hypercharge wrong, this is where it's caught — before any dead-end algebra.
 
 ## 5. Break the symmetry: tadpoles and masses
+
+This is the Brout–Englert–Higgs mechanism [EB64; Higgs64].
 
 ```python
 model.solve_tadpoles([mu2])
@@ -188,7 +196,12 @@ model.rotate(Rotation([W1, W2], [Wp, Wm], U, kind="unitary"))
   `diagonalize_orthogonal_2x2(M, old, new, angle=...)`, which *derives* the
   angle from `tan 2θ = 2M₁₂/(M₁₁−M₂₂)` and attaches it as
   `rot.angle_relation` — the CONVENTIONS.md rule that any mixing angle must
-  be checked against its `tan 2θ` source, not just `sin²+cos²=1`.
+  be checked against its `tan 2θ` source, not just `sin²+cos²=1`. Or let
+  the model find the block and the rotation: `model.mass_blocks()` lists
+  which fields mix (with their derived charge and Goldstone directions), and
+  `model.diagonalize(block, names=[...])` builds and registers the rotation —
+  for the gauge bosons it gives exactly the `W±` and `(Z, A)` rotations
+  written by hand here (see `examples/sm_scalar_gauge.py`).
 - `kind="unitary"` tells `Rotation` to use `R†` (not `Rᵀ`) as the inverse
   when it builds the weak→physical substitution — needed here because the
   charged combination `W± = (W1 ∓ iW2)/√2` is complex.
@@ -265,7 +278,7 @@ print(latex_feynman_table(rules))
 ```
 
 produces a ready-to-paste `\begin{array}` table. For a MadGraph-importable
-model directory, use `feynlag.export.ufo.write_ufo(...)` — see
+model directory, use `feynlag.export.ufo.write_ufo(...)`, which writes the UFO format [UFO12] — see
 `tests/test_ufo_export.py` for a complete worked call (it needs a
 `UFOParticle` spec per physical field: PDG code, spin, mass parameter name,
 color, charge).
@@ -288,8 +301,13 @@ eR = WeylFermion("eR", reps={U1Y: -1}, chirality="R", nflavors=3,
 current = fermion_gauge_current(Ll, i) + fermion_gauge_current(eR, i)
 ```
 
-Yukawa terms are written by hand as `Bilinear(ψ̄[i], Γ, χ[j])` sandwiches
-(`Γ` built from `diracPL`/`diracPR`), and `extract_fermion_vertices` +
+Yukawa terms are `Bilinear(ψ̄[i], Γ, χ[j])` sandwiches (`Γ` built from
+`diracPL`/`diracPR`). They can be written by hand, as in the notebook, or in
+one call with a field-level constructor that does the gauge contraction, the
+flavour indices and the `+ h.c.` and returns the same expression —
+`yukawa(Ye, Ll, H, eR)`, `yukawa(Yu, QL, tilde(H), uR)`, `dirac_mass`,
+`majorana_mass`, `weinberg`; `L.add_kinetic(H, Ll, eR)` adds the kinetic
+terms and gauge currents (`docs/manual/lagrangian.md`). Either way, `extract_fermion_vertices` +
 `fermion_mass_matrix` peel off the boson legs / build the mass matrix the
 same way the bosonic extractor does. See `tests/test_fermion_sector.py` for
 the full SM-lepton worked example (Yukawa mass, `W`/`Z`/`γ` currents with the
@@ -315,10 +333,14 @@ discrete `S₃` flavor symmetry) — read them alongside this checklist:
    Clebsch–Gordan contractions to build invariant terms without doing the
    group theory by hand — `thdm_s3.py` builds its entire potential this way.
 3. **Extend the potential/Yukawas**: write the new invariant contractions
-   (`dag(H1)*H2.mat`, CG products, …) and add them to a `Lagrangian` sector.
+   (`dag(H1)*H2.mat` or `inner(H1, H2)`, CG products, …) and add them to a
+   `Lagrangian` sector. `Model.most_general(...)` builds every allowed
+   operator with a coupling attached, and `model.term_coverage()` lists the
+   invariants a hand-written Lagrangian leaves out.
    Call `model.check_invariance()` immediately — a forbidden term (wrong
    representation, missing `+ h.c.`, wrong discrete charge) fails loudly
-   instead of silently producing wrong Feynman rules downstream.
+   instead of silently producing wrong Feynman rules downstream, and
+   `report.explain()` says why (for a U(1), the charge of each piece).
 4. **VEVs on every scalar that gets one**, then `solve_tadpoles([...])` for
    as many mass parameters as you have independent tadpole conditions. If
    the system is *over*-constrained (more tadpole equations than free mass
@@ -342,3 +364,30 @@ The invariant is: nothing about `Model`, `check_invariance`,
 `solve_tadpoles`, `mass_matrix`, `rotate`, or `feynman_rules` is SM-specific
 — they operate purely on whatever fields, symmetries, and Lagrangian terms
 you declared. Growing the model is additive, not a rewrite.
+
+## 11. References
+
+- **[Glashow61]** S. L. Glashow, *Partial-symmetries of weak interactions*, Nucl. Phys.
+  **22** (1961) 579–588,
+  doi:[10.1016/0029-5582(61)90469-2](https://doi.org/10.1016/0029-5582(61)90469-2).
+- **[Weinberg67]** S. Weinberg, *A Model of Leptons*, Phys. Rev. Lett. **19** (1967)
+  1264–1266, doi:[10.1103/PhysRevLett.19.1264](https://doi.org/10.1103/PhysRevLett.19.1264).
+- **[EB64]** F. Englert, R. Brout, *Broken Symmetry and the Mass of Gauge Vector Mesons*,
+  Phys. Rev. Lett. **13** (1964) 321,
+  doi:[10.1103/PhysRevLett.13.321](https://doi.org/10.1103/PhysRevLett.13.321).
+- **[Higgs64]** P. W. Higgs, *Broken Symmetries and the Masses of Gauge Bosons*, Phys. Rev.
+  Lett. **13** (1964) 508,
+  doi:[10.1103/PhysRevLett.13.508](https://doi.org/10.1103/PhysRevLett.13.508).
+- **[RS12]** J. C. Romão, J. P. Silva, *A resource for signs and Feynman diagrams of the
+  Standard Model*, Int. J. Mod. Phys. A **27** (2012) 1230025,
+  doi:[10.1142/S0217751X12300256](https://doi.org/10.1142/S0217751X12300256),
+  [arXiv:1209.6213](https://arxiv.org/abs/1209.6213) — the full SM Feynman rules with every
+  sign convention made explicit, and a comparison of the conventions in ~40 textbooks.
+- **[FR14]** A. Alloul, N. D. Christensen, C. Degrande, C. Duhr, B. Fuks, *FeynRules 2.0 — A
+  complete toolbox for tree-level phenomenology*, Comput. Phys. Commun. **185** (2014)
+  2250–2300, doi:[10.1016/j.cpc.2014.04.012](https://doi.org/10.1016/j.cpc.2014.04.012),
+  [arXiv:1310.1921](https://arxiv.org/abs/1310.1921) — the input style `feynlag` follows.
+- **[UFO12]** C. Degrande, C. Duhr, B. Fuks, D. Grellscheid, O. Mattelaer, T. Reiter, *UFO —
+  The Universal FeynRules Output*, Comput. Phys. Commun. **183** (2012) 1201–1214,
+  doi:[10.1016/j.cpc.2012.01.022](https://doi.org/10.1016/j.cpc.2012.01.022),
+  [arXiv:1108.2040](https://arxiv.org/abs/1108.2040) — the model format `write_ufo` emits.

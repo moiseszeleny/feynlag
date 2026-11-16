@@ -157,6 +157,40 @@ class Field:
     def __len__(self):
         return len(self.components)
 
+    def named(self):
+        """``{name: object}`` of everything reachable as ``field.<name>``:
+        the components, a fermion's bar components (``<component>bar``) and a
+        scalar's VEV fluctuations (``<component>_r`` / ``<component>_i``)."""
+        attrs = self.__dict__
+        out = {}
+        for comp in attrs.get("components", ()):
+            out[str(getattr(comp, "label", comp))] = comp
+        for bar in attrs.get("bar_components", ()):
+            out[str(bar.label)] = bar
+        for _vev, re, im in attrs.get("vev_expansions", {}).values():
+            out[str(re)] = re
+            if im is not None:
+                out[str(im)] = im
+        return out
+
+    def __getattr__(self, name):
+        """Access a component by its declared name: ``H.H0``, ``PsiL.EL``,
+        ``PsiL.ELbar``, and after :meth:`Scalar.expand_vev` ``H.H0_r``.
+
+        Only reached when ordinary attribute lookup fails, and it returns the
+        *stored* object, so a tex-carrying symbol keeps its identity (never
+        rebuild one by name).
+        """
+        if name.startswith("_"):
+            raise AttributeError(name)
+        table = self.named()
+        if name in table:
+            return table[name]
+        raise AttributeError(
+            f"{type(self).__name__} {self.__dict__.get('name', '?')!r} has "
+            f"no attribute or component {name!r}; components: "
+            f"{', '.join(table) or '(none)'}")
+
 
 class Scalar(Field):
     """Spin-0 field.

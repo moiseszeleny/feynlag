@@ -61,6 +61,19 @@ class Lagrangian:
         self.terms.append(LagrangianTerm(expr, sector=sector, name=name))
         return self
 
+    def add_kinetic(self, *fields, index=None):
+        """Add the canonical kinetic/gauge terms of ``fields``.
+
+        ``(D_μφ)†(D^μφ)`` per scalar (sector ``kinetic``) and the gauge
+        current per charged fermion (sector ``yukawa``), via
+        :func:`feynlag.terms.kinetic`.  Gauge bosons need no term here: their
+        self-couplings come from the structure constants at extraction time.
+        """
+        from .terms import kinetic
+        for expr, sector in kinetic(*fields, index=index):
+            self.add(expr, sector=sector)
+        return self
+
     def sector(self, name):
         """Sum of all terms in one sector."""
         return sp.Add(*[t.expr for t in self.terms if t.sector == name])
@@ -86,15 +99,37 @@ class InvarianceReport:
     #: list of (term, check_name, details)
     failures: list = dc_field(default_factory=list)
     checked: int = 0
+    #: one plain-language explanation per failure, in the same order
+    hints: list = dc_field(default_factory=list)
 
     @property
     def ok(self):
         return not self.failures
 
+    def explain(self):
+        """What failed and why, one paragraph per failure.
+
+        For a U(1) it lists the monomials that carry a net charge; for a
+        non-abelian group it says when the group's gauge bosons are simply
+        missing from ``Model(fields=...)``; for hermiticity it names the
+        sector that lacks its ``+ h.c.``.
+        """
+        if self.ok:
+            return "all invariance checks passed"
+        out = []
+        for k, (term, name, _details) in enumerate(self.failures):
+            label = term.name or f"<{term.sector} term>"
+            hint = self.hints[k] if k < len(self.hints) else ""
+            out.append(f"[{name}] {label}: {hint or 'not invariant'}")
+        return "\n".join(out)
+
     def raise_on_failure(self):
         if not self.ok:
-            lines = [f"  [{name}] term {term.name or term.expr}: {details}"
-                     for term, name, details in self.failures]
+            lines = []
+            for k, (term, name, details) in enumerate(self.failures):
+                hint = self.hints[k] if k < len(self.hints) else ""
+                lines.append(f"  [{name}] term {term.name or term.expr}: "
+                             f"{hint + ' — ' if hint else ''}{details}")
             raise ValueError("invariance check failed:\n" + "\n".join(lines))
         return self
 
@@ -143,6 +178,98 @@ class ValidationReport:
         n_ok = sum(1 for r in run if r.ok)
         status = "PASS" if self.ok else "FAIL"
         return f"ValidationReport({n_ok}/{len(run)} checks passed, {status})"
+
+
+class ParameterReport:
+    """Result of :meth:`Model.check_parameters`.
+
+    Attributes:
+        undeclared: symbols used in the Lagrangian (or as a VEV) that are
+            neither a declared parameter nor a field component.  Such a symbol
+            silently counts as mass dimension 0 in the power-counting check and
+            has no numeric value at export time.
+        flavour_matrices: :class:`~sympy.IndexedBase` couplings (``Y[i,j]``).
+            :class:`~feynlag.parameters.ParameterSet` is scalar-only, so these
+            cannot be declared; they are listed for information and do not
+            fail the check.
+    """
+
+    def __init__(self, undeclared, flavour_matrices):
+        self.undeclared = list(undeclared)
+        self.flavour_matrices = list(flavour_matrices)
+
+    @property
+    def ok(self):
+        return not self.undeclared
+
+    def raise_on_failure(self):
+        if not self.ok:
+            raise ValueError(
+                "undeclared symbols in the Lagrangian: "
+                + ", ".join(str(s) for s in self.undeclared)
+                + " (declare each as an ExternalParameter/InternalParameter "
+                "and pass it to Model(parameters=...))")
+        return self
+
+    def __repr__(self):
+        status = "PASS" if self.ok else "FAIL"
+        parts = [f"undeclared={[str(s) for s in self.undeclared]}"]
+        if self.flavour_matrices:
+            parts.append("flavour_matrices="
+                         f"{[str(b) for b in self.flavour_matrices]}")
+        return f"ParameterReport({', '.join(parts)}, {status})"
+
+
+def _table(header, rows):
+    """Left-aligned plain-text table."""
+    widths = [max(len(str(r[k])) for r in [header] + rows)
+              for k in range(len(header))]
+
+    def line(row):
+        return "  ".join(str(c).ljust(w) for c, w in zip(row, widths)).rstrip()
+
+    return "\n".join([line(header), line(["-" * w for w in widths])]
+                     + [line(r) for r in rows])
+
+
+def _md_table(header, rows):
+    def line(row):
+        return "| " + " | ".join(str(c) or " " for c in row) + " |"
+
+    return "\n".join([line(header), line(["---"] * len(header))]
+                     + [line(r) for r in rows])
+
+
+class ModelSummary:
+    """The field-content and parameter tables of a model, as one would print
+    them in a paper.  ``print()`` gives aligned text; a notebook renders the
+    Markdown tables.  Built by :meth:`Model.summary`.
+    """
+
+    def __init__(self, name, field_header, field_rows, param_header,
+                 param_rows):
+        self.name = name
+        self.field_header = field_header
+        self.field_rows = field_rows
+        self.param_header = param_header
+        self.param_rows = param_rows
+
+    def __str__(self):
+        out = [f"Model: {self.name}", "", "Fields",
+               _table(self.field_header, self.field_rows)]
+        if self.param_rows:
+            out += ["", "Parameters",
+                    _table(self.param_header, self.param_rows)]
+        return "\n".join(out)
+
+    __repr__ = __str__
+
+    def _repr_markdown_(self):
+        out = [f"**Model: {self.name}**", "",
+               _md_table(self.field_header, self.field_rows)]
+        if self.param_rows:
+            out += ["", _md_table(self.param_header, self.param_rows)]
+        return "\n".join(out)
 
 
 class Model:
@@ -194,6 +321,60 @@ class Model:
         self.rotations = []
         self._tadpole_solutions = {}
         self._cache = {}
+
+    @classmethod
+    def most_general(cls, name, fields, gauge_groups=(), discrete_groups=(),
+                     parameters=(), names=None, max_dim=4, **kwargs):
+        """A model with the most general Lagrangian its symmetries allow.
+
+        Every invariant operator of the scalars and fermions in ``fields``
+        gets a named coupling (:func:`feynlag.general.most_general_lagrangian`),
+        and the kinetic terms are added.  The result is an ordinary
+        :class:`Model`; the generated operators and couplings are listed by
+        ``model.general``.
+
+        Args:
+            fields: scalars and fermions (and optionally the gauge bosons;
+                any group's bosons not listed are added).
+            parameters: parameters that already exist (gauge couplings, VEVs);
+                the generated couplings are appended.
+            names: ``{operator label: coupling name}`` overrides.
+            max_dim: ``4`` or ``5`` (Weinberg operator).
+            **kwargs: forwarded to :class:`Model` (``global_groups``).
+        """
+        from .general import most_general_lagrangian
+
+        from .fields import GaugeBoson
+
+        general = most_general_lagrangian(
+            fields, gauge_groups, discrete_groups, names=names,
+            max_dim=max_dim)
+        # the kinetic terms contain the gauge bosons, which must be among the
+        # model's fields for the invariance check: add any not listed
+        fields = list(fields)
+        for g in gauge_groups:
+            if not any(isinstance(f, GaugeBoson) and f.group is g
+                       for f in fields):
+                fields.append(g.bosons())
+        model = cls(name, gauge_groups=gauge_groups,
+                    discrete_groups=discrete_groups, fields=fields,
+                    parameters=list(parameters) + general.parameters,
+                    lagrangian=general.lagrangian, **kwargs)
+        model.general = general
+        return model
+
+    def term_coverage(self, max_dim=4):
+        """Which invariants allowed by the declared symmetries this model's
+        potential and Yukawa sector contain, which they leave out, and what
+        they contain beyond them (:func:`feynlag.general.term_coverage`)."""
+        from .general import term_coverage
+        return term_coverage(self, max_dim=max_dim)
+
+    def missing_terms(self, max_dim=4):
+        """The allowed invariants this model does not contain, as
+        :class:`~feynlag.suggest.SuggestedTerm` objects (see
+        :meth:`term_coverage`)."""
+        return self.term_coverage(max_dim=max_dim).missing
 
     def _invalidate(self):
         """Drop cached pipeline results after a state mutation."""
@@ -258,6 +439,40 @@ class Model:
         self.rotations.append(rotation)
         self._invalidate()
         return rotation
+
+    def mass_blocks(self, kind=None):
+        """The blocks of fields that mix in the mass matrix at the vacuum.
+
+        Scalars are partitioned by what actually mixes (so the CP-even/odd
+        split appears when CP is conserved and not otherwise), tagged with
+        the electric charge derived from the vacuum and with their Goldstone
+        directions; gauge bosons are split into charge eigenstates and
+        neutral blocks carrying the photon direction; Dirac fermion legs
+        likewise.  See :func:`feynlag.vacuum.physical.mass_blocks`.
+
+        Args:
+            kind: ``"scalar"``, ``"gauge"``, ``"fermion"`` or ``None`` (all).
+        """
+        from .vacuum.physical import mass_blocks
+        return mass_blocks(self, kind=kind)
+
+    def diagonalize(self, block, names=None, **kwargs):
+        """Rotate a :class:`~feynlag.vacuum.physical.MassBlock` to its mass
+        eigenstates, register the rotation and record the new states in
+        :attr:`physical`.  Arguments as
+        :func:`feynlag.vacuum.physical.diagonalize_block`."""
+        from .vacuum.physical import diagonalize_block
+        return diagonalize_block(self, block, names=names, **kwargs)
+
+    @property
+    def physical(self):
+        """The accumulated physical states
+        (:class:`~feynlag.vacuum.physical.PhysicalRegistry`): ``bosons``,
+        ``cmap``, ``conjugates``, ``charges``, ``goldstones``, ``masses``."""
+        if getattr(self, "_physical", None) is None:
+            from .vacuum.physical import PhysicalRegistry
+            self._physical = PhysicalRegistry(self)
+        return self._physical
 
     def physical_lagrangian(self, sector=None):
         """The Lagrangian in the physical basis: vacuum-shifted, tadpole
@@ -425,7 +640,36 @@ class Model:
         Returns:
             :class:`InvarianceReport`.
         """
+        from .fields import GaugeBoson
+        from .invariance import u1_charge_breakdown
+
         report = InvarianceReport()
+
+        def fail(term, name, details, hint):
+            report.failures.append((term, name, details))
+            report.hints.append(hint)
+
+        def gauge_hint(term, group, violations):
+            if group.abelian:
+                charged = u1_charge_breakdown(term.expr, self.fields, group)
+                if charged:
+                    shown = "; ".join(f"{m} has charge {q}"
+                                      for m, q in charged[:4])
+                    more = (f" (and {len(charged) - 4} more)"
+                            if len(charged) > 4 else "")
+                    return (f"{group.name} charges do not cancel: "
+                            f"{shown}{more}")
+                return f"not invariant under {group.name}"
+            listed = any(isinstance(f, GaugeBoson) and f.group is group
+                         for f in self.fields)
+            if not listed and term.expr.has(*group.bosons().components):
+                return (f"the term contains {group.name} gauge bosons, but "
+                        f"they are not in Model(fields=...); add "
+                        f"{group.name}.bosons() to the model's fields so they "
+                        f"transform in the adjoint")
+            return (f"the {group.name} indices are not contracted to a "
+                    f"singlet (generators violated: "
+                    f"{[a for a, _c in violations]})")
 
         for term in self.lagrangian:
             for group in self.gauge_groups:
@@ -433,28 +677,31 @@ class Model:
                     term.expr, self.fields, group)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, f"gauge:{group.name}", violations))
+                    fail(term, f"gauge:{group.name}", violations,
+                         gauge_hint(term, group, violations))
             for group in self.discrete_groups:
                 ok, violations = check_discrete_invariance(term.expr, group)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, f"discrete:{group.name}", violations))
+                    fail(term, f"discrete:{group.name}", violations,
+                         f"changes under {group.name} generator(s) "
+                         f"{[a for a, _r in violations]}")
             for group in self.global_groups:
                 ok, violations = check_global_invariance(term.expr, group)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, f"global:{group.name}", violations))
+                    fail(term, f"global:{group.name}", violations,
+                         f"carries a net {group.name} charge")
             if dimension:
                 ok, worst = check_mass_dimension(
                     term.expr, self.fields, self.parameters, max_dim=max_dim)
                 report.checked += 1
                 if not ok:
-                    report.failures.append(
-                        (term, "mass-dimension",
-                         f"dimension {worst} > {max_dim}"))
+                    fail(term, "mass-dimension",
+                         f"dimension {worst} > {max_dim}",
+                         f"mass dimension {worst} exceeds {max_dim}: declare "
+                         f"the coupling's unit_dim, or raise max_dim for an "
+                         f"effective operator")
 
         if hermiticity:
             for sector in SECTORS:
@@ -466,8 +713,10 @@ class Model:
                 if not ok:
                     fake_term = LagrangianTerm(expr, sector=sector,
                                                name=f"<sector {sector}>")
-                    report.failures.append(
-                        (fake_term, "hermiticity", residual))
+                    fail(fake_term, "hermiticity", residual,
+                         f"the {sector} sector is not hermitian: a term is "
+                         f"missing its '+ h.c.' (or a coupling that should "
+                         f"be real is complex)")
 
         if raise_on_failure:
             report.raise_on_failure()
@@ -485,10 +734,137 @@ class Model:
             report.raise_on_failure()
         return report
 
+    # --------------------------------------------------------- bookkeeping
+
+    def check_parameters(self):
+        """Report Lagrangian symbols that are not declared parameters.
+
+        Scans every Lagrangian term and every VEV for free symbols and removes
+        the declared parameters, the field components (and bar legs), and the
+        integer index symbols (flavour and Lorentz).  What is left was most
+        likely meant to be a parameter and was never passed to
+        ``Model(parameters=...)``.
+
+        Returns:
+            :class:`ParameterReport` (``.ok`` iff nothing is undeclared).
+        """
+        from .fields import Fermion
+
+        expr = self.lagrangian.total
+        symbols = set(expr.free_symbols)
+        known = {p.symbol for p in self.parameters}
+        fermion_bases = set()
+        for f in self.fields:
+            for comp in f.components:
+                if isinstance(comp, sp.IndexedBase):
+                    known.add(comp.label)
+                    fermion_bases.add(comp)
+                else:
+                    known.add(comp)
+            if isinstance(f, Fermion):
+                for bar in f.bar_components:
+                    known.add(bar.label)
+                    fermion_bases.add(bar)
+            for vev, re, im in getattr(f, "vev_expansions", {}).values():
+                symbols |= sp.sympify(vev).free_symbols
+                known.add(re)
+                if im is not None:
+                    known.add(im)
+
+        matrices = {a.base for a in expr.atoms(sp.Indexed)} - fermion_bases
+        known |= {b.label for b in matrices}
+        undeclared = [s for s in symbols
+                      if isinstance(s, sp.Symbol) and not s.is_integer
+                      and s not in known]
+        return ParameterReport(sorted(undeclared, key=str),
+                               sorted(matrices, key=str))
+
+    def undeclared_symbols(self):
+        """Symbols used in the Lagrangian that are neither a declared
+        parameter nor a field (see :meth:`check_parameters`)."""
+        return self.check_parameters().undeclared
+
+    def summary(self):
+        """Field-content and parameter tables (:class:`ModelSummary`).
+
+        One row per field with its type, its representation under every gauge
+        group (the charge for a U(1), the dimension label otherwise), its
+        discrete irrep and global charge where assigned, the number of
+        flavours and any VEV; then one row per parameter.  Read-only.
+        """
+        from .fields import Fermion, GaugeBoson, Scalar
+
+        def kind(f):
+            if isinstance(f, GaugeBoson):
+                return "vector"
+            if isinstance(f, Fermion):
+                return f"fermion {f.chirality}" if f.chirality else "fermion"
+            if isinstance(f, Scalar):
+                return "real scalar" if f.real else "scalar"
+            return type(f).__name__
+
+        def gauge_rep(f, g):
+            if isinstance(f, GaugeBoson):
+                if getattr(f, "group", None) is g:
+                    return "0" if getattr(g, "abelian", False) else "adj"
+                return "0" if getattr(g, "abelian", False) else "1"
+            if getattr(g, "abelian", False):
+                return str(f.charge(g))
+            return str(f.reps.get(g, 1))
+
+        def discrete_rep(f, g):
+            members = set(f.components) | {f}
+            for irrep, multiplet in g.assignments:
+                if any(m is f or m in members for m in multiplet):
+                    return str(irrep)
+            return ""
+
+        def global_charge(f, g):
+            for field, charge in g.assignments:
+                if field is f:
+                    return str(charge)
+            return ""
+
+        def vev(f):
+            out = []
+            for comp, (v, _re, im) in getattr(f, "vev_expansions",
+                                              {}).items():
+                out.append(f"⟨{comp}⟩ = {v}" if im is None
+                           else f"⟨{comp}⟩ = {v}/√2")
+            return ", ".join(out)
+
+        header = (["field", "type"] + [g.name for g in self.gauge_groups]
+                  + [g.name for g in self.discrete_groups]
+                  + [g.name for g in self.global_groups]
+                  + ["flavours", "components", "VEV"])
+        rows = []
+        for f in self.fields:
+            rows.append(
+                [f.name, kind(f)]
+                + [gauge_rep(f, g) for g in self.gauge_groups]
+                + [discrete_rep(f, g) for g in self.discrete_groups]
+                + [global_charge(f, g) for g in self.global_groups]
+                + [str(f.nflavors) if isinstance(f, Fermion) else "",
+                   ", ".join(str(getattr(c, "label", c))
+                             for c in f.components),
+                   vev(f)])
+
+        param_rows = []
+        for p in self.parameters:
+            value = getattr(p, "value", None) if p.nature == "external" \
+                else getattr(p, "expr", None)
+            param_rows.append([p.name, p.nature,
+                               "" if value is None else str(value),
+                               str(p.unit_dim)])
+        return ModelSummary(self.name, header, rows,
+                            ["parameter", "nature", "value / expression",
+                             "mass dim"], param_rows)
+
     def validate(self, invariance=True, hermiticity=True, dimension=True,
                  max_dim=4, anomalies=True, ufo_path=None, external_values=None,
                  charges=None, fields=None, conjugate_map=None,
-                 conjugates=None, fermion_table=None, raise_on_failure=False):
+                 conjugates=None, fermion_table=None, raise_on_failure=False,
+                 parameters=False):
         """Run every applicable consistency check and aggregate the results.
 
         The umbrella entry point: it runs the symmetry/hermiticity/dimension
@@ -526,6 +902,8 @@ class Model:
             fermion_table: optional ``extract_fermion_vertices`` output to add
                 the fermionic vertices to the charge/hermiticity checks.
             raise_on_failure: raise ``ValueError`` if any check fails.
+            parameters: also run :meth:`check_parameters` (every Lagrangian
+                symbol is a declared parameter or a field).  Off by default.
 
         Returns:
             :class:`ValidationReport`.
@@ -533,6 +911,8 @@ class Model:
         from .fields import Fermion
 
         checks = {}
+        if parameters:
+            checks["parameters"] = self.check_parameters()
         if invariance:
             checks["invariance"] = self.check_invariance(
                 hermiticity=hermiticity, dimension=dimension, max_dim=max_dim)

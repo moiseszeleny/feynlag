@@ -9,9 +9,9 @@ singlet e_R.  After EWSB the charged-lepton mass matrix
 
     rows (ē_L, Ē_L) × cols (e_R, E_R):  [[y_e v/√2, 0], [λ_E v/√2, M]]
 
-is diagonalized biunitarily (θ_L from M·Mᵀ, θ_R from Mᵀ·M — the analytic
-diagonalize_svd_2x2 route; the generic symbolic SVD returns unusable nested
-radicals).  Headline physics, all extracted below and pinned in
+is diagonalized biunitarily by ``model.diagonalize`` on that mass block
+(θ_L from M·Mᵀ, θ_R from Mᵀ·M — the analytic tan 2θ route; the generic
+symbolic SVD returns unusable nested radicals).  Headline physics, all extracted below and pinned in
 tests/test_vll.py:
 
 - θ_R is the LARGE angle (∝ λ_E v/M) — the doublet-VLL signature; θ_L is
@@ -35,11 +35,9 @@ Run:  python examples/sm_vll.py
 import sympy as sp
 
 from feynlag import (
-    Bilinear, DiracGamma, ExternalParameter, Lagrangian, Model, Rotation, SU2,
-    U1, WeylFermion, charged_current_rotation, diagonalize_svd_2x2, diracPL,
-    diracPR, electroweak_scaffold, extract_fermion_vertices,
-    fermion_gauge_current, fermion_mass_matrix, rotation_2x2,
-    weinberg_rotation,
+    FL_I, FL_J, DiracGamma, Lagrangian, Model, ParameterSet, WeylFermion,
+    bar_partner, diracPL, diracPR, dirac_mass, electroweak_scaffold,
+    extract_fermion_vertices, fermion_mass_matrix, rotation_2x2, yukawa,
 )
 
 
@@ -49,10 +47,12 @@ def main():
     # example's subject is the vector-like lepton added below.
     ew = electroweak_scaffold(lam=0.129)
     SU2L, U1Y, H = ew.SU2L, ew.U1Y, ew.H
-    gw, g1, v, lam, mu2 = ew.gw, ew.g1, ew.v, ew.lam, ew.mu2
-    ye = ExternalParameter("ye", 0.01, positive=True)
-    lamE = ExternalParameter("lamE", 0.4, positive=True)
-    MPsi = ExternalParameter("MPsi", 1000.0, positive=True, unit_dim=1)
+    v, mu2 = ew.v, ew.mu2
+    # declare each new parameter once: P.external creates AND registers it
+    P = ParameterSet(*ew.parameters)
+    ye = P.external("ye", 0.01, positive=True)
+    lamE = P.external("lamE", 0.4, positive=True)
+    MPsi = P.external("MPsi", 1000.0, positive=True, unit_dim=1)
 
     # --- fields -----------------------------------------------------------
     Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
@@ -63,53 +63,37 @@ def main():
                        chirality="L", nflavors=1, component_names=["NL", "EL"])
     PsiR = WeylFermion("PsiR", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
                        chirality="R", nflavors=1, component_names=["NR", "ER"])
-    W, B = ew.W, ew.B
-
-    Gp, H0 = H.components
-    nuL, eL = Ll.components
-    nuLbar, eLbar = Ll.bar_components
-    eR, eRbar = eRf.components[0], eRf.bar_components[0]
-    NL, EL = PsiL.components
-    NLbar, ELbar = PsiL.bar_components
-    NR, ER = PsiR.components
-    NRbar, ERbar = PsiR.bar_components
-
-    i = sp.Symbol("fl_i", integer=True)
 
     # --- Lagrangian ---------------------------------------------------------
-    # SM Yukawa: -ye Lbar_L H e_R + h.c.
-    LYuk = -(ye.s * Gp * Bilinear(nuLbar[i], diracPR, eR[i])
-             + ye.s * H0 * Bilinear(eLbar[i], diracPR, eR[i]))
-    LYuk += -(ye.s * sp.conjugate(Gp) * Bilinear(eRbar[i], diracPL, nuL[i])
-              + ye.s * sp.conjugate(H0) * Bilinear(eRbar[i], diracPL, eL[i]))
-
-    # mixing Yukawa: -lamE Psibar_L H e_R + h.c.  (Psi_L carries L_L's reps,
-    # so the component pattern is identical to the SM Yukawa's)
-    LYuk += -(lamE.s * Gp * Bilinear(NLbar[i], diracPR, eR[i])
-              + lamE.s * H0 * Bilinear(ELbar[i], diracPR, eR[i]))
-    LYuk += -(lamE.s * sp.conjugate(Gp) * Bilinear(eRbar[i], diracPL, NL[i])
-              + lamE.s * sp.conjugate(H0) * Bilinear(eRbar[i], diracPL, EL[i]))
-
-    # bare vector-like mass: -MPsi Psibar_L Psi_R + h.c. (gauge invariant —
-    # both chiralities share the same reps; dim 3 with unit_dim(MPsi)=1)
-    LYuk += -MPsi.s * (Bilinear(NLbar[i], diracPR, NR[i])
-                       + Bilinear(ELbar[i], diracPR, ER[i]))
-    LYuk += -MPsi.s * (Bilinear(NRbar[i], diracPL, NL[i])
-                       + Bilinear(ERbar[i], diracPL, EL[i]))
-
-    current = (fermion_gauge_current(Ll, i) + fermion_gauge_current(eRf, i)
-               + fermion_gauge_current(PsiL, i)
-               + fermion_gauge_current(PsiR, i))
+    # Written at field level: each constructor does the SU(2) contraction,
+    # the flavour index and the + h.c. (the component-level Bilinear form
+    # these expand to is pinned in tests/test_terms.py).
+    LYuk = (yukawa(ye, Ll, H, eRf)            # −ye L̄_L H e_R + h.c.
+            # mixing Yukawa −lamE Ψ̄_L H e_R + h.c.: Ψ_L carries L_L's reps
+            + yukawa(lamE, PsiL, H, eRf)
+            # bare vector-like mass −MPsi Ψ̄_L Ψ_R + h.c.: gauge invariant
+            # because both chiralities share the same reps (dim 3 with
+            # unit_dim(MPsi)=1)
+            + dirac_mass(MPsi, PsiL, PsiR))
 
     L = Lagrangian()
     ew.add_higgs(L)                                    # kinetic + potential
     L.add(LYuk, sector="yukawa")
-    L.add(current, sector="yukawa")
+    L.add_kinetic(Ll, eRf, PsiL, PsiR)                 # the gauge currents
 
     model = Model("SM-VLL", gauge_groups=ew.gauge_groups,
                   fields=ew.fields + [Ll, eRf, PsiL, PsiR],
-                  parameters=ew.parameters + [ye, lamE, MPsi],
-                  lagrangian=L)
+                  parameters=P, lagrangian=L)
+    print(model.summary())
+    print()
+
+    # components by their declared names (field.<name>, bars as <name>bar);
+    # every term above uses the canonical flavour index FL_I, so the
+    # rotations registered below reach all of them
+    i, j = FL_I, FL_J
+    eL, eR, ER = Ll.eL, eRf.eR, PsiR.ER
+    eLbar, ELbar = Ll.eLbar, PsiL.ELbar
+    nuLbar, NLbar, NR, NRbar = Ll.nuLbar, PsiL.NLbar, PsiR.NR, PsiR.NRbar
 
     # --- pipeline -----------------------------------------------------------
     report = model.check_invariance()
@@ -117,12 +101,18 @@ def main():
     report.raise_on_failure()
     print("tadpole:   ", model.solve_tadpoles([mu2]))
 
-    # gauge rotations (Weinberg + W±) from feynlag.models
-    Z, A = weinberg_rotation(model, SU2L, U1Y)
-    Wp, Wm = charged_current_rotation(model, SU2L)
+    # the model finds which fields mix, with their charge (derived from the
+    # vacuum); the gauge blocks give W± and (Z, γ), the charged-lepton block
+    # is the (e, E) mixing studied below
+    print("\nmass blocks:")
+    for block in model.mass_blocks():
+        print("  ", block)
+    charged, neutral = model.mass_blocks(kind="gauge")
+    Z, A = model.diagonalize(neutral, names=["Z", "A"]).new_fields
+    Wp, Wm = model.diagonalize(charged, names=["Wp"],
+                               conjugate_names=["Wm"]).rotation.new_fields
 
     # --- charged-lepton mass matrix ------------------------------------------
-    j = sp.Symbol("fl_j", integer=True)
     bars, rights = (eLbar, ELbar), (eR, ER)
     M2 = sp.Matrix(2, 2, lambda a, b: fermion_mass_matrix(
         LYuk, bars[a], rights[b], model.vacuum, 1, (i, j),
@@ -136,15 +126,20 @@ def main():
     print("        no bilinear pairs nuL with any right-handed state)")
 
     # --- biunitary diagonalization -------------------------------------------
+    # the (e, E) block: rows (eL, EL), columns (eR, ER) — the matrix above.
+    # diagonalize() takes θ_L from M·Mᵀ and θ_R from Mᵀ·M (the analytic
+    # tan 2θ route) and registers the four rotations, field side AND bar side
+    # of each chirality, on the new states e1, e2 (e1L, e1R, e1Lbar, ...).
+    (block,) = [b for b in model.mass_blocks(kind="fermion")
+                if eL in b.fields]
+    assert block.matrix == M2
     thL, thR = sp.symbols("thL thR", real=True)
-    e1L, e2L = sp.IndexedBase("e1L"), sp.IndexedBase("e2L")
-    e1R, e2R = sp.IndexedBase("e1R"), sp.IndexedBase("e2R")
-    e1Lbar, e2Lbar = sp.IndexedBase("e1Lbar"), sp.IndexedBase("e2Lbar")
-    e1Rbar, e2Rbar = sp.IndexedBase("e1Rbar"), sp.IndexedBase("e2Rbar")
-
-    rotL, rotR = diagonalize_svd_2x2(M2, [eL[i], EL[i]], [eR[i], ER[i]],
-                                     [e1L[i], e2L[i]], [e1R[i], e2R[i]],
-                                     angle_left=thL, angle_right=thR)
+    d = model.diagonalize(block, names=["e1", "e2"], angle=(thL, thR))
+    rotL, rotR = d.rotations[0], d.rotations[2]
+    e1L, e2L = d.new_fields
+    e1R, e2R = d.new_right
+    e1Lbar, e2Lbar = (bar_partner(f) for f in d.new_fields)
+    e1Rbar, e2Rbar = (bar_partner(f) for f in d.new_right)
     print("\nθ_L (v²/M²-suppressed):", rotL.angle_relation)
     print("θ_R (the large doublet-mixing angle):", rotR.angle_relation)
 
@@ -159,19 +154,8 @@ def main():
     print(f"benchmark: θ_L={thL_num:.3e}, θ_R={thR_num:.3e}, "
           f"m_e={abs(D[0, 0]):.4f}, m_E={abs(D[1, 1]):.2f} GeV")
 
-    # register the fermion rotations: per chirality, field-side AND bar-side
-    # with the same real matrix (Rotation carries Indexed old fields — the
-    # substitution reaches every Bilinear slot because all terms share the
-    # same flavor index i; expand_bilinear then distributes the sums)
-    model.rotate(rotL)
-    model.rotate(Rotation([eLbar[i], ELbar[i]], [e1Lbar[i], e2Lbar[i]],
-                          rotation_2x2(thL)))
-    model.rotate(rotR)
-    model.rotate(Rotation([eRbar[i], ERbar[i]], [e1Rbar[i], e2Rbar[i]],
-                          rotation_2x2(thR)))
-
     # --- physical couplings ---------------------------------------------------
-    h = sp.Symbol("H0_r", real=True)
+    h = H.H0_r                 # the Higgs fluctuation, by name
     LYuk_phys = model.physical_lagrangian(sector="yukawa")
     table = extract_fermion_vertices(LYuk_phys, [Z, A, Wp, Wm, h])
 

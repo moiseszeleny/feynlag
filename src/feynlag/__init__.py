@@ -1,6 +1,6 @@
 """feynlag — tree-level Feynman rules from BSM Lagrangians in pure SymPy."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from .conventions import METRIC_SIGNATURE, SQRT2, tidy
 from .dirac import (
@@ -37,6 +37,7 @@ from .fields import (
     WeylFermion, bar_partner, conjugate_pair, dag, hc,
 )
 from .vacuum import (
+    Diagonalization, MassBlock, PhysicalRegistry, goldstone_directions,
     MajoranaRotation, Rotation, Vacuum, build_mass_matrix, charged_mass_matrix,
     diagonalize_orthogonal_2x2, diagonalize_svd, diagonalize_svd_2x2,
     diagonalize_takagi,
@@ -55,7 +56,15 @@ from .invariance import (
     check_mass_dimension, gauge_variation,
 )
 from .lagrangian import (
-    InvarianceReport, Lagrangian, LagrangianTerm, Model, ValidationReport,
+    InvarianceReport, Lagrangian, LagrangianTerm, Model, ModelSummary,
+    ParameterReport, ValidationReport,
+)
+from .terms import (
+    FL_I, FL_J, dirac_mass, eps, inner, kinetic, majorana_mass, tilde,
+    weinberg, yukawa,
+)
+from .general import (
+    GeneralLagrangian, TermCoverage, most_general_lagrangian, term_coverage,
 )
 from .anomalies import (
     AnomalyReport, anomaly_coefficients, check_anomaly_free,
@@ -82,6 +91,12 @@ from .suggest import (
 )
 
 __all__ = [
+    "GeneralLagrangian", "TermCoverage", "most_general_lagrangian",
+    "term_coverage",
+    "MassBlock", "Diagonalization", "PhysicalRegistry", "goldstone_directions",
+    "ModelSummary", "ParameterReport",
+    "FL_I", "FL_J", "inner", "eps", "tilde", "yukawa", "dirac_mass",
+    "majorana_mass", "weinberg", "kinetic",
     "TexSymbol", "tex_symbol",
     "Parameter", "ExternalParameter", "InternalParameter", "ParameterSet",
     "GaugeGroup", "U1", "SUN", "SU2", "SU3", "DiscreteSymmetry", "ZN", "S3",

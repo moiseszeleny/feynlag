@@ -33,6 +33,129 @@ All notable changes to feynlag are documented here. The format follows
 - `Amplitude.squared` no longer crashes on a line with zero couplings (its
   trace is a plain `0`).
 
+## [0.4.0] — 2026-11-15
+
+Model building for particle physicists: terms written at field level, the
+physical basis found by the model, and a front door that starts from every
+allowed operator (#46–#50). All additive; 0.3.0 code runs unchanged.
+
+### Added
+- Field-level term constructors (`feynlag.terms`): `yukawa(y, FL, S, FR)`,
+  `dirac_mass(M, FL, FR)`, `majorana_mass(M, F)` and `weinberg(c, F, S)` build
+  the gauge contraction, the flavour indices and the `+ h.c.` in one call;
+  `tilde(H)` selects the conjugate doublet, and `inner(A, B)` / `eps(A, B)`
+  give the scalar invariants `A†B` and `Aᵀ(iσ₂)B`. A coupling may be a
+  parameter (flavour-universal) or an `IndexedBase` matrix (`Y[i, j]`). Each
+  returns exactly the expression the component-level `Bilinear` code produces.
+  A term whose U(1) charges do not balance raises a `ValueError` giving the
+  charge sum and, where it applies, the `S` ↔ `tilde(S)` fix; an unsupported
+  representation raises `NotImplementedError`. `feynlag.suggest` now uses the
+  same contraction functions.
+- `kinetic(*fields)` and `Lagrangian.add_kinetic(*fields)`: the scalar kinetic
+  terms and fermion gauge currents of a list of fields.
+- `FL_I`, `FL_J`: canonical flavour-index symbols, the defaults of the
+  constructors above.
+- `ParameterSet.external(...)` / `.internal(...)`: create, register and return
+  a parameter, so it is declared once (`Model(parameters=P)`).
+- Named component access: `H.H0`, `PsiL.EL`, `PsiL.ELbar`, and after
+  `expand_vev` the fluctuations `H.H0_r` / `H.H0_i`; `Field.named()` lists
+  them. The stored object is returned, so a tex-carrying symbol is never
+  rebuilt by name.
+- `Model.check_parameters()` / `Model.undeclared_symbols()`: Lagrangian or VEV
+  symbols that are neither a declared parameter nor a field. Opt-in through
+  `Model.validate(parameters=True)`; the default `validate()` is unchanged.
+- `Model.summary()`: the field-content table (type, gauge representations,
+  discrete and global assignments, flavours, VEVs) and the parameter table, as
+  text or Markdown.
+- `Parameter.__rpow__` (`2 ** p`).
+
+- Guided physical basis. `Model.mass_blocks()` partitions the scalar
+  fluctuations and the Dirac fermion legs into the blocks that actually mix,
+  each tagged with its electric charge (derived from the vacuum), its CP
+  content and its Goldstone directions (`i T^a⟨φ⟩`, checked to be zero modes;
+  unsolved tadpoles are reported). Nothing is assumed about CP: a
+  CP-violating potential gives one merged neutral block.
+  `Model.diagonalize(block, names=[...])` picks the route (Goldstone-fixed
+  rotation, `tan 2θ`, analytic 2×2 biunitary with bar-side rotations, or a
+  numeric rotation with `values=`), verifies it, registers it, and creates the
+  new symbols and conjugate pairs. With `values=` a symbolic 2×2 keeps its
+  symbolic angle and the numbers choose the `tan 2θ` branch so the first name
+  is the heavier state; `branch_valid_for` records where that holds.
+  `Model.physical` accumulates `bosons`, `cmap`, `conjugates`, `charges`,
+  `goldstones` and `masses`; `weinberg_rotation`, `charged_current_rotation`
+  and `to_physical_basis` record into it too. A symbolic block with no closed
+  form, a field mixing with a conjugate field, and flavoured or Majorana
+  fermion blocks are refused or reported with the route to use instead.
+- `Model.most_general(name, fields, gauge_groups, discrete_groups)`
+  (`feynlag.general.most_general_lagrangian`): the most general Lagrangian
+  the declared symmetries allow, built from the `suggest` operator basis with
+  a named coupling of the right mass dimension per operator (`m2_k`, `mu_k`,
+  `lam_k`, `M_k`, `y_k`, `c_k`; `names=` overrides), flavour-matrix Yukawas
+  for multi-flavour fermions, and the kinetic terms. Gauge bosons missing from
+  `fields` are added. A potential operator needing `+ h.c.` gets one real
+  coupling (the CP-odd combination is not enumerated).
+- `Model.term_coverage()` / `Model.missing_terms()`: decompose a hand-written
+  potential and Yukawa sector on that basis and report the coefficient of each
+  invariant, the allowed invariants that are absent, and the remainder (a
+  non-invariant term, a complex coupling's CP-odd part, a soft breaking of a
+  declared symmetry).
+- `InvarianceReport.explain()` and `report.hints`: one plain sentence per
+  failed check (which monomial carries a net U(1) charge, gauge bosons missing
+  from `Model(fields=...)`, a sector missing its `+ h.c.`);
+  `raise_on_failure()` includes it. `invariance.u1_charge_breakdown` is the
+  underlying diagnostic. `report.failures` is unchanged.
+- Gauge bosons in the guided physical basis. `Model.mass_blocks(kind="gauge")`
+  returns the charged and neutral gauge blocks of every group that acts on a
+  VEV, and `Model.diagonalize` rotates them: the charge eigenstates
+  `(A_a − iA_b)/√2` are read off the unbroken charge, and the photon is fixed
+  exactly as `A ∝ Σ (c_k/g_k) A_k`, with no diagonalization. One massive
+  neutral state is then fixed too (`angle=` gives `rotation_2x2(−θ_W)`); two
+  that mix (`Z`–`Z′`) take the `tan 2θ` route in the photon's complement and
+  are registered as one composed rotation; two charged states that mix
+  (`W_L`–`W_R`) likewise. For the SM the result equals `weinberg_rotation` /
+  `charged_current_rotation` exactly, which remain available.
+  `mass_blocks()` with no `kind` now returns scalar, gauge and fermion blocks.
+- A scalar component can be expanded around a zero VEV
+  (`expand_vev({comp: 0})`, e.g. the neutral component of an inert doublet):
+  `Model.tadpoles()` / `solve_tadpoles` used to raise on it. Its stationarity
+  condition is reported under the fluctuation symbol only when it does not
+  vanish identically.
+
+### Changed
+- `examples/thdm.py` uses the guided physical basis; its previous output is
+  unchanged and it now also prints the blocks, `tan β`, `m_A²`, `m_{H±}²` and
+  the derived charges.
+- `examples/sm_u1x.py` gets its gauge rotations from `mass_blocks` /
+  `diagonalize` instead of two hand-chained rotations; its physics output is
+  unchanged (the intermediate `(Z0, X)` matrix is no longer printed).
+- `examples/sm_vll.py` is written with the new constructors; its printed
+  physics is unchanged.
+- The remaining model-building examples use the new API: `sm_scalar_gauge`,
+  `sm_u1x` (now throughout: Yukawas, kinetic terms, parameters, and the h–s
+  portal block through `diagonalize`), `sm_vll` (gauge and charged-lepton
+  rotations through `diagonalize`), `sm_seesaw`, `sm_weinberg` (which also
+  prints `term_coverage(max_dim=5)`), `thdm_s3` and `sm_decays`. Their physics
+  output is unchanged. The differences are flavour indices printed as
+  `fl_i`/`fl_j`, added summaries and mass-block listings, and larger
+  invariance-check counts (`add_kinetic` adds one term per field).
+  `fermi_theory`, `sm_ckm`, `ee_to_ff` and `sm_higgs_decays` keep their
+  component-level terms (see `examples/README.md`).
+- Tutorials: `SM_VLL`, `SM_U1X`, `SM_Seesaw` and `THDM_S3` follow the migrated
+  scripts, with the same printed physics. `SM_U1X` replaces the hand-chained
+  Weinberg → Z–Z′ rotations with `diagonalize` and checks that the composed
+  rotation equals `R₂(θ′)·R₁(θ_W)`. `ModelBuilding` gains a section on
+  `Model.most_general`, `term_coverage` and `report.explain()`.
+  `SM_Feynman_Rules` keeps its hand-built model and ends with a section that
+  asserts the constructors reproduce it.
+
+### Fixed
+- `term_coverage` with a flavour-matrix Weinberg coefficient `c[i, j]`: the
+  coefficient came back as `(3c_ij + c_ji)/4` with a spurious remainder
+  ∝ `c_ij − c_ji`. `ν_iᵀCP_Lν_j` is symmetric in `i ↔ j`, so only the
+  symmetric part `(c_ij + c_ji)/2` is physical, and that is now returned with
+  no remainder. The basis operators are also put in the same canonical
+  flavour-index form as the model terms. Pinned in `tests/test_general.py`.
+
 ## [0.3.0] — 2026-10-07
 
 ### Added

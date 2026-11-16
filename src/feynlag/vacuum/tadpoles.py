@@ -21,10 +21,31 @@ def extract_tadpoles(potential, vacuum):
     V0 = vacuum.at_vacuum(potential)
     tadpoles = {}
     for vev in vacuum.vevs:
+        if vev == 0:
+            continue          # a zero VEV: handled through its fluctuation
         if not isinstance(vev, sp.Symbol):
             raise ValueError(f"cannot differentiate with respect to composite "
                              f"VEV {vev}; declare it as a plain symbol")
         tadpoles[vev] = sp.factor(sp.diff(V0, vev))
+
+    # A component expanded around a ZERO VEV (``expand_vev({φ: 0})``, e.g. an
+    # inert doublet split into its real and imaginary parts) has no VEV
+    # symbol to differentiate with respect to.  Its stationarity condition is
+    # the term linear in the fluctuation; it is reported, under the
+    # fluctuation symbol, only when it does not vanish identically — i.e.
+    # when ⟨φ⟩ = 0 is not actually a stationary point.
+    zero_vev = [(re, im) for s in vacuum.scalars
+                for vev, re, im in s.vev_expansions.values() if vev == 0]
+    if zero_vev:
+        shifted = vacuum.shift(potential)
+        for re, im in zero_vev:
+            for fluct in (re, im):
+                if fluct is None:
+                    continue
+                linear = sp.factor(vacuum.zero_fluctuations(
+                    sp.diff(shifted, fluct)))
+                if linear != 0:
+                    tadpoles[fluct] = linear
     return tadpoles
 
 

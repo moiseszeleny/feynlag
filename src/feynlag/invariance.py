@@ -15,9 +15,9 @@ Strategy (see plan): **explicit component transformation**.
   :func:`_fermion_transform_discrete`.
 - Global U(1)s: infinitesimal phase ``φ → (1 + iqα)φ`` with per-flavour
   fermion charges — see :func:`check_global_invariance`.
-- Hermiticity: ``expand(L − L*) = 0`` (valid for bosonic sectors; fermion
-  bilinears need Dirac-conjugation identities not yet implemented — see
-  ``Model.check_invariance``, which skips sectors containing ``Bilinear``).
+- Hermiticity: ``expand(L − L*) = 0``, for every sector — a fermion
+  ``Bilinear`` conjugates via ``Bilinear._eval_conjugate``
+  (``(ψ̄₁Γψ₂)† = ψ̄₂Γ̄ψ₁``), so a term missing its ``+ h.c.`` fails.
 - Mass dimension: symbolic power counting (renormalizability: ≤ 4).  A
   fermion ``Bilinear`` contributes exactly 3 (two spin-½ legs).
 """
@@ -256,6 +256,60 @@ def check_gauge_invariance(term, fields, group):
     return (not violations, violations)
 
 
+def u1_charge_breakdown(term, fields, group):
+    """Monomials of ``term`` that carry a non-zero charge under a U(1).
+
+    A diagnostic for a failed abelian invariance check: each monomial's
+    charge is the sum over its factors (a conjugated scalar and a bar leg
+    count with the opposite sign, powers multiply), and an invariant term has
+    every monomial neutral.
+
+    Returns:
+        ``[(monomial, charge)]`` for the charged monomials (coefficients
+        stripped), in term order.
+    """
+    from .fields import Fermion
+
+    charge = {}
+    for f in fields:
+        q = f.charge(group)
+        for comp in f.components:
+            charge[comp] = q
+        if isinstance(f, Fermion):
+            for bar in f.bar_components:
+                charge[bar] = -q
+
+    def of(node):
+        if node in charge:
+            return charge[node]
+        if isinstance(node, sp.Indexed):
+            return charge.get(node.base, sp.S.Zero)
+        if isinstance(node, sp.conjugate):
+            return -of(node.args[0])
+        if isinstance(node, sp.Pow):
+            return node.exp * of(node.base)
+        if isinstance(node, Bilinear):
+            return of(node.bar) + of(node.field)
+        if isinstance(node, MajoranaBilinear):
+            return of(node.field1) + of(node.field2)
+        if isinstance(node, PartialMu):
+            return of(node.args[0])
+        if isinstance(node, sp.Mul):
+            return sum((of(a) for a in node.args), sp.S.Zero)
+        return sp.S.Zero
+
+    def fields_only(mono):
+        keep = [a for a in sp.Mul.make_args(mono) if of(a) != 0]
+        return sp.Mul(*keep)
+
+    out = {}
+    for mono in sp.Add.make_args(expand_bilinear(sp.expand(term))):
+        q = sp.simplify(of(mono))
+        if q != 0:
+            out.setdefault(fields_only(mono), q)
+    return list(out.items())
+
+
 def check_discrete_invariance(term, group):
     """Whether ``term`` is invariant under every generator of ``group``.
 
@@ -325,7 +379,10 @@ def check_global_invariance(term, group):
 
 
 def check_hermiticity(expr):
-    """Whether a bosonic Lagrangian (sector) is hermitian: ``L = L*``.
+    """Whether a Lagrangian (sector) is hermitian: ``L = L*``.
+
+    Fermion sandwiches conjugate through ``Bilinear._eval_conjugate`` /
+    ``MajoranaBilinear._eval_conjugate``, so this covers fermionic sectors too.
 
     Returns:
         ``(ok: bool, residual)``.

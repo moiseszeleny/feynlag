@@ -28,13 +28,17 @@ from dataclasses import dataclass, field as dc_field
 import sympy as sp
 
 from .fields import Fermion, Scalar, dag
-from .groups.gauge import SU2
 from .invariance import (
     _apply_field_map, _fermion_transform_discrete, check_gauge_invariance,
     check_discrete_invariance, check_hermiticity, check_mass_dimension,
 )
 from .operators import Dmu
 from .parameters import ExternalParameter
+from .terms import (
+    _charge_is_zero, _doublet_setup, _is_su2_doublet, _nonabelian_signature,
+    _u1_groups, contract_bare, contract_direct, contract_tilde,
+    contract_weinberg,
+)
 from .vertices.bilinear import (
     Bilinear, MajoranaBilinear, expand_bilinear, fermion_gauge_current,
 )
@@ -280,34 +284,8 @@ def build_lagrangian(suggestions, coupling_prefix="c", start=1):
 # Gauge building blocks
 # --------------------------------------------------------------------------
 
-def _u1_groups(gauge_groups):
-    return [g for g in gauge_groups if getattr(g, "abelian", False)]
-
-
-def _nonabelian_signature(field, gauge_groups):
-    """Rep dimension of ``field`` under each non-abelian group (1 = singlet)."""
-    sig = []
-    for g in gauge_groups:
-        if getattr(g, "abelian", False):
-            continue
-        rep = field.reps.get(g)
-        sig.append((g, g.rep_dim(rep) if rep is not None else 1))
-    return tuple(sig)
-
-
 def _charge_vector(field_or_expr_charges, u1s):
     return tuple(field_or_expr_charges.get(g, sp.S.Zero) for g in u1s)
-
-
-def _is_su2_doublet(field, gauge_groups):
-    """True iff ``field`` is a 2 of exactly one SU(2) and a singlet of every
-    other non-abelian group."""
-    su2s = [g for g in gauge_groups if isinstance(g, SU2)]
-    doublet = [g for g in su2s if field.reps.get(g) == 2]
-    if len(doublet) != 1:
-        return False
-    sig = dict(_nonabelian_signature(field, gauge_groups))
-    return all(d == 1 for g, d in sig.items() if not isinstance(g, SU2))
 
 
 @dataclass
@@ -358,11 +336,6 @@ def _scalar_blocks(scalars, gauge_groups):
         blocks.append(_Block(sp.expand(expr), 2, q,
                              f"({A.name}·{B.name})"))
     return blocks
-
-
-def _charge_is_zero(charges, u1s):
-    total = sum((charges.get(g, sp.S.Zero) for g in u1s), sp.S.Zero)
-    return sp.simplify(total) == 0
 
 
 # --------------------------------------------------------------------------
@@ -438,44 +411,6 @@ def suggest_potential(scalars, gauge_groups, discrete_groups=(), max_dim=4,
 # suggest_yukawa
 # --------------------------------------------------------------------------
 
-def _nonabelian_reps(field, gauge_groups):
-    """Ordered ``[(group, dim), ...]`` of the non-abelian reps a field
-    actually carries (singlets omitted), in the field's own declaration
-    order — the order :meth:`~feynlag.fields.Field.generators` uses to build
-    the Kronecker product, hence the order of the flat component index."""
-    out = []
-    for g in field.reps:
-        if getattr(g, "abelian", False):
-            continue
-        d = g.rep_dim(field.reps[g])
-        if d > 1:
-            out.append((g, d))
-    return out
-
-
-def _flat_index(field, local, gauge_groups):
-    """Flat component index of ``field`` from per-group local indices.
-
-    ``local`` maps a non-abelian group to its index within that group's rep;
-    groups absent from ``local`` (singlets) contribute index 0.  Mixed-radix
-    in the field's declaration order — matching the Kronecker product in
-    :meth:`~feynlag.fields.Field.generators` / the flat ``components`` list.
-    """
-    idx = 0
-    for g, d in _nonabelian_reps(field, gauge_groups):
-        idx = idx * d + local.get(g, 0)
-    return idx
-
-
-def _spectator_iter(reps):
-    """Cartesian product over a list of ``(group, dim)`` index ranges,
-    yielding ``{group: local_index}`` dicts (one for the empty list)."""
-    groups = [g for g, _ in reps]
-    ranges = [range(d) for _, d in reps]
-    for combo in itertools.product(*ranges):
-        yield dict(zip(groups, combo))
-
-
 def _scalar_leg_options(FL, FR, scalars, gauge_groups):
     """Yield ``(scalar_contraction_expr_builder, dim, charges, label)`` for
     every gauge-(non-abelian)-invariant way to sandwich ``F̄_L Γ F_R`` with a
@@ -485,70 +420,43 @@ def _scalar_leg_options(FL, FR, scalars, gauge_groups):
     with flavor indices ``i`` (bar leg) and ``j`` (field leg).  Non-abelian
     indices other than the SU(2) one a doublet scalar saturates are summed
     diagonally (the ``δ``-contraction — e.g. the SU(3) color sum of a quark
-    Yukawa, mirroring ``examples/sm_scalar_gauge.py``'s ``qcolor``).
+    Yukawa, mirroring ``examples/sm_scalar_gauge.py``'s ``qcolor``).  The
+    contractions themselves live in :mod:`feynlag.terms`.
     """
-    from .dirac import diracPR
-
     u1s = _u1_groups(gauge_groups)
-    sigL = _nonabelian_signature(FL, gauge_groups)
-    sigR = _nonabelian_signature(FR, gauge_groups)
 
     def bare_charges(scalar_charges):
         return {g: -FL.charge(g) + FR.charge(g) + scalar_charges.get(g, 0)
                 for g in u1s}
 
     # bare Dirac mass: matched non-abelian signatures, no scalar
-    if sigL == sigR:
+    if (_nonabelian_signature(FL, gauge_groups)
+            == _nonabelian_signature(FR, gauge_groups)):
         def builder(i, j, FL=FL, FR=FR):
-            return sum(Bilinear(FL.bar_components[k][i], diracPR,
-                                FR.components[k][j])
-                       for k in range(FL.dim))
+            return contract_bare(FL, FR, i, j)
         yield builder, 3, bare_charges({}), f"{FL.name}̄·{FR.name}"
 
     # doublet(F_L) × singlet-under-SU(2)(F_R): a doublet scalar saturates the
     # SU(2) index; every other non-abelian rep must match and is δ-summed.
-    su2s = [g for g in gauge_groups if isinstance(g, SU2)]
-    fl_su2 = [g for g in su2s if FL.reps.get(g) == 2]
-    if len(fl_su2) == 1 and all(FR.reps.get(g) != 2 for g in su2s):
-        su2 = fl_su2[0]
-        # spectator reps = FL's non-abelian reps other than the saturated SU(2)
-        spec = [(g, d) for g, d in _nonabelian_reps(FL, gauge_groups)
-                if g is not su2]
-        # they must equal FR's non-abelian reps (color etc.)
-        if spec == _nonabelian_reps(FR, gauge_groups):
-            for S in scalars:
-                if not _is_su2_doublet(S, gauge_groups):
-                    continue
-                qS = {g: S.charge(g) for g in u1s}
-                qSc = {g: -S.charge(g) for g in u1s}
+    setup = _doublet_setup(FL, FR, gauge_groups)
+    if setup is None:
+        return
+    su2, spec = setup
+    for S in scalars:
+        if not _is_su2_doublet(S, gauge_groups):
+            continue
+        qS = {g: S.charge(g) for g in u1s}
+        qSc = {g: -S.charge(g) for g in u1s}
 
-                def builder_direct(i, j, FL=FL, FR=FR, S=S, su2=su2, spec=spec):
-                    total = sp.S.Zero
-                    for sp_idx in _spectator_iter(spec):
-                        fr = FR.components[_flat_index(FR, sp_idx, gauge_groups)]
-                        for a in (0, 1):
-                            fl = FL.bar_components[_flat_index(
-                                FL, {su2: a, **sp_idx}, gauge_groups)]
-                            total += S.components[a] * Bilinear(
-                                fl[i], diracPR, fr[j])
-                    return total
-                yield (builder_direct, 4, bare_charges(qS),
-                       f"{FL.name}̄·{S.name} {FR.name}")
+        def builder_direct(i, j, FL=FL, FR=FR, S=S):
+            return contract_direct(FL, S, FR, i, j, su2, spec, gauge_groups)
+        yield (builder_direct, 4, bare_charges(qS),
+               f"{FL.name}̄·{S.name} {FR.name}")
 
-                def builder_tilde(i, j, FL=FL, FR=FR, S=S, su2=su2, spec=spec):
-                    eps = {(0, 1): 1, (1, 0): -1}
-                    total = sp.S.Zero
-                    for sp_idx in _spectator_iter(spec):
-                        fr = FR.components[_flat_index(FR, sp_idx, gauge_groups)]
-                        for a, b in ((0, 1), (1, 0)):
-                            fl = FL.bar_components[_flat_index(
-                                FL, {su2: a, **sp_idx}, gauge_groups)]
-                            total += (eps[(a, b)]
-                                      * sp.conjugate(S.components[b])
-                                      * Bilinear(fl[i], diracPR, fr[j]))
-                    return total
-                yield (builder_tilde, 4, bare_charges(qSc),
-                       f"{FL.name}̄·{S.name}̃ {FR.name}")
+        def builder_tilde(i, j, FL=FL, FR=FR, S=S):
+            return contract_tilde(FL, S, FR, i, j, su2, spec, gauge_groups)
+        yield (builder_tilde, 4, bare_charges(qSc),
+               f"{FL.name}̄·{S.name}̃ {FR.name}")
 
 
 def _majorana_leg_options(FL, scalars, gauge_groups):
@@ -558,29 +466,18 @@ def _majorana_leg_options(FL, scalars, gauge_groups):
     The operator is ``(ε_ab F^a H^b)(ε_cd F^c H^d)`` with the Majorana
     ``C P_L`` between the two fermion legs — ``builder(i, j)`` returns the
     coefficient-free :class:`~feynlag.vertices.bilinear.MajoranaBilinear`
-    expression.  Only doublet ``F`` and doublet scalars qualify (raises are
-    avoided by the ``_is_su2_doublet`` guards); its U(1) charge is
-    ``2 q_F + 2 q_S``.
+    expression (:func:`feynlag.terms.contract_weinberg`).  Only doublet ``F``
+    and doublet scalars qualify; its U(1) charge is ``2 q_F + 2 q_S``.
     """
-    from .dirac import diracC, diracPL
-
     u1s = _u1_groups(gauge_groups)
     if not _is_su2_doublet(FL, gauge_groups):
         return
-    CPL = diracC * diracPL
     for S in scalars:
         if not _is_su2_doublet(S, gauge_groups):
             continue
 
         def builder(i, j, FL=FL, S=S):
-            # (εX)_a = ε_ab X^b with ε_12 = 1, ε_21 = −1  →  (εX) = [X^2, −X^1]
-            epsS = [S.components[1], -S.components[0]]
-            total = sp.S.Zero
-            for a in (0, 1):
-                for c in (0, 1):
-                    total += epsS[a] * epsS[c] * MajoranaBilinear(
-                        FL.components[a][i], CPL, FL.components[c][j])
-            return total
+            return contract_weinberg(FL, S, i, j)
 
         charges = {g: 2 * FL.charge(g) + 2 * S.charge(g) for g in u1s}
         yield builder, 5, charges, f"({FL.name}·ε{S.name})² [Weinberg]"

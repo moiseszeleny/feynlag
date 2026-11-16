@@ -75,3 +75,34 @@ def test_unknown_dependency_raises():
 def test_duplicate_name_raises():
     with pytest.raises(ValueError, match="duplicate"):
         ParameterSet(ExternalParameter("x", 1.0), ExternalParameter("x", 2.0))
+
+
+def test_parameter_set_factories_declare_once():
+    """``P.external`` / ``P.internal`` create, register and return."""
+    P = ParameterSet()
+    v = P.external("v", 246.0, positive=True, unit_dim=1)
+    lam = P.external("lam", 0.13)
+    mu2 = P.internal("mu2", lam * v**2, unit_dim=2)
+    assert isinstance(v, ExternalParameter) and isinstance(mu2, InternalParameter)
+    assert [p.name for p in P] == ["v", "lam", "mu2"]
+    assert P["v"] is v and P[mu2.s] is mu2
+    assert P.resolve()[mu2.s] == lam.s * v.s**2
+    with pytest.raises(ValueError, match="duplicate"):
+        P.external("v", 1.0)
+
+
+def test_parameters_work_in_expressions_without_dot_s():
+    """A Parameter is usable wherever its symbol is (no ``.s`` needed)."""
+    from feynlag import Bilinear, diracPR
+
+    v = ExternalParameter("v", 246.0, positive=True)
+    y = ExternalParameter("y", 0.1, real=False)
+    psi, psibar = sp.IndexedBase("psi"), sp.IndexedBase("psibar")
+    i = sp.Symbol("i", integer=True)
+    B = Bilinear(psibar[i], diracPR, psi[i])
+    assert y * B == y.s * B and B * y == y.s * B
+    assert -v == -v.s and 1 / v == 1 / v.s and 2 ** v == 2 ** v.s
+    assert sp.sqrt(v) == sp.sqrt(v.s)
+    assert sp.conjugate(y) == sp.conjugate(y.s)
+    assert sp.conjugate(v) == v.s                      # positive ⇒ real
+    assert sp.Matrix([[v, y]]) == sp.Matrix([[v.s, y.s]])

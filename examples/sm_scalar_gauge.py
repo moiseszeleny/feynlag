@@ -7,11 +7,11 @@ Run:  python examples/sm_scalar_gauge.py
 import sympy as sp
 
 from feynlag import (
-    Bilinear, DiracGamma, Dmu, ExternalParameter, Lagrangian, Model, SU3,
-    WeylFermion, charged_current_rotation, conjugate_pair, cubic_couplings,
-    dag, diracPL, diracPR, electroweak_scaffold, extract_fermion_vertices,
-    fermion_feynman_rule, fermion_gauge_current, fermion_mass_matrix,
-    latex_feynman_table, quartic_couplings, weinberg_rotation,
+    FL_I, FL_J, DiracGamma, Lagrangian, Model, ParameterSet, SU3,
+    WeylFermion, conjugate_pair, cubic_couplings, diracPL, diracPR,
+    electroweak_scaffold, extract_fermion_vertices, fermion_feynman_rule,
+    fermion_mass_matrix, latex_feynman_table, quartic_couplings, tilde,
+    yukawa,
 )
 from feynlag.export.ufo.vvvv import (ADJOINT_VVV_COLOR,
                                      adjoint_vvv, adjoint_vvvv,
@@ -24,8 +24,9 @@ def main():
     # colour sector is this example's own addition.
     ew = electroweak_scaffold(lam=0.129)
     SU2L, U1Y, H = ew.SU2L, ew.U1Y, ew.H
-    gw, g1, v, lam, mu2 = ew.gw, ew.g1, ew.v, ew.lam, ew.mu2
-    gs = ExternalParameter("gs", 1.22, positive=True)
+    v, mu2 = ew.v, ew.mu2
+    P = ParameterSet(*ew.parameters)          # declare once: create + register
+    gs = P.external("gs", 1.22, positive=True)
     SU3c = SU3("SU3c", coupling=gs)
 
     Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
@@ -55,73 +56,30 @@ def main():
     W, B = ew.W, ew.B
     G = SU3c.bosons("G")
 
-    # --- Lagrangian (user-written, FeynRules style) ------------------------
-    DH = Dmu(H)
-
-    i, j = sp.symbols("i j", integer=True)
-    Ye = sp.IndexedBase("Ye")
-    Gp, H0 = H.components
-    nuLbar, eLbar = Ll.bar_components
-    eRc, eRbar = eR.components[0], eR.bar_components[0]
-
-    # L_Yuk = - Ye[i,j] Lbar_i H e_R[j] + h.c.  (P_R sandwich; h.c. carries P_L)
-    LYuk = -(Ye[i, j] * Gp * Bilinear(nuLbar[i], diracPR, eRc[j])
-             + Ye[i, j] * H0 * Bilinear(eLbar[i], diracPR, eRc[j]))
-    LYuk += -(sp.conjugate(Ye[i, j]) * sp.conjugate(Gp)
-              * Bilinear(eRbar[j], diracPL, Ll.components[0][i])
-              + sp.conjugate(Ye[i, j]) * sp.conjugate(H0)
-              * Bilinear(eRbar[j], diracPL, Ll.components[1][i]))
-
-    # --- quark Yukawas: same L̄·H·(e_R-like)-field pattern as the lepton
-    # sector, with an explicit color sum (the color index isn't a symbolic
-    # IndexedBase axis here — it's baked into which Kronecker-product
-    # component of QL/uR/dR you pick, so it's summed in Python, not left as
-    # a free index like the flavor i,j).
-    Yu, Yd = sp.IndexedBase("Yu"), sp.IndexedBase("Yd")
-    qL_u, qL_d = QL.components[:3], QL.components[3:]
-    qLbar_u, qLbar_d = QL.bar_components[:3], QL.bar_components[3:]
-    uRc, uRbar = uR.components, uR.bar_components
-    dRc, dRbar = dR.components, dR.bar_components
-
-    def qcolor(bar_list, gamma, field_list, idx1, idx2):
-        return sum(Bilinear(bar_list[c][idx1], gamma, field_list[c][idx2])
-                   for c in range(3))
-
-    # down-type: L_Yuk_d = -Yd[i,j] Qbar_i . H d_R[j] + h.c.
-    LYuk_d = -(Yd[i, j] * Gp * qcolor(qLbar_u, diracPR, dRc, i, j)
-               + Yd[i, j] * H0 * qcolor(qLbar_d, diracPR, dRc, i, j))
-    LYuk_d += -(sp.conjugate(Yd[i, j]) * sp.conjugate(Gp)
-                * qcolor(dRbar, diracPL, qL_u, j, i)
-                + sp.conjugate(Yd[i, j]) * sp.conjugate(H0)
-                * qcolor(dRbar, diracPL, qL_d, j, i))
-
-    # up-type: uses the conjugate ("tilde") Higgs doublet H̃=(H0*, -Gp*);
-    # no Htilde Field/abstraction exists (or is needed) anywhere in the
-    # codebase — built inline exactly like the lepton h.c. terms already do.
-    LYuk_u = -(Yu[i, j] * sp.conjugate(H0) * qcolor(qLbar_u, diracPR, uRc, i, j)
-               + Yu[i, j] * (-sp.conjugate(Gp))
-               * qcolor(qLbar_d, diracPR, uRc, i, j))
-    LYuk_u += -(sp.conjugate(Yu[i, j]) * H0
-                * qcolor(uRbar, diracPL, qL_u, j, i)
-                + sp.conjugate(Yu[i, j]) * (-Gp)
-                * qcolor(uRbar, diracPL, qL_d, j, i))
-
-    # i psibar gamma^mu D_mu psi, interaction part: g A^a psibar gamma^mu T^a P psi
-    current = fermion_gauge_current(Ll, i) + fermion_gauge_current(eR, i)
-    current_quarks = (fermion_gauge_current(QL, i)
-                      + fermion_gauge_current(uR, i)
-                      + fermion_gauge_current(dR, i))
+    # --- Lagrangian (field level) -------------------------------------------
+    # Each constructor does the gauge contraction, the flavour indices and
+    # the + h.c.; the colour index of the quark terms is a spectator, summed
+    # diagonally.  A flavour matrix (IndexedBase) gives Y[fl_i, fl_j] with
+    # the canonical indices FL_I (barred doublet leg) and FL_J (singlet leg).
+    Ye, Yu, Yd = (sp.IndexedBase(n) for n in ("Ye", "Yu", "Yd"))
+    LYuk = yukawa(Ye, Ll, H, eR)                     # −Ye L̄ H e_R + h.c.
+    LYuk_d = yukawa(Yd, QL, H, dR)                   # −Yd Q̄ H d_R + h.c.
+    LYuk_u = yukawa(Yu, QL, tilde(H), uR)            # −Yu Q̄ H̃ u_R, H̃ = iσ₂H*
 
     L = Lagrangian()
     ew.add_higgs(L)                                    # kinetic + potential
-    L.add(LYuk, sector="yukawa")
-    L.add(current, sector="yukawa")
-    L.add(LYuk_d + LYuk_u, sector="yukawa")
-    L.add(current_quarks, sector="yukawa")
+    L.add(LYuk + LYuk_d + LYuk_u, sector="yukawa")
+    L.add_kinetic(Ll, eR, QL, uR, dR)                  # the gauge currents
 
     model = Model("SM-EW+QCD", gauge_groups=[SU2L, U1Y, SU3c],
                   fields=[H, Ll, eR, QL, uR, dR, W, B, G],
-                  parameters=[gw, g1, gs, v, lam, mu2], lagrangian=L)
+                  parameters=P, lagrangian=L)
+    print(model.summary())
+    print()
+
+    i, j = FL_I, FL_J
+    Gp = H.Gp
+    eLbar, eRc = Ll.eLbar, eR.eR
 
     # --- pipeline -----------------------------------------------------------
     # validate() is the umbrella: symmetry/hermiticity/dimension + gauge-anomaly
@@ -130,17 +88,26 @@ def main():
     print(model.validate().summary())
     print("tadpole:   ", model.solve_tadpoles([mu2]))
 
-    h, G0 = sp.Symbol("H0_r", real=True), sp.Symbol("H0_i", real=True)
+    h, G0 = H.H0_r, H.H0_i
     print("m_h² =", model.mass_matrix([h])[0, 0])
 
-    # gauge masses and Weinberg rotation
-    W1, W2, W3 = W.components
-    B0 = B.components[0]
+    # --- gauge sector: the model finds the blocks and their rotations ------
+    # (W¹,W² → W± from the unbroken charge; W³,B → Z,γ with the photon
+    # fixed as the massless direction of Q = T3 + Y)
+    charged, neutral = model.mass_blocks(kind="gauge")
+    print("gauge blocks:")
+    print("  ", charged)
+    print("  ", neutral)
     print("gauge M² =")
-    sp.pprint(model.gauge_mass_matrix([W1, W2, W3, B0]))
+    sp.pprint(model.gauge_mass_matrix([*W.components, *B.components]))
 
-    Z, A = weinberg_rotation(model, SU2L, U1Y)
-    Wp, Wm = charged_current_rotation(model, SU2L)
+    # names: massive states first, the photon last.  No angle= here, so the
+    # rotation is explicit in g, g' (with angle="thetaW" the couplings would
+    # stay in a free θ_W until tan θ_W = g'/g is substituted)
+    Z, A = model.diagonalize(neutral, names=["Z", "A"]).new_fields
+    # names: the positive-charge states; their conjugates are named too
+    Wp, Wm = model.diagonalize(charged, names=["Wp"],
+                               conjugate_names=["Wm"]).rotation.new_fields
 
     # --- scalar Feynman rules -----------------------------------------------
     Gm, cmap = conjugate_pair(Gp, "Gm")
@@ -173,9 +140,9 @@ def main():
     # quark mass matrices: color-diagonal, so any single color slot's
     # (bar_base, field_base) pair recovers the full flavor structure — no
     # diagonalization/CKM here (see the quark-sector comment above).
-    M_u = fermion_mass_matrix(LYuk_u, qLbar_u[0], uRc[0], model.vacuum, 3,
+    M_u = fermion_mass_matrix(LYuk_u, QL.uL_1bar, uR.uR_1, model.vacuum, 3,
                               (i, j), gamma=diracPR)
-    M_d = fermion_mass_matrix(LYuk_d, qLbar_d[0], dRc[0], model.vacuum, 3,
+    M_d = fermion_mass_matrix(LYuk_d, QL.dL_1bar, dR.dR_1, model.vacuum, 3,
                               (i, j), gamma=diracPR)
     print("\nup-quark mass matrix M_u =")
     sp.pprint(M_u)
@@ -236,7 +203,7 @@ def main():
     mu = sp.Symbol("mu", integer=True)
     gammaL = DiracGamma(mu) * diracPL
     gammaR = DiracGamma(mu) * diracPR
-    nuL, eL = Ll.components
+    eL, nuLbar, eRbar = Ll.eL, Ll.nuLbar, eR.eRbar
 
     def show(name, bar, gamma, field, boson):
         key = (bar, gamma, field)
