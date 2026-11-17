@@ -74,6 +74,18 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
   the initial-state average divides by each incoming leg's colour
   dimension. A coloured species is declared as a `DiracParticle` on one
   colour component with `color=N_c`.
+- **External gluons.** An external gluon is the calculator's single gluon
+  symbol with colour dimension `N²−1`. Colour tensors on a quark line with
+  two external bosons: `(M_first M_second)[x, y]` for a quark exchange
+  (`first` at the vertex next to the bar slot; `M = T^a` for a gluon, `1`
+  for a colour singlet) and `Σ_c T^c[x, y] f^{c a b}` for the gluon exchange,
+  with the three-gluon vertex's legs in the order (mediator, boson 1,
+  boson 2) for both `f` and the Lorentz tensor. The stripped `ggg` coupling
+  is `−g` (`adjoint_vvv`), so with `VVV_KAPPA = −1` the vertex is
+  `g f^{abc}[g^{μν}(p₁−p₂)^ρ + cyclic]`, momenta incoming. Two external
+  gluons are summed over physical polarizations,
+  `−g_{μν} + (k_μn_ν + n_μk_ν)/(k·n)`, each with the other gluon's momentum
+  as the light-like reference `n`.
 - **Polarization sums.** `−g_{μμ'} + k_μk_{μ'}/m²` for a massive external
   vector; `−g_{μμ'}` for a massless one, used only after the Ward identity
   `k_μM^μ = 0` has been checked on that amplitude. Mediators are in unitary

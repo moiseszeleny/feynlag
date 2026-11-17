@@ -572,7 +572,8 @@ four-point contact vertices, boson–boson scattering.
 ## 17.5 Tier 5 — coloured / hadronic 2→2 (parton level)
 
 **Channels**: four-quark scattering and quark–lepton processes (stage 5a,
-delivered); $q\bar q\to gg$, $qg\to qg$ (stage 5b); $gg\to gg$ (stage 5c).
+delivered); $q\bar q\to gg$, $qg\to qg$ (stage 5b, delivered); $gg\to gg$
+(stage 5c).
 **Effort: medium–large.** Parton level only: **no PDFs, no hadronic
 luminosity, fixed $\alpha_s$** — the same "no proton structure" scope as the
 rest of the library.
@@ -662,13 +663,64 @@ is handled as before.
 
 Worked example: `examples/qcd_scattering.py`.
 
-### Stage 5b — external gluons
+### Stage 5b — external gluons ✅ (delivered)
 
-$q\bar q\to gg$, $qg\to qg$, $gg\to q\bar q$ on the Tier 4 line engine:
-physical polarization sums for the gluons, the $ggg$ vertex with colour
-$f^{abc}$ (`adjoint_vvv`), and colour tensors with adjoint indices.
-**Oracle**: the $q\bar q\to gg$ entry of [ESW96, Table 7.1] and its
-crossings, plus an explicit polarization-vector evaluator.
+$q\bar q\to gg$, $gg\to q\bar q$, $qg\to qg$ and the mixed
+$q\bar q\to g\gamma$, on Tier 4's line engine. The external state is the
+calculator's gluon symbol.
+
+**Physical polarization sums.** For two external gluons $-g_{\mu\nu}$ is
+wrong: the amplitude satisfies $k_\mu\mathcal M^{\mu\nu}\propto k'^\nu$, not
+$0$, so unphysical polarizations survive (in a covariant gauge the ghosts
+cancel them). `VectorLeg(reference=n)` sums over the two physical ones,
+
+$$\sum\varepsilon_\mu\varepsilon^*_\nu=-g_{\mu\nu}+\frac{k_\mu n_\nu+n_\mu k_\nu}{k\cdot n},
+\qquad n^2=0 ,$$
+
+and the calculator gives each of two external gluons the other's momentum as
+$n$. The extra pieces are ordinary loose tensors, so the contraction code is
+unchanged. A single gluon (with a photon) keeps $-g$: there is no three-boson
+diagram and the abelian identity holds.
+
+**Colour.** `line_colour_tensor` over (bar-slot colour, field-slot colour,
+boson 1, boson 2): $(T^aT^b)_{xy}$ or $(T^bT^a)_{xy}$ for the two
+quark-exchange diagrams, in line order, and $\sum_cT^c_{xy}f^{cab}$ for the
+gluon exchange. The three-gluon vertex is one `VVV` vertex on the single
+gluon symbol with the stripped coupling $-g$ (`adjoint_vvv`); its legs are
+ordered (mediator, boson 1, boson 2) for both $f$ and the Lorentz tensor, so
+the two antisymmetries stay aligned and $\kappa=-1$ from stage 4b applies
+unchanged. `LineAmplitude.squared(colour=)` weights each pair of diagrams.
+
+**A hole in the Ward guard, found and closed.** Stages 4a–4c relied on the
+computed Ward check to refuse an invalid $-g$ sum. For two non-abelian
+vectors both summed with $-g$ it did not fire: the residue
+$k_\mu\mathcal M^{\mu\nu}\propto k'^\nu$ is squared by $-g$ to $k'^2=0$. The
+check now also contracts every other $-g$ leg with the probed leg's own
+momentum, which does see it. Nothing shipped before had two external
+non-abelian massless vectors, and the calculator never uses $-g$ for two
+gluons; the fix matters for hand-built amplitudes.
+
+**Verified** (`tests/test_gluons.py`):
+
+- **The parton table [ESW96, Table 7.1]**, exactly and symbolically:
+  $q\bar q\to gg=\tfrac{32}{27}\frac{t^2+u^2}{tu}-\tfrac83\frac{t^2+u^2}{s^2}$,
+  $gg\to q\bar q=\tfrac16\frac{t^2+u^2}{tu}-\tfrac38\frac{t^2+u^2}{s^2}$,
+  $qg\to qg=\frac{s^2+u^2}{t^2}-\tfrac49\frac{s^2+u^2}{su}$.
+  All three matched on the first run.
+- **Massive quarks** ($q\bar q\to gg$, $gg\to Q\bar Q$) against an explicit
+  evaluator — spinors, transverse polarization vectors, $T^a$ and $f^{abc}$,
+  the amplitude summed per colour and spin configuration — which first
+  checks its own Ward identity.
+- **Gauge independence**: quark momenta as reference vectors give the same
+  $\sum|\mathcal M|^2$.
+- **Controls**: with $\kappa$ flipped the Ward check fails; with $-g$ on both
+  gluons it fails too, and forcing it gives a different number.
+- **Ingredients**: the stripped $ggg$ coupling against `cubic_couplings` on
+  every triple; the polarization sum against explicit vectors; the colour
+  matrix ($\tfrac{16}{3}$, $-\tfrac23$, $12$, and
+  $K_{ab}-K_{ba}=iK_s$ from $[T^a,T^b]=if^{abc}T^c$).
+- **Abelian limits**: $q\bar q\to\gamma\gamma=N_cQ_q^4\cdot8e^4(u/t+t/u)$ and
+  $q\bar q\to g\gamma$ with $\mathrm{Tr}(T^aT^a)=4$.
 
 ### Stage 5c — $gg\to gg$
 
@@ -684,7 +736,7 @@ $\tfrac92\big(3-\tfrac{tu}{s^2}-\tfrac{su}{t^2}-\tfrac{st}{u^2}\big)$.
 | 2 ✅ | $e^+e^-\to\mu^+\mu^-$ (Z only); any single chiral-current diagram | ε (γ₅) algebra (`pheno.epsilon`): $\mathrm{Tr}[\gamma\gamma\gamma\gamma\gamma_5]$, ε·ε → Gram determinant, `forward_backward_asymmetry` | large | $d\sigma/d\cos\theta$ shape + $A_{FB}=\tfrac34A_eA_f$ vs [LEPEWWG06]; γ₅-carrying matrix oracle (massless + massive mediator) |
 | 3 ✅ | full $e^+e^-\to f\bar f$ (γ/Z interference); Bhabha, Møller, $\nu_ee$ | multi-diagram double sum (same-pairing product of traces; exchanged-pairing single trace); s/t/u topology enumeration; permutation-parity fermion signs; `ScatteringCalculator` | medium–large | **MadGraph 2.7878 pb** (inside $\lvert\eta\rvert<2.5$); Bhabha/Møller closed forms; explicit-spinor oracle |
 | 4 ✅ | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: $e^+e^-\to\phi^+\phi^-$ (`VSS`) | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors, boson exchange (**done**); 4c: `VSS` momentum tags (**done**) | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb** (engine: 19.447), exact high-energy cancellation, Higgsstrahlung closed form [Djouadi08]; 4c: scalar-QED closed form [BFIK05], Ward identity |
-| 5 (5a ✅) | 5a: four-quark scattering, $e^+e^-\to q\bar q$; 5b: $q\bar q\to gg$, $qg\to qg$; 5c: $gg\to gg$ | 5a: colour tensors and the colour matrix from the group generators (**done**); 5b: external gluons, physical polarization sums, $ggg$ colour; 5c: pure-boson amplitude, 4-point contact vertex | medium–large | 5a: ESW four-quark entries [ESW96], explicit colour + spinor sum; 5b, 5c: remaining ESW entries (no PDFs) |
+| 5 (5a, 5b ✅) | 5a: four-quark scattering, $e^+e^-\to q\bar q$; 5b: $q\bar q\to gg$, $qg\to qg$; 5c: $gg\to gg$ | 5a: colour tensors and the colour matrix from the group generators (**done**); 5b: external gluons, physical polarization sums, $ggg$ colour (**done**); 5c: pure-boson amplitude, 4-point contact vertex | medium–large | 5a: ESW four-quark entries [ESW96], explicit colour + spinor sum; 5b: ESW gluon entries, explicit polarization evaluator; 5c: ESW $gg\to gg$ (no PDFs) |
 
 The recommended order is the table order: Tier 1 gave the first native cross
 section for the cost of an object layer that reuses the existing covariant
@@ -698,8 +750,8 @@ See {doc}`decays_roadmap` for the parallel decay-side roadmap and its
 `n_momenta`/ε-drop precedent, `tests/test_scattering.py` for what Tiers 1–2
 pin, `tests/test_interference.py` for Tier 3 and
 `tests/test_line_scattering.py`, `tests/test_ww.py` and `tests/test_vss.py`
-for Tier 4's stages 4a, 4b and 4c, and `tests/test_colour.py` for Tier 5's
-stage 5a.
+for Tier 4's stages 4a, 4b and 4c, and `tests/test_colour.py` and `tests/test_gluons.py`
+for Tier 5's stages 5a and 5b.
 
 ## 17.7 References
 
@@ -727,7 +779,8 @@ stage 5a.
   Physics*, Cambridge Monographs on Particle Physics, Nuclear Physics and
   Cosmology 8, Cambridge University Press (1996), ISBN 978-0-521-54589-1 —
   Table 7.1, the parton-level $2\to2$ $|\mathcal M|^2$ table; Tier 5's stage
-  5a reproduces its four-quark entries.
+  5a reproduces its four-quark entries and stage 5b its entries with two
+  gluons.
 - **[LEPEWWG06]** ALEPH, DELPHI, L3, OPAL, SLD Collaborations, LEP
   Electroweak Working Group, SLD Electroweak and Heavy Flavour Groups,
   "Precision Electroweak Measurements on the Z Resonance," Phys. Rept. 427

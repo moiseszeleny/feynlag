@@ -24,7 +24,8 @@ import itertools
 
 import sympy as sp
 
-__all__ = ["colour_matrix", "four_fermion_colour_tensor"]
+__all__ = ["colour_matrix", "four_fermion_colour_tensor",
+           "line_colour_tensor"]
 
 
 def four_fermion_colour_tensor(lines, dims, generators=None):
@@ -69,6 +70,72 @@ def four_fermion_colour_tensor(lines, dims, generators=None):
             value = sum(Ta[xa, ya] * Tb[xb, yb] for Ta, Tb in zip(T_a, T_b))
         if value != 0:
             tensor[colours] = sp.nsimplify(value)
+    return tensor
+
+
+def line_colour_tensor(kind, dims, order=None, generators=None,
+                       structure=None):
+    """``K_d`` of a one-line diagram with two external bosons, as
+    ``{(x, y, a₁, a₂): value}`` — bar-slot colour, field-slot colour and the
+    colour index of each external boson (in the order of ``dims[2:]``).
+
+    Args:
+        kind: ``'fermion'`` (both bosons on the line), ``'gluon'`` (the line
+            emits the colour group's gauge boson, which meets the two
+            external bosons at the ``ggg`` vertex) or ``'singlet'`` (a
+            colour-singlet mediator).
+        dims: ``(d_bar, d_field, d_boson1, d_boson2)``; a colour singlet has
+            dimension ``1``.
+        order: for ``'fermion'``, ``(first, second)`` — which boson (``0`` or
+            ``1``) sits at the vertex next to the bar slot and which next to
+            the field slot; the tensor is ``(M_first · M_second)[x, y]`` with
+            ``M = T^a`` for a coloured boson and ``1`` for a singlet.
+        generators: the line's generator list ``T^a`` (needed whenever a
+            coloured boson couples to it).
+        structure: for ``'gluon'``, the structure constants as
+            ``{(a, b, c): f^{abc}}``.  The tensor is
+            ``Σ_c T^c[x, y] f^{c a₁ a₂}`` — mediator index first, then the
+            external bosons in order, the leg order the Lorentz tensor of
+            the three-boson vertex is built with.
+    """
+    d_bar, d_field, d1, d2 = dims
+    if d_bar != d_field:
+        raise ValueError(
+            f"colour: the fermion line joins colour dimensions {d_bar} and "
+            f"{d_field}; a coloured mediator or flavour-changing coloured "
+            f"vertex of that kind is not supported")
+    identity = sp.eye(d_bar)
+
+    def matrix(boson, index):
+        if (d1, d2)[boson] == 1:
+            return identity
+        return generators[index]
+
+    tensor = {}
+    for a1 in range(d1):
+        for a2 in range(d2):
+            adjoint = (a1, a2)
+            if kind == "fermion":
+                first, second = order
+                block = matrix(first, adjoint[first]) * matrix(second, adjoint[second])
+            elif kind == "singlet":
+                if d1 != 1 or d2 != 1:
+                    raise ValueError(
+                        "colour: a colour-singlet mediator cannot end on "
+                        "coloured external bosons")
+                block = identity
+            elif kind == "gluon":
+                block = sp.zeros(d_bar, d_bar)
+                for c, Tc in enumerate(generators):
+                    f = structure.get((c, a1, a2), 0)
+                    if f != 0:
+                        block += f * Tc
+            else:
+                raise ValueError(f"colour: unknown line diagram kind {kind!r}")
+            for x in range(d_bar):
+                for y in range(d_field):
+                    if block[x, y] != 0:
+                        tensor[(x, y, a1, a2)] = sp.nsimplify(block[x, y])
     return tensor
 
 

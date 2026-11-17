@@ -25,7 +25,11 @@ Scope, enforced rather than documented only:
   :class:`~feynlag.pheno.particles.DiracParticle` on **one** colour component
   with ``color=N_c``.  The gluon becomes one mediator (``calc.gluon``) with a
   colour-stripped coupling, and the colour factors come from
-  :mod:`~feynlag.pheno.colour`.  External gluons raise (stage 5b);
+  :mod:`~feynlag.pheno.colour`.  With two external gauge bosons on a quark
+  line (stage 5b: ``q q̄→gg``, ``qg→qg``, ``gg→q q̄``, ``q q̄→gγ``) the
+  external gluon is ``calc.gluon``, the ``ggg`` vertex is added, and two
+  external gluons are summed over their **physical** polarizations.
+  ``gg→gg`` raises (stage 5c);
 - mediators are the declared bosons in **unitary gauge**: leave Goldstones out
   of ``boson_fields`` (a massive vector's propagator already carries their
   physics as ``q_μq_ν/m²``).
@@ -41,7 +45,10 @@ from .particles import ExternalState, expand_particles
 from .scattering import (
     cross_section, differential_cross_section, forward_backward_asymmetry,
 )
-from .colour import colour_matrix, four_fermion_colour_tensor
+from ..export.ufo.vvvv import adjoint_vvv
+from .colour import (
+    colour_matrix, four_fermion_colour_tensor, line_colour_tensor,
+)
 from .diagrams import Amplitude
 from .topology import (
     ExternalBoson, ExternalFermion, enumerate_diagrams,
@@ -121,6 +128,13 @@ class ScatteringCalculator:
             vertices = self._at_zero_fields(vertices)
             if self.colour_group is not None:
                 vertices = self._colour_stripped(vertices)
+                if not self.colour_group.abelian:
+                    # one gluon symbol on all three legs; the colour factor
+                    # f^{abc} is carried by the diagram's colour tensor
+                    vertices.append(DecayVertex(
+                        particles=(self.gluon,) * 3, vertex_type="VVV",
+                        coupling=adjoint_vvv(self.colour_group),
+                        meta={"source": "colour"}))
             if self.gauge_groups:
                 wanted = set(self.boson_fields)
                 for vertex in self.model.gauge_vertices(
@@ -255,6 +269,43 @@ class ScatteringCalculator:
                 info.lines, dims, generators))
         return colour_matrix(tensors)
 
+    def _line_colour_matrix(self, externals, diagrams):
+        """The colour matrix of a two-fermion + two-boson process, or
+        ``None`` when every external is a colour singlet."""
+        fermions = [ext for ext in externals if isinstance(ext, ExternalFermion)]
+        bosons = [ext for ext in externals if isinstance(ext, ExternalBoson)]
+        bar = next(ext for ext in fermions if ext.slot == "bar")
+        field = next(ext for ext in fermions if ext.slot == "field")
+        dims = (bar.particle.color, field.particle.color,
+                bosons[0].color, bosons[1].color)
+        if all(d == 1 for d in dims):
+            return None
+        generators = (self._generators(bar.particle)
+                      if bar.particle.color != 1 else None)
+        tensors = []
+        for info in diagrams:
+            if info.kind == "fermion":
+                tensors.append(line_colour_tensor(
+                    "fermion", dims, order=info.order, generators=generators))
+            elif info.mediator == self.gluon:
+                tensors.append(line_colour_tensor(
+                    "gluon", dims, generators=generators,
+                    structure=self.colour_group.structure_constants()))
+            else:
+                tensors.append(line_colour_tensor("singlet", dims))
+        return colour_matrix(tensors)
+
+    @staticmethod
+    def _references(externals, kin):
+        """Physical-polarization reference momenta: with two external
+        gluons, each takes the other's (light-like) momentum."""
+        heads = (kin.k1, kin.k2, kin.k3, kin.k4)
+        gluons = [j for j, ext in enumerate(externals)
+                  if isinstance(ext, ExternalBoson) and ext.color != 1]
+        if len(gluons) != 2:
+            return {}
+        return {gluons[0]: heads[gluons[1]], gluons[1]: heads[gluons[0]]}
+
     def mass_of(self, boson):
         if self.gluon is not None and boson == self.gluon:
             return sp.S.Zero
@@ -290,12 +341,14 @@ class ScatteringCalculator:
                         f"to the calculator")
                 return ExternalFermion(dp, anti=(symbol == dp.antiparticle),
                                        incoming=incoming)
-        if self.gluon is not None and (symbol == self.gluon
-                                       or symbol in self._gluon_components):
-            raise NotImplementedError(
-                f"ScatteringCalculator: an external gluon ({symbol}) needs "
-                f"physical polarization sums and the ggg vertex — stage 5b "
-                f"of Tier 5 of the scattering roadmap")
+        if self.gluon is not None and symbol == self.gluon:
+            return ExternalBoson(symbol, 1, 0, incoming,
+                                 color=self.colour_group.n_generators)
+        if symbol in self._gluon_components:
+            raise KeyError(
+                f"{symbol!r} is one colour component of the gluon; an "
+                f"external gluon is the calculator's `gluon` symbol "
+                f"({self.gluon}), summed over colour")
         if symbol in self.boson_fields or symbol in self.conjugates:
             spin = self.model.spin_map(conjugate_map=self.conjugate_map).get(symbol)
             if spin is None:
@@ -343,11 +396,6 @@ class ScatteringCalculator:
         n_bosons = sum(isinstance(ext, ExternalBoson) for ext in externals)
         amplitude = None
         colour = None
-        if n_bosons and any(isinstance(ext, ExternalFermion)
-                            and ext.particle.color != 1 for ext in externals):
-            raise NotImplementedError(
-                "ScatteringCalculator: coloured fermions with external "
-                "bosons are stage 5b of Tier 5 of the scattering roadmap")
         if n_bosons == 0:
             diagrams = enumerate_diagrams(
                 externals, vertices, kin,
@@ -363,13 +411,17 @@ class ScatteringCalculator:
                 mass_of=lambda b: num(self.mass_of(b)),
                 width_of=lambda b: num(self.width_of(b)))
             if diagrams:
-                amplitude = line_amplitude(externals, diagrams, kin)
+                colour = self._line_colour_matrix(externals, diagrams)
+                amplitude = line_amplitude(
+                    externals, diagrams, kin,
+                    references=self._references(externals, kin))
         else:
             raise NotImplementedError(
                 f"ScatteringCalculator: a process with {n_bosons} external "
                 f"boson(s) and {4 - n_bosons} external fermion(s) is not "
                 f"implemented (four fermions, or two fermions and two "
-                f"bosons)")
+                f"bosons; four bosons, e.g. gg→gg, is stage 5c of Tier 5 "
+                f"of the scattering roadmap)")
         if not diagrams:
             raise ValueError(
                 f"no tree diagram connects {tuple(map(str, incoming))} -> "
@@ -382,7 +434,7 @@ class ScatteringCalculator:
 def _colour_dim(external):
     if isinstance(external, ExternalFermion):
         return external.particle.color
-    return 1
+    return external.color
 
 
 def _mass(external):

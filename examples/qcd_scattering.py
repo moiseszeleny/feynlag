@@ -1,4 +1,4 @@
-"""Parton-level QCD 2→2 from the Lagrangian — Tier 5, stage 5a.
+"""Parton-level QCD 2→2 from the Lagrangian — Tier 5, stages 5a and 5b.
 
 Quark–quark and quark–antiquark scattering through gluon (and photon)
 exchange, with the couplings extracted from a QCD × QED model and the colour
@@ -12,9 +12,15 @@ vertex with the colour-stripped coupling ``i g_s`` and builds each diagram's
 colour tensor (``T^a ⊗ T^a`` for a gluon, ``δ ⊗ δ`` for a photon); the
 colour-summed ``|M|²`` is ``Σ C_dd' L_d L̄_d'``.
 
-Checked against the four-quark entries of the parton table of Ellis, Stirling
-and Webber, *QCD and Collider Physics* (Cambridge University Press, 1996),
-Table 7.1.  Parton level only: no PDFs, fixed ``α_s``.
+With external gluons (``q q̄→gg``, ``gg→q q̄``, ``qg→qg``) the external
+state is ``calc.gluon``.  The three-gluon vertex is added with colour
+``f^{abc}``, and the two gluons are summed over their **physical**
+polarizations: with ``−g_{μν}`` on both, unphysical polarizations would
+survive (that is what ghosts cancel in a covariant gauge).
+
+Checked against the parton table of Ellis, Stirling and Webber, *QCD and
+Collider Physics* (Cambridge University Press, 1996), Table 7.1.  Parton
+level only: no PDFs, fixed ``α_s``.
 
 Run:  python examples/qcd_scattering.py
 """
@@ -100,6 +106,25 @@ def main():
         # show it in terms of s, t, u (u is derived: u = -s - t)
         shown = sp.factor(averaged.subs({kin.s: s, kin.t: t}))
         print(f"  {label}:  {shown}     [u = -s - t]")
+
+    print("\n" + "=" * 70)
+    print("External gluons: averaged |M|^2 / g_s^4  (ESW Table 7.1)")
+    print("=" * 70)
+    g = calc.gluon
+    gluon_processes = [
+        ("q qbar -> g g   ", (u.particle, u.antiparticle), (g, g), 36),
+        ("g g    -> q qbar", (g, g), (u.particle, u.antiparticle), 256),
+        ("q g    -> q g   ", (u.particle, g), (u.particle, g), 96),
+    ]
+    for label, incoming, outgoing, states in gluon_processes:
+        proc = calc.process(incoming, outgoing)
+        kin = proc.kinematics
+        s, t = sp.symbols("s t")
+        averaged = sp.simplify(proc.squared() / states / gs**4)
+        shown = sp.factor(averaged.subs({kin.s: s, kin.t: t}))
+        print(f"  {label}:  {shown}     [u = -s - t]")
+        kinds = ", ".join(f"{d.channel}:{d.mediator}" for d in proc.diagrams)
+        print(f"      diagrams: {kinds}")
 
     print("\n" + "=" * 70)
     print("Colour matrix of u ubar -> u ubar with photon and gluon")

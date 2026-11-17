@@ -204,8 +204,9 @@ form, and the `VSS` derivative coupling gives scalar pair production
 ($e^+e^-\to\phi^+\phi^-$ in scalar QED, with the sign fixed by a Ward
 identity). Tier 5's first stage is delivered as well: coloured four-fermion
 processes, with colour factors computed from the group generators, reproduce
-the four-quark entries of the Ellis–Stirling–Webber parton table. Remaining:
-external gluons ($q\bar q\to gg$, $qg\to qg$) and $gg\to gg$ (no PDFs).
+the four-quark entries of the Ellis–Stirling–Webber parton table, and its
+second stage adds external gluons ($q\bar q\to gg$, $gg\to q\bar q$,
+$qg\to qg$) with physical polarization sums. Remaining: $gg\to gg$ (no PDFs).
 See {doc}`manual/scattering_roadmap`.
 
 ## Suggested order

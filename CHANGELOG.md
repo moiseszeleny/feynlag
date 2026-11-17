@@ -7,6 +7,17 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- 2→2 scattering, Tier 5 stage 5b: **external gluons** on one quark line —
+  `q q̄→gg`, `gg→q q̄`, `qg→qg`, and the mixed `q q̄→gγ`. The external
+  state is `calc.gluon`. `ScatteringCalculator` adds the three-gluon vertex
+  (`adjoint_vvv`, colour `f^{abc}`), builds the colour matrix with
+  `colour.line_colour_tensor`, and sums two external gluons over their
+  physical polarizations: `VectorLeg(reference=n)` gives
+  `−g_{μν} + (k_μn_ν + n_μk_ν)/(k·n)`. `LineAmplitude.squared(colour=)`.
+  Reproduces the three gluon entries of the Ellis–Stirling–Webber parton
+  table exactly; massive quarks (`gg→Q Q̄`) match an explicit evaluator.
+- `ExternalBoson.color`, `LineDiagramInfo.order`,
+  `line_amplitude(..., references=)`.
 - 2→2 scattering, Tier 5 stage 5a: **coloured four-fermion processes**
   (`qq′→qq′`, `q q̄→q′q̄′`, `qq→qq`, `q q̄→q q̄`, `e⁺e⁻→q q̄`, `q q̄→ℓ⁺ℓ⁻`).
   `ScatteringCalculator(colour_group=SU3c, gluon=G)` turns the
@@ -75,6 +86,10 @@ All notable changes to feynlag are documented here. The format follows
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Changed
+- `ScatteringCalculator` no longer refuses an external gluon or coloured
+  fermions with external bosons. A gluon *component* symbol (`G_1`) as an
+  external state raises `KeyError`; four external bosons (`gg→gg`) raise
+  until stage 5c.
 - `ScatteringCalculator` no longer refuses a coloured `DiracParticle` in a
   four-fermion process when `colour_group` and `gluon` are given; without
   them it still raises. External gluons raise until stage 5b.
@@ -99,6 +114,12 @@ All notable changes to feynlag are documented here. The format follows
   `gauge_groups` is not given.
 
 ### Fixed
+- The Ward-identity guard of `LineAmplitude.squared` did not catch two
+  non-abelian massless vectors both summed with `−g`: there
+  `k_μM^{μν} ∝ k′^ν`, and `−g` squares that to `k′² = 0`. The check now also
+  contracts the other `−g` leg with the probed leg's momentum, so that sum
+  is refused. No shipped process was affected (none had two external
+  non-abelian massless vectors).
 - The γ₅ guard (`assert_epsilon_single_vanishes`) refused valid processes
   whose masses were floats: the Gram determinant of four dependent momenta
   then survives as a round-off residue (`3e-17·s³t²`) instead of `0`. A
