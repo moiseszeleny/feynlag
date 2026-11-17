@@ -49,15 +49,19 @@ from sympy.combinatorics import Permutation
 from .diagrams import (
     BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain, _chain_indices,
 )
-from .boson_vertices import sss_tensor, vss_tensor, vvs_tensor, vvv_tensor
+from .boson import BosonAmplitude, BosonTerm
+from .boson_vertices import (
+    sss_tensor, vss_tensor, vvs_tensor, vvv_tensor, vvvv_tensor,
+)
 from .line import (
     LineAmplitude, VectorLeg, boson_exchange_terms, fermion_exchange_term,
     fresh_name,
 )
 
-__all__ = ["DiagramInfo", "ExternalBoson", "ExternalFermion",
-           "LineDiagramInfo", "enumerate_diagrams", "enumerate_line_diagrams",
-           "line_amplitude"]
+__all__ = ["BosonDiagramInfo", "DiagramInfo", "ExternalBoson",
+           "ExternalFermion", "LineDiagramInfo", "boson_amplitude",
+           "enumerate_boson_diagrams", "enumerate_diagrams",
+           "enumerate_line_diagrams", "line_amplitude"]
 
 _diagram_counter = itertools.count()
 
@@ -565,3 +569,158 @@ def line_amplitude(externals, infos, kin, references=None):
     return LineAmplitude(out=leg(bar), inn=leg(field),
                          diagrams=tuple(info.terms for info in infos),
                          vectors=vectors)
+
+
+# --------------------------------------------------------------------------
+# four external bosons: no fermion line (Tier 5, stage 5c)
+# --------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class BosonDiagramInfo:
+    """One colour structure of a four-vector process and how it was built.
+
+    Attributes:
+        channel: ``'s'``, ``'t'`` or ``'u'`` — the invariant in the exchange
+            diagram's propagator.
+        mediator: the exchanged boson's field symbol.
+        pairing: ``((i, j), (k, l))`` — the external positions on the two
+            three-boson vertices, whose legs are ordered ``(i, j, mediator)``
+            and ``(mediator, k, l)``.  Colour tensors are built from this.
+        structure: the contact structure (``'VVVV1/2/3'``) sharing this
+            diagram's colour tensor.
+        vertices: the ``VVV`` and ``VVVV``
+            :class:`~feynlag.pheno.vertices.DecayVertex` used.
+        terms: the :class:`~feynlag.pheno.boson.BosonTerm`\\ s — the
+            exchange diagram's and the contact structure's.
+    """
+
+    channel: str
+    mediator: sp.Expr
+    pairing: tuple
+    structure: str
+    vertices: tuple
+    terms: tuple
+
+    def __repr__(self):
+        return (f"BosonDiagramInfo({self.channel}-channel {self.mediator} "
+                f"+ {self.structure} contact)")
+
+
+#: the pairing of external positions each contact structure's colour tensor
+#: ``f^{ije}f^{kle}`` belongs to
+_BOSON_PAIRINGS = (
+    ("VVVV1", ((0, 1), (2, 3))),
+    ("VVVV2", ((0, 2), (1, 3))),
+    ("VVVV3", ((0, 3), (1, 2))),
+)
+
+
+def enumerate_boson_diagrams(externals, vertices, kin, mass_of=None,
+                             width_of=None):
+    """The tree amplitude of four identical self-conjugate vectors of an
+    unbroken non-abelian group (``gg→gg``), one entry per colour structure.
+
+    The three exchange diagrams have colour ``f^{ije}f^{ekl}`` for the
+    pairings ``(01|23)``, ``(02|13)``, ``(03|12)``, and the contact vertex is
+    a sum of three Lorentz structures with exactly those colour tensors.  So
+    each entry holds an exchange diagram **and** its share of the contact
+    vertex:
+
+    ``V₃(i, j, e) × (−i g_{ρσ}/q²) × V₃(e, k, l)  +  c₄ · VVVV_n(0,1,2,3)``.
+
+    Every leg enters its vertex with its own incoming momentum (``+k`` for
+    an incoming, ``−k`` for an outgoing particle); the mediator enters the
+    first vertex with ``−(p_i+p_j)`` and the second with ``+(p_i+p_j)``.
+    The leg orders are the ones the colour tensor uses
+    (:func:`~feynlag.pheno.colour.four_boson_colour_tensor`), which keeps
+    the Lorentz and colour antisymmetries aligned.
+
+    Args:
+        externals: four :class:`ExternalBoson`, in the order of ``k1..k4``.
+        vertices: must hold one ``VVV`` and one ``VVVV`` vertex on the
+            external symbol (the calculator's colour vertices; the ``VVVV``
+            one carries ``meta['structures']``).
+        kin: a :class:`~feynlag.pheno.kinematics.TwoToTwoKinematics`.
+        mass_of, width_of: callables for the mediator (default massless,
+            zero width).
+
+    Raises:
+        NotImplementedError: anything but four identical self-conjugate
+            coloured vectors — electroweak four-boson processes need Higgs
+            exchange, ``VVSS``/mixed ``VVVV`` contact vertices and charged
+            legs, none of which is enumerated here.
+        ValueError: the ``VVV`` or the ``VVVV`` self-coupling is missing
+            (either alone is not gauge invariant).
+    """
+    symbols = {ext.symbol for ext in externals}
+    if (len(externals) != 4
+            or not all(isinstance(ext, ExternalBoson) for ext in externals)
+            or len(symbols) != 1
+            or any(ext.spin != 1 or ext.color == 1 for ext in externals)):
+        raise NotImplementedError(
+            "enumerate_boson_diagrams: only four external gluons (identical "
+            "self-conjugate vectors of the unbroken colour group) are "
+            "implemented. Other four-boson processes (WW→WW, γγ→WW, VV→hh) "
+            "need scalar exchange, VVSS and electroweak VVVV contact "
+            "vertices and charged external legs, which are not enumerated.")
+    (symbol,) = symbols
+    cubic = [v for v in vertices if v.vertex_type == "VVV"
+             and tuple(v.particles) == (symbol,) * 3]
+    quartic = [v for v in vertices if v.vertex_type == "VVVV"
+               and tuple(v.particles) == (symbol,) * 4]
+    if len(cubic) != 1 or len(quartic) != 1:
+        raise ValueError(
+            f"enumerate_boson_diagrams: need exactly one VVV and one VVVV "
+            f"self-coupling of {symbol} (found {len(cubic)} and "
+            f"{len(quartic)}); the exchange diagrams and the contact vertex "
+            f"are only gauge invariant together")
+    (cubic,), (quartic,) = cubic, quartic
+    structures = quartic.meta["structures"]
+    mass = sp.sympify(mass_of(symbol)) if mass_of is not None else sp.S.Zero
+    width = sp.sympify(width_of(symbol)) if width_of is not None else sp.S.Zero
+    if mass != 0:
+        raise NotImplementedError(
+            "enumerate_boson_diagrams: a massive self-interacting vector "
+            "(broken group) is not implemented")
+    from .propagator import propagator_denominator
+    heads = (kin.k1, kin.k2, kin.k3, kin.k4)
+    names = tuple(_external_index(j) for j in range(4))
+
+    def p_in(j):
+        return (sp.S.One if externals[j].incoming else -sp.S.One, heads[j])
+
+    out = []
+    for structure, ((i, j), (k, l)) in _BOSON_PAIRINGS:
+        q = (p_in(i), p_in(j))                  # flows out of the first vertex
+        minus_q = tuple((-c, head) for c, head in q)
+        q2 = sp.expand(sum(ca * cb * kin.dot(ha, hb)
+                           for ca, ha in q for cb, hb in q))
+        r, s_ = fresh_name("r"), fresh_name("s")
+        first = vvv_tensor(cubic.coupling, [
+            (names[i], (p_in(i),)), (names[j], (p_in(j),)), (r, minus_q)])
+        second = vvv_tensor(cubic.coupling, [
+            (s_, q), (names[k], (p_in(k),)), (names[l], (p_in(l),))])
+        propagator = -sp.I / propagator_denominator(q2, mass, width)
+        terms = [BosonTerm(c1 * c2 * propagator,
+                           t1 + (("g", r, s_),) + t2)
+                 for c1, t1 in first for c2, t2 in second]
+        terms += [BosonTerm(c, t) for c, t in vvvv_tensor(
+            structure, structures.get(structure, 0), names) if c != 0]
+        out.append(BosonDiagramInfo(
+            channel=_CHANNELS[frozenset({i, j})], mediator=symbol,
+            pairing=((i, j), (k, l)), structure=structure,
+            vertices=(cubic, quartic), terms=tuple(terms)))
+    return out
+
+
+def boson_amplitude(externals, infos, kin, references=None):
+    """The :class:`~feynlag.pheno.boson.BosonAmplitude` of enumerated
+    diagrams; ``references`` as for :func:`line_amplitude`."""
+    references = references or {}
+    heads = (kin.k1, kin.k2, kin.k3, kin.k4)
+    masses = (kin.m1, kin.m2, kin.m3, kin.m4)
+    vectors = tuple(VectorLeg(_external_index(j), heads[j], masses[j],
+                              reference=references.get(j))
+                    for j, ext in enumerate(externals) if ext.spin == 1)
+    return BosonAmplitude(diagrams=tuple(info.terms for info in infos),
+                          vectors=vectors)

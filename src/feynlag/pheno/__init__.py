@@ -55,23 +55,31 @@ from .scattering import (
 )
 from .scattering_calculator import ScatteringCalculator, ScatteringProcess
 from .colour import (
-    colour_matrix, four_fermion_colour_tensor, line_colour_tensor,
+    colour_matrix, four_boson_colour_tensor, four_fermion_colour_tensor,
+    line_colour_tensor,
 )
+from .boson import BosonAmplitude, BosonTerm
 from .boson_vertices import (
     VSS_KAPPA, VVV_KAPPA, sss_tensor, vss_tensor, vvs_tensor, vvv_tensor,
+    vvvv_tensor,
 )
+from .contraction import contract_tensors, contract_trace
 from .line import (
     LineAmplitude, LineTerm, VectorLeg, boson_exchange_terms,
     fermion_exchange_term,
 )
 from .topology import (
-    DiagramInfo, ExternalBoson, ExternalFermion, LineDiagramInfo,
+    BosonDiagramInfo, DiagramInfo, ExternalBoson, ExternalFermion,
+    LineDiagramInfo, boson_amplitude, enumerate_boson_diagrams,
     enumerate_diagrams, enumerate_line_diagrams, line_amplitude,
 )
 from .vertices import DecayVertex, classify_gamma, collect_decay_vertices
 
 __all__ = [
-    "Amplitude", "BosonPropagator", "ChainVertex", "DecayCalculator",
+    "Amplitude", "BosonAmplitude", "BosonDiagramInfo", "BosonPropagator",
+    "BosonTerm", "ChainVertex", "DecayCalculator",
+    "boson_amplitude", "contract_tensors", "contract_trace",
+    "enumerate_boson_diagrams", "four_boson_colour_tensor", "vvvv_tensor",
     "DecayChannel", "DecayVertex", "Diagram", "DiagramInfo", "DiracParticle",
     "ExternalBoson", "ExternalFermion", "ExternalState", "Leg",
     "LineAmplitude", "LineDiagramInfo", "LineTerm", "ScatteringCalculator",

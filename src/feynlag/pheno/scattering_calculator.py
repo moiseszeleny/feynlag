@@ -29,7 +29,10 @@ Scope, enforced rather than documented only:
   line (stage 5b: ``q q̄→gg``, ``qg→qg``, ``gg→q q̄``, ``q q̄→gγ``) the
   external gluon is ``calc.gluon``, the ``ggg`` vertex is added, and two
   external gluons are summed over their **physical** polarizations.
-  ``gg→gg`` raises (stage 5c);
+  Four external gluons (stage 5c, ``gg→gg``) go through the pure-boson
+  amplitude of :mod:`~feynlag.pheno.boson`: three exchange diagrams and the
+  ``gggg`` contact vertex, all four gluons on physical polarization sums.
+  Any other four-boson process raises;
 - mediators are the declared bosons in **unitary gauge**: leave Goldstones out
   of ``boson_fields`` (a massive vector's propagator already carries their
   physics as ``q_μq_ν/m²``).
@@ -45,14 +48,16 @@ from .particles import ExternalState, expand_particles
 from .scattering import (
     cross_section, differential_cross_section, forward_backward_asymmetry,
 )
-from ..export.ufo.vvvv import adjoint_vvv
+from ..export.ufo.vvvv import adjoint_vvv, adjoint_vvvv
 from .colour import (
-    colour_matrix, four_fermion_colour_tensor, line_colour_tensor,
+    colour_matrix, four_boson_colour_tensor, four_fermion_colour_tensor,
+    line_colour_tensor,
 )
 from .diagrams import Amplitude
 from .topology import (
-    ExternalBoson, ExternalFermion, enumerate_diagrams,
-    enumerate_line_diagrams, line_amplitude,
+    ExternalBoson, ExternalFermion, boson_amplitude,
+    enumerate_boson_diagrams, enumerate_diagrams, enumerate_line_diagrams,
+    line_amplitude,
 )
 from .vertices import DecayVertex, collect_decay_vertices
 
@@ -135,6 +140,12 @@ class ScatteringCalculator:
                         particles=(self.gluon,) * 3, vertex_type="VVV",
                         coupling=adjoint_vvv(self.colour_group),
                         meta={"source": "colour"}))
+                    # the contact vertex: three Lorentz structures, each
+                    # with its own colour tensor f·f (stage 5c)
+                    vertices.append(DecayVertex(
+                        particles=(self.gluon,) * 4, vertex_type="VVVV",
+                        meta={"source": "colour", "structures":
+                              adjoint_vvvv(self.colour_group)}))
             if self.gauge_groups:
                 wanted = set(self.boson_fields)
                 for vertex in self.model.gauge_vertices(
@@ -295,13 +306,24 @@ class ScatteringCalculator:
                 tensors.append(line_colour_tensor("singlet", dims))
         return colour_matrix(tensors)
 
+    def _boson_colour_matrix(self, diagrams):
+        """The colour matrix of a four-gluon process."""
+        structure = self.colour_group.structure_constants()
+        dim = self.colour_group.n_generators
+        return colour_matrix([
+            four_boson_colour_tensor(info.pairing, dim, structure)
+            for info in diagrams])
+
     @staticmethod
     def _references(externals, kin):
         """Physical-polarization reference momenta: with two external
-        gluons, each takes the other's (light-like) momentum."""
+        gluons, each takes the other's (light-like) momentum; with four,
+        the two incoming ones pair up and so do the two outgoing ones."""
         heads = (kin.k1, kin.k2, kin.k3, kin.k4)
         gluons = [j for j, ext in enumerate(externals)
                   if isinstance(ext, ExternalBoson) and ext.color != 1]
+        if len(gluons) == 4:
+            return {0: heads[1], 1: heads[0], 2: heads[3], 3: heads[2]}
         if len(gluons) != 2:
             return {}
         return {gluons[0]: heads[gluons[1]], gluons[1]: heads[gluons[0]]}
@@ -415,13 +437,29 @@ class ScatteringCalculator:
                 amplitude = line_amplitude(
                     externals, diagrams, kin,
                     references=self._references(externals, kin))
+        elif n_bosons == 4:
+            if not (self.gluon is not None
+                    and all(ext.symbol == self.gluon for ext in externals)):
+                raise NotImplementedError(
+                    "ScatteringCalculator: the only four-boson process "
+                    "implemented is four external gluons (gg→gg). Other "
+                    "four-boson processes (WW→WW, γγ→WW, VV→hh) need scalar "
+                    "exchange, VVSS and electroweak VVVV contact vertices "
+                    "and charged external legs.")
+            diagrams = enumerate_boson_diagrams(
+                externals, vertices, kin,
+                mass_of=lambda b: num(self.mass_of(b)),
+                width_of=lambda b: num(self.width_of(b)))
+            colour = self._boson_colour_matrix(diagrams)
+            amplitude = boson_amplitude(
+                externals, diagrams, kin,
+                references=self._references(externals, kin))
         else:
             raise NotImplementedError(
                 f"ScatteringCalculator: a process with {n_bosons} external "
                 f"boson(s) and {4 - n_bosons} external fermion(s) is not "
-                f"implemented (four fermions, or two fermions and two "
-                f"bosons; four bosons, e.g. gg→gg, is stage 5c of Tier 5 "
-                f"of the scattering roadmap)")
+                f"implemented (four fermions, two fermions and two bosons, "
+                f"or four gluons)")
         if not diagrams:
             raise ValueError(
                 f"no tree diagram connects {tuple(map(str, incoming))} -> "
@@ -445,7 +483,12 @@ def _mass(external):
 
 
 def _substituted(vertex, values):
-    return _replace(vertex,
+    meta = vertex.meta
+    if "structures" in meta:                # a VVVV vertex's couplings
+        meta = dict(meta, structures={
+            name: sp.sympify(c).subs(values)
+            for name, c in meta["structures"].items()})
+    return _replace(vertex, meta=meta,
                    g_left=sp.sympify(vertex.g_left).subs(values),
                    g_right=sp.sympify(vertex.g_right).subs(values),
                    coupling=sp.sympify(vertex.coupling).subs(values))
@@ -489,7 +532,8 @@ class ScatteringProcess:
     def amplitude(self):
         """The four-fermion :class:`~feynlag.pheno.diagrams.Amplitude`, or
         the :class:`~feynlag.pheno.line.LineAmplitude` of a process with two
-        external bosons."""
+        external bosons, or the :class:`~feynlag.pheno.boson.BosonAmplitude`
+        of four gluons."""
         if self._amplitude is not None:
             return self._amplitude
         return Amplitude(tuple(d.diagram for d in self.diagrams))

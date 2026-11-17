@@ -1,4 +1,4 @@
-"""Parton-level QCD 2→2 from the Lagrangian — Tier 5, stages 5a and 5b.
+"""Parton-level QCD 2→2 from the Lagrangian — Tier 5, stages 5a to 5c.
 
 Quark–quark and quark–antiquark scattering through gluon (and photon)
 exchange, with the couplings extracted from a QCD × QED model and the colour
@@ -17,6 +17,11 @@ state is ``calc.gluon``.  The three-gluon vertex is added with colour
 ``f^{abc}``, and the two gluons are summed over their **physical**
 polarizations: with ``−g_{μν}`` on both, unphysical polarizations would
 survive (that is what ghosts cancel in a covariant gauge).
+
+``gg→gg`` has no fermion line at all: three exchange diagrams through two
+three-gluon vertices and the four-gluon contact vertex, grouped into three
+colour structures ``f^{ije}f^{ekl}``, all four gluons on physical
+polarization sums.
 
 Checked against the parton table of Ellis, Stirling and Webber, *QCD and
 Collider Physics* (Cambridge University Press, 1996), Table 7.1.  Parton
@@ -115,6 +120,7 @@ def main():
         ("q qbar -> g g   ", (u.particle, u.antiparticle), (g, g), 36),
         ("g g    -> q qbar", (g, g), (u.particle, u.antiparticle), 256),
         ("q g    -> q g   ", (u.particle, g), (u.particle, g), 96),
+        ("g g    -> g g   ", (g, g), (g, g), 256),
     ]
     for label, incoming, outgoing, states in gluon_processes:
         proc = calc.process(incoming, outgoing)
@@ -125,6 +131,9 @@ def main():
         print(f"  {label}:  {shown}     [u = -s - t]")
         kinds = ", ".join(f"{d.channel}:{d.mediator}" for d in proc.diagrams)
         print(f"      diagrams: {kinds}")
+    print("  (g g -> g g: each entry is an exchange diagram plus its share of "
+          "the contact vertex;")
+    print(f"   colour matrix {proc.colour})")
 
     print("\n" + "=" * 70)
     print("Colour matrix of u ubar -> u ubar with photon and gluon")

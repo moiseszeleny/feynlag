@@ -255,11 +255,23 @@ def _is_zero(expr, reference, symbols):
     ``reference`` at two generic points of ``symbols``."""
     if expr == 0:
         return True
+    if expr.has(sp.Float):
+        # a float residue is judged numerically; only if that is impossible
+        # (other free symbols) is the slow symbolic route tried
+        verdict = _numerically_zero(expr, reference, symbols)
+        if verdict is not None:
+            return verdict
     simplified = sp.simplify(sp.together(expr))
     if simplified == 0:
         return True
     if not simplified.has(sp.Float):
         return False
+    return bool(_numerically_zero(expr, reference, symbols))
+
+
+def _numerically_zero(expr, reference, symbols):
+    """``expr`` against ``reference`` at two generic points of ``symbols``;
+    ``None`` when they do not evaluate to numbers."""
     for point in ((sp.Rational(731, 100), sp.Rational(-213, 100)),
                   (sp.Rational(1907, 100), sp.Rational(-477, 100))):
         values = dict(zip(symbols, point))
@@ -267,10 +279,63 @@ def _is_zero(expr, reference, symbols):
             num = complex(expr.subs(values))
             ref = complex(reference.subs(values))
         except TypeError:
-            return False            # other free symbols: not a float residue
+            return None             # other free symbols: not a float residue
         if abs(num) > 1e-9 * max(abs(ref), 1e-300):
             return False
     return True
+
+
+def check_ward_identities(summed, vectors, sums, total, kin, who):
+    """Verify ``k_μ M^μ = 0`` for every massless external vector.
+
+    The leg's polarization sum is replaced by ``k_μk_{μ'}`` while the other
+    legs keep theirs, so with physical sums on the gluons this is the
+    non-abelian identity.
+
+    Args:
+        summed: callable ``{index: [(coeff, tensors)]} -> Σ|M|²`` with the
+            given per-leg sums.
+        vectors: the external :class:`VectorLeg`\\ s.
+        sums: their polarization sums, as passed to ``summed``.
+        total: ``summed(sums)`` (the scale a float residue is compared to).
+        kin: the kinematics (``s``, ``t`` for the numeric fallback).
+        who: the caller's name, for the message.
+
+    Raises:
+        NotImplementedError: an identity fails.
+    """
+    for leg in vectors:
+        if leg.mass != 0:
+            continue
+        probe = dict(sums)
+        probe[leg.index] = [(sp.S.One, leg.longitudinal())]
+        probes = [probe]
+        # ``k_μ M^{μν}`` must vanish as a vector on every other leg
+        # that is summed with −g.  For two non-abelian vectors it is
+        # ∝ k'^ν instead, which −g squares to k'² = 0 and so cannot
+        # see: also contract that leg with this leg's own momentum.
+        k = ((sp.S.One, leg.momentum),)
+        for other in vectors:
+            if (other is leg or other.mass != 0
+                    or other.reference is not None):
+                continue
+            sharper = dict(probe)
+            sharper[other.index] = [(sp.S.One, (
+                ("v", k, other.index),
+                ("v", k, primed(other.index))))]
+            probes.append(sharper)
+        residues = [summed(p) for p in probes]
+        if not all(_is_zero(residue, total, (kin.s, kin.t))
+                   for residue in residues):
+            raise NotImplementedError(
+                f"{who}: the Ward identity "
+                f"k·M = 0 fails for the massless external vector "
+                f"with momentum {leg.momentum.name}, so its "
+                f"polarization sum cannot be trusted. Two external "
+                f"massless non-abelian vectors need physical "
+                f"polarization sums (VectorLeg.reference) and their "
+                f"colour matrix; otherwise a diagram is missing or "
+                f"a relative sign is wrong.")
 
 
 @dataclass(frozen=True)
@@ -357,36 +422,7 @@ class LineAmplitude:
                 for leg in self.vectors}
         total = self._summed(kin, sums, colour)
         if ward_check:
-            for leg in self.vectors:
-                if leg.mass != 0:
-                    continue
-                probe = dict(sums)
-                probe[leg.index] = [(sp.S.One, leg.longitudinal())]
-                probes = [probe]
-                # ``k_μ M^{μν}`` must vanish as a vector on every other leg
-                # that is summed with −g.  For two non-abelian vectors it is
-                # ∝ k'^ν instead, which −g squares to k'² = 0 and so cannot
-                # see: also contract that leg with this leg's own momentum.
-                k = ((sp.S.One, leg.momentum),)
-                for other in self.vectors:
-                    if (other is leg or other.mass != 0
-                            or other.reference is not None):
-                        continue
-                    sharper = dict(probe)
-                    sharper[other.index] = [(sp.S.One, (
-                        ("v", k, other.index),
-                        ("v", k, primed(other.index))))]
-                    probes.append(sharper)
-                residues = [self._summed(kin, p, colour) for p in probes]
-                if not all(_is_zero(residue, total, (kin.s, kin.t))
-                           for residue in residues):
-                    raise NotImplementedError(
-                        f"LineAmplitude.squared: the Ward identity "
-                        f"k·M = 0 fails for the massless external vector "
-                        f"with momentum {leg.momentum.name}, so its "
-                        f"polarization sum cannot be trusted. Two external "
-                        f"massless non-abelian vectors need physical "
-                        f"polarization sums (VectorLeg.reference) and their "
-                        f"colour matrix; otherwise a diagram is missing or "
-                        f"a relative sign is wrong.")
+            check_ward_identities(
+                lambda probe: self._summed(kin, probe, colour), self.vectors,
+                sums, total, kin, "LineAmplitude.squared")
         return sp.expand(total)

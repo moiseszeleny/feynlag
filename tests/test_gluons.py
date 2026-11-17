@@ -411,14 +411,3 @@ def test_heavy_quark_pair_production_vs_explicit_evaluator(qcd):
         assert abs(engine.imag) < 1e-9 * abs(engine.real)
         assert engine.real == pytest.approx(
             _pair_production_oracle(s, cos, m), rel=1e-8)
-
-
-# --------------------------------------------------------------------------
-# guards
-# --------------------------------------------------------------------------
-
-def test_four_gluons_is_stage_5c(qcd):
-    calc, _ = qcd["setup"]()
-    g = calc.gluon
-    with pytest.raises(NotImplementedError, match="stage 5c"):
-        calc.process((g, g), (g, g))
