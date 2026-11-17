@@ -573,7 +573,7 @@ four-point contact vertices, boson–boson scattering.
 
 **Channels**: four-quark scattering and quark–lepton processes (stage 5a,
 delivered); $q\bar q\to gg$, $qg\to qg$ (stage 5b, delivered); $gg\to gg$
-(stage 5c).
+(stage 5c, delivered).
 **Effort: medium–large.** Parton level only: **no PDFs, no hadronic
 luminosity, fixed $\alpha_s$** — the same "no proton structure" scope as the
 rest of the library.
@@ -722,11 +722,79 @@ gluons; the fix matters for hand-built amplitudes.
 - **Abelian limits**: $q\bar q\to\gamma\gamma=N_cQ_q^4\cdot8e^4(u/t+t/u)$ and
   $q\bar q\to g\gamma$ with $\mathrm{Tr}(T^aT^a)=4$.
 
-### Stage 5c — $gg\to gg$
+### Stage 5c — $gg\to gg$ ✅ (delivered)
 
-A pure-boson amplitude (three exchange diagrams and the $gggg$ contact
-vertex). **Oracle**: [ESW96]
-$\tfrac92\big(3-\tfrac{tu}{s^2}-\tfrac{su}{t^2}-\tfrac{st}{u^2}\big)$.
+The first amplitude with no fermion line, and the first diagram with a
+four-point contact vertex. Scope: four external gluons of the calculator's
+colour group. Any other four-boson process ($WW\to WW$,
+$\gamma\gamma\to WW$, $VV\to hh$) still raises: those need scalar exchange,
+`VVSS` and electroweak `VVVV` contact vertices and charged legs.
+
+**The amplitude** (`pheno/boson.py`). A `BosonTerm` is a coefficient times
+loose tensors (metrics and momenta) on the four external indices and on
+propagator dummies; there is no Dirac string. `BosonAmplitude.squared`
+contracts them with the new trace-free `contraction.contract_tensors`, uses
+the same `VectorLeg` polarization sums as the line engine, and runs the same
+Ward check (`line.check_ward_identities`, factored out of
+`LineAmplitude.squared`).
+
+**Three colour structures, not four diagrams.** The exchange diagrams have
+colour $f^{a_ia_je}f^{ea_ka_l}$ for the pairings $(12|34)$, $(13|24)$,
+$(14|23)$, and the contact vertex is a sum of three Lorentz structures with
+exactly those colour tensors,
+
+$$i g^2\big[f^{12e}f^{34e}(g_{14}g_{23}-g_{13}g_{24})
++f^{13e}f^{24e}(g_{14}g_{23}-g_{12}g_{34})
++f^{14e}f^{23e}(g_{13}g_{24}-g_{12}g_{34})\big]$$
+
+(`adjoint_vvvv`, the coupling already exported to UFO; `vvvv_tensor` writes
+one structure). So `enumerate_boson_diagrams` returns three entries, each an
+exchange diagram plus its share of the contact vertex, and the colour matrix
+is $3\times3$: $N^2(N^2-1)$ on the diagonal, half of it off the diagonal
+with the signs of the Jacobi identity (`four_boson_colour_tensor`; $72$ and
+$\pm36$ for SU(3)). The cubic vertices have their legs in the order
+$(i,j,e)$ and $(e,k,l)$ for both $f$ and the Lorentz tensor, as in stage 5b.
+
+**All four gluons on physical polarization sums**: the two incoming ones
+take each other's momentum as reference, and so do the two outgoing ones.
+
+**What this process fixes.** Each exchange diagram has two cubic vertices,
+so $gg\to gg$ cannot see the sign of the cubic coupling ($\kappa$ of stage
+4b); $q\bar q\to gg$ and $e^+e^-\to W^+W^-$ fix that. It fixes the
+**contact** term relative to the exchange diagrams:
+$(\kappa\,c_3)^2\cdot(-i)/q^2$ against $i g^2$.
+
+**Making it fast enough.** Term by term the sum is $33^2\times3^4$
+contractions, over ten minutes. Two exact reductions bring symbolic
+$gg\to gg$ to about ten seconds. Each diagram is rewritten in a few
+canonical monomials, with every vector on an external index taken modulo
+momentum conservation and modulo the momenta that leg's polarization sum
+annihilates ($k$ and the reference $n$ for a physical sum; computed from the
+sum actually in use, so the Ward probes are reduced correctly). And the
+contraction of two monomials through the polarization sums factorises over
+the connected components of its index graph.
+
+**Verified** (`tests/test_four_gluons.py`):
+
+- **The parton table [ESW96, Table 7.1]**, exactly and symbolically:
+  $gg\to gg=\tfrac92\big(3-\tfrac{tu}{s^2}-\tfrac{su}{t^2}-\tfrac{st}{u^2}\big)$,
+  averaged over $(2\times8)^2$ initial states. It matched on the first run.
+- **An explicit evaluator** written from the textbook rules [PS95, Chapter
+  16]: transverse polarization vectors and $f^{abc}$, the amplitude summed
+  per colour and helicity configuration; it first checks its own Ward
+  identity. SU(3) and pure SU(2) Yang–Mills both agree with the engine (the
+  SU(2) number also against $16N^2(N^2-1)$ times the same bracket, which is
+  what the engine and the evaluator give, not a quoted result).
+- **The contact vertex** against a direct fourth derivative of the quartic
+  term of $-\tfrac14F^2$, colour component by colour component.
+- **Controls**: with the contact term's sign flipped, or the contact term
+  left out, the Ward check fails; with $-g$ on the gluons it fails, and
+  forcing it gives a different number; with $\kappa$ flipped the result is
+  unchanged.
+- **Gauge independence**: pairing each incoming gluon with an outgoing one
+  as reference gives the same $\sum|\mathcal M|^2$.
+- The cross section inside an angular cut against the integrated closed
+  form (the $t$- and $u$-channel poles need a cut).
 
 ## 17.6 Summary
 
@@ -736,7 +804,7 @@ $\tfrac92\big(3-\tfrac{tu}{s^2}-\tfrac{su}{t^2}-\tfrac{st}{u^2}\big)$.
 | 2 ✅ | $e^+e^-\to\mu^+\mu^-$ (Z only); any single chiral-current diagram | ε (γ₅) algebra (`pheno.epsilon`): $\mathrm{Tr}[\gamma\gamma\gamma\gamma\gamma_5]$, ε·ε → Gram determinant, `forward_backward_asymmetry` | large | $d\sigma/d\cos\theta$ shape + $A_{FB}=\tfrac34A_eA_f$ vs [LEPEWWG06]; γ₅-carrying matrix oracle (massless + massive mediator) |
 | 3 ✅ | full $e^+e^-\to f\bar f$ (γ/Z interference); Bhabha, Møller, $\nu_ee$ | multi-diagram double sum (same-pairing product of traces; exchanged-pairing single trace); s/t/u topology enumeration; permutation-parity fermion signs; `ScatteringCalculator` | medium–large | **MadGraph 2.7878 pb** (inside $\lvert\eta\rvert<2.5$); Bhabha/Møller closed forms; explicit-spinor oracle |
 | 4 ✅ | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: $e^+e^-\to\phi^+\phi^-$ (`VSS`) | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors, boson exchange (**done**); 4c: `VSS` momentum tags (**done**) | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb** (engine: 19.447), exact high-energy cancellation, Higgsstrahlung closed form [Djouadi08]; 4c: scalar-QED closed form [BFIK05], Ward identity |
-| 5 (5a, 5b ✅) | 5a: four-quark scattering, $e^+e^-\to q\bar q$; 5b: $q\bar q\to gg$, $qg\to qg$; 5c: $gg\to gg$ | 5a: colour tensors and the colour matrix from the group generators (**done**); 5b: external gluons, physical polarization sums, $ggg$ colour (**done**); 5c: pure-boson amplitude, 4-point contact vertex | medium–large | 5a: ESW four-quark entries [ESW96], explicit colour + spinor sum; 5b: ESW gluon entries, explicit polarization evaluator; 5c: ESW $gg\to gg$ (no PDFs) |
+| 5 ✅ | 5a: four-quark scattering, $e^+e^-\to q\bar q$; 5b: $q\bar q\to gg$, $qg\to qg$; 5c: $gg\to gg$ | 5a: colour tensors and the colour matrix from the group generators (**done**); 5b: external gluons, physical polarization sums, $ggg$ colour (**done**); 5c: pure-boson amplitude, 4-point contact vertex (**done**) | medium–large | 5a: ESW four-quark entries [ESW96], explicit colour + spinor sum; 5b: ESW gluon entries, explicit polarization evaluator; 5c: ESW $gg\to gg$, explicit polarization evaluator (no PDFs) |
 
 The recommended order is the table order: Tier 1 gave the first native cross
 section for the cost of an object layer that reuses the existing covariant
@@ -744,14 +812,14 @@ engine unchanged; Tier 2 was the genuinely new algebra 2→2 requires that 1→2
 never did; Tier 3 is where the first MadGraph benchmark stops being
 aspirational and is reproduced (the second, $e^+e^-\to W^+W^-$, by Tier 4's stage 4b); Tier 4 is the hardest single piece (derivative
 couplings); Tier 5 generalizes to QCD: colour bookkeeping first (stage 5a),
-then external gluons and the four-gluon amplitude.
+then external gluons (stage 5b) and the four-gluon amplitude (stage 5c).
 
 See {doc}`decays_roadmap` for the parallel decay-side roadmap and its
 `n_momenta`/ε-drop precedent, `tests/test_scattering.py` for what Tiers 1–2
 pin, `tests/test_interference.py` for Tier 3 and
 `tests/test_line_scattering.py`, `tests/test_ww.py` and `tests/test_vss.py`
-for Tier 4's stages 4a, 4b and 4c, and `tests/test_colour.py` and `tests/test_gluons.py`
-for Tier 5's stages 5a and 5b.
+for Tier 4's stages 4a, 4b and 4c, and `tests/test_colour.py`, `tests/test_gluons.py`
+and `tests/test_four_gluons.py` for Tier 5's stages 5a, 5b and 5c.
 
 ## 17.7 References
 
@@ -762,7 +830,10 @@ for Tier 5's stages 5a and 5b.
   Problem 5.2, Bhabha scattering, whose massless result Tier 3 reproduces
   (and, crossed $s\leftrightarrow u$, Møller scattering); §5.5, "Compton
   Scattering," the Klein–Nishina $|\mathcal M|^2$ with a massive electron and
-  its crossing to $e^+e^-\to\gamma\gamma$, which Tier 4's stage 4a reproduces.
+  its crossing to $e^+e^-\to\gamma\gamma$, which Tier 4's stage 4a reproduces;
+  Chapter 16, "Quantization of Non-Abelian Gauge Theories," the three- and
+  four-gauge-boson Feynman rules the explicit $gg\to gg$ evaluator of Tier
+  5's stage 5c is written from.
 - **[BFIK05]** Yu. M. Bystritskiy, G. V. Fedotovich, F. V. Ignatov and
   E. A. Kuraev, "The cross sections of the muons and charged pions pairs
   production at electron-positron annihilation near the threshold,"
@@ -779,8 +850,8 @@ for Tier 5's stages 5a and 5b.
   Physics*, Cambridge Monographs on Particle Physics, Nuclear Physics and
   Cosmology 8, Cambridge University Press (1996), ISBN 978-0-521-54589-1 —
   Table 7.1, the parton-level $2\to2$ $|\mathcal M|^2$ table; Tier 5's stage
-  5a reproduces its four-quark entries and stage 5b its entries with two
-  gluons.
+  5a reproduces its four-quark entries, stage 5b its entries with two
+  gluons and stage 5c $gg\to gg$.
 - **[LEPEWWG06]** ALEPH, DELPHI, L3, OPAL, SLD Collaborations, LEP
   Electroweak Working Group, SLD Electroweak and Heavy Flavour Groups,
   "Precision Electroweak Measurements on the Z Resonance," Phys. Rept. 427

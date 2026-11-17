@@ -24,8 +24,8 @@ import itertools
 
 import sympy as sp
 
-__all__ = ["colour_matrix", "four_fermion_colour_tensor",
-           "line_colour_tensor"]
+__all__ = ["colour_matrix", "four_boson_colour_tensor",
+           "four_fermion_colour_tensor", "line_colour_tensor"]
 
 
 def four_fermion_colour_tensor(lines, dims, generators=None):
@@ -137,6 +137,37 @@ def line_colour_tensor(kind, dims, order=None, generators=None,
                     if block[x, y] != 0:
                         tensor[(x, y, a1, a2)] = sp.nsimplify(block[x, y])
     return tensor
+
+
+def four_boson_colour_tensor(pairing, dim, structure):
+    """``K_d`` of a four-gluon colour structure, as
+    ``{(a₀, a₁, a₂, a₃): Σ_e f^{a_i a_j e} f^{e a_k a_l}}``.
+
+    Args:
+        pairing: ``((i, j), (k, l))`` — external positions ``0..3``.  The
+            exchange diagram joins the three-boson vertices with legs
+            ``(i, j, mediator)`` and ``(mediator, k, l)``, the leg orders its
+            Lorentz tensors are built with; the contact structure
+            ``f^{ije}f^{kle}`` is the same tensor.
+        dim: the adjoint dimension ``N²−1``.
+        structure: the structure constants as ``{(a, b, c): f^{abc}}``.
+    """
+    (i, j), (k, l) = pairing
+    first, second = {}, {}
+    for (a, b, e), value in structure.items():
+        if value != 0:
+            first.setdefault(e, []).append((a, b, value))      # f^{a b e}
+            second.setdefault(a, []).append((b, e, value))     # f^{e c d}
+    tensor = {}
+    for e in range(dim):
+        for a, b, f1 in first.get(e, ()):
+            for c, d, f2 in second.get(e, ()):
+                colours = [None] * 4
+                colours[i], colours[j], colours[k], colours[l] = a, b, c, d
+                key = tuple(colours)
+                tensor[key] = tensor.get(key, sp.S.Zero) + f1 * f2
+    return {key: sp.nsimplify(value) for key, value in tensor.items()
+            if value != 0}
 
 
 def colour_matrix(tensors):

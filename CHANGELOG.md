@@ -7,6 +7,22 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- 2→2 scattering, Tier 5 stage 5c: **`gg→gg`**, the first amplitude with no
+  fermion line and the first four-point contact vertex in a diagram. New
+  `feynlag.pheno.boson` (`BosonTerm`, `BosonAmplitude`): terms are a
+  coefficient times loose tensors, squared through the new trace-free
+  `contraction.contract_tensors` with the same polarization sums and Ward
+  check as the line engine. `topology.enumerate_boson_diagrams` builds three
+  colour structures `f^{ije}f^{ekl}`, each an exchange diagram through two
+  three-gluon vertices plus its share of the contact vertex
+  (`boson_vertices.vvvv_tensor`, coupling `adjoint_vvvv = i g²`);
+  `colour.four_boson_colour_tensor` gives the colour matrix. All four gluons
+  are summed over physical polarizations. Reproduces the
+  Ellis–Stirling–Webber entry `9/2 (3 − tu/s² − su/t² − st/u²)` exactly, and
+  SU(3) and SU(2) match an explicit polarization-vector evaluator. Any other
+  four-boson process still raises. This completes Tier 5.
+- `line.check_ward_identities`: the Ward probe of `LineAmplitude.squared`,
+  now shared with `BosonAmplitude.squared`.
 - 2→2 scattering, Tier 5 stage 5b: **external gluons** on one quark line —
   `q q̄→gg`, `gg→q q̄`, `qg→qg`, and the mixed `q q̄→gγ`. The external
   state is `calc.gluon`. `ScatteringCalculator` adds the three-gluon vertex

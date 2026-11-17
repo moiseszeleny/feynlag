@@ -41,7 +41,7 @@ from dataclasses import dataclass
 
 import sympy as sp
 
-__all__ = ["Ix", "contract_trace"]
+__all__ = ["Ix", "contract_tensors", "contract_trace"]
 
 
 @dataclass(frozen=True)
@@ -247,29 +247,20 @@ def _combo_dot(combo_a, combo_b, dot):
     return sum(ca * cb * dot(ha, hb) for ca, ha in combo_a for cb, hb in combo_b)
 
 
-def contract_trace(factors, tensors, dot, memo=None):
-    """``Tr[factors] × ∏ tensors``, fully contracted, as a scalar (γ₅-free
-    part — see the module docstring).
-
-    Args:
-        factors: the Dirac string, as for :func:`_expand_chiral_string`,
-            with a ``'G'`` factor's free Lorentz index given as a plain
-            hashable **name** (not a tuple).
-        tensors: loose tensors sharing those names —
-            ``('g', a, b)`` (a metric) and ``('v', combo, a)`` (the vector
-            ``Σ c_h h^a``, ``combo = ((c_h, head), …)``).
-        dot: callable ``(head, head) -> scalar``, e.g.
-            :meth:`~feynlag.pheno.kinematics.TwoToTwoKinematics.dot`.
-        memo: optional slash-trace cache, see :func:`_scalar_trace`.
+def _eliminate_loose(factors, tensors, dot, who):
+    """Remove every loose tensor: a metric identifies its two indices, two
+    vectors on one index become a dot product, a vector meeting a ``γ``
+    becomes a slash.  Returns ``(scalar coefficient, factors)``.
 
     Raises:
-        ValueError: an index name that does not appear exactly twice.
+        ValueError: an unknown tensor, an index name that does not appear
+            exactly twice, or (with no ``γ`` to meet) a vector left alone on
+            its index.
     """
-    factors = list(factors)
     metrics = [t for t in tensors if t[0] == "g"]
     vectors = [t for t in tensors if t[0] == "v"]
     if len(metrics) + len(vectors) != len(tensors):
-        raise ValueError(f"contract_trace: unknown tensor in {tensors!r}")
+        raise ValueError(f"{who}: unknown tensor in {tensors!r}")
 
     counts = {}
     for name in ([_factor_index(f) for f in factors]
@@ -280,7 +271,7 @@ def contract_trace(factors, tensors, dot, memo=None):
     bad = {name: n for name, n in counts.items() if n != 2}
     if bad:
         raise ValueError(
-            f"contract_trace: every index must appear exactly twice; got "
+            f"{who}: every index must appear exactly twice; got "
             f"{bad}")
 
     coeff = sp.S.One
@@ -307,6 +298,45 @@ def contract_trace(factors, tensors, dot, memo=None):
             (combo,) = combos
             factors = [("G", ("q", tuple(combo)), f[2], f[3])
                        if _factor_index(f) == a else f for f in factors]
+    return coeff, factors
+
+
+def contract_tensors(tensors, dot):
+    """``∏ tensors``, fully contracted, as a scalar — :func:`contract_trace`
+    without a Dirac trace (a pure-boson ``|M|²``, Tier 5 stage 5c).
+
+    Args:
+        tensors: ``('g', a, b)`` metrics and ``('v', combo, a)`` vectors on
+            plain hashable index names, each name appearing exactly twice.
+        dot: callable ``(head, head) -> scalar``.
+
+    Raises:
+        ValueError: an index name that does not appear exactly twice.
+    """
+    coeff, _ = _eliminate_loose([], tensors, dot, "contract_tensors")
+    return coeff
+
+
+def contract_trace(factors, tensors, dot, memo=None):
+    """``Tr[factors] × ∏ tensors``, fully contracted, as a scalar (γ₅-free
+    part — see the module docstring).
+
+    Args:
+        factors: the Dirac string, as for :func:`_expand_chiral_string`,
+            with a ``'G'`` factor's free Lorentz index given as a plain
+            hashable **name** (not a tuple).
+        tensors: loose tensors sharing those names —
+            ``('g', a, b)`` (a metric) and ``('v', combo, a)`` (the vector
+            ``Σ c_h h^a``, ``combo = ((c_h, head), …)``).
+        dot: callable ``(head, head) -> scalar``, e.g.
+            :meth:`~feynlag.pheno.kinematics.TwoToTwoKinematics.dot`.
+        memo: optional slash-trace cache, see :func:`_scalar_trace`.
+
+    Raises:
+        ValueError: an index name that does not appear exactly twice.
+    """
+    coeff, factors = _eliminate_loose(list(factors), tensors, dot,
+                                      "contract_trace")
 
     # 3. what is left is contracted γ pairs inside the trace
     seen = set()

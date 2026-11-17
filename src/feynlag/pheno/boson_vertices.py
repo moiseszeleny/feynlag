@@ -34,14 +34,23 @@ with ``∂_μφ → +i p(φ) φ``; :func:`vss_tensor` resolves each to
 field leg ``φ`` — the same plane-wave sign as above (``tests/test_vss.py``
 evaluates the kinetic term on plane waves directly, and the Ward identity of
 ``e⁻γ→χφ⁻`` is the physical proof).
+
+``VVVV``.  A four-vector contact vertex has no derivative, hence no momentum
+and no ``κ``: :func:`vvvv_tensor` writes one catalog structure
+(``VVVV1/2/3`` of :mod:`feynlag.export.ufo.vvvv`) in the metric-pair basis,
+times its coupling, which already is the Feynman rule (``i g²`` per structure
+for an unbroken group, :func:`~feynlag.export.ufo.vvvv.adjoint_vvvv`).  Its
+sign relative to two cubic vertices joined by a propagator is what the Ward
+identity of ``gg→gg`` tests (``tests/test_four_gluons.py``).
 """
 
 import sympy as sp
 
+from ..export.ufo.vvvv import _STRUCTURE_METRIC_PAIRS
 from ..operators import momentum
 
 __all__ = ["VSS_KAPPA", "VVV_KAPPA", "sss_tensor", "vss_tensor",
-           "vvs_tensor", "vvv_tensor"]
+           "vvs_tensor", "vvv_tensor", "vvvv_tensor"]
 
 #: vertex = ``VVV_KAPPA × Vertex.coupling × [g^{μν}(p₁−p₂)^ρ + cyclic]``
 VVV_KAPPA = -sp.S.One
@@ -72,6 +81,31 @@ def vvv_tensor(coupling, legs):
         (c, (("g", i2, i3), ("v", _difference(p2, p3), i1))),
         (c, (("g", i3, i1), ("v", _difference(p3, p1), i2))),
     ]
+
+
+def vvvv_tensor(structure, coupling, indices):
+    """One catalog structure of the four-vector contact vertex.
+
+    Args:
+        structure: ``'VVVV1'``, ``'VVVV2'`` or ``'VVVV3'`` —
+            ``M14M23 − M13M24``, ``M14M23 − M12M34``, ``M13M24 − M12M34``
+            with ``Mab = g^{μ_aμ_b}``.
+        coupling: its coefficient (the Feynman rule, ``i`` included).
+        indices: the four legs' index names, in the order the structure
+            numbers them.
+
+    The three structures are kept apart because, for an unbroken group, each
+    multiplies its own colour tensor (``f^{12e}f^{34e}``, ``f^{13e}f^{24e}``,
+    ``f^{14e}f^{23e}``).
+    """
+    i1, i2, i3, i4 = indices
+    pairs = ((("g", i1, i2), ("g", i3, i4)),
+             (("g", i1, i3), ("g", i2, i4)),
+             (("g", i1, i4), ("g", i2, i3)))
+    coupling = sp.sympify(coupling)
+    return [(weight * coupling, tensors)
+            for weight, tensors in zip(_STRUCTURE_METRIC_PAIRS[structure], pairs)
+            if weight != 0]
 
 
 def vvs_tensor(coupling, index_a, index_b):
