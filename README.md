@@ -132,9 +132,9 @@ Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszel
 - 2→2 scattering covers four-fermion processes (with interference and
   s/t/u topologies) and two-fermion + two-boson processes (`e+e-→γγ`,
   `e+e-→ZZ`, Compton, `e+e-→W+W-`, `e+e-→Zh`, scalar pairs through a `VSS`
-  vertex), plus coloured four-fermion processes (parton-level four-quark
-  scattering): four-point contact vertices, boson–boson scattering and
-  external gluons are not yet supported, and `VVV` decays are not implemented;
+  vertex), plus coloured processes at parton level (four-quark scattering,
+  `q q̄→gg`, `qg→qg`, `gg→q q̄`): four-point contact vertices and
+  boson–boson scattering (`gg→gg`) are not yet supported, and `VVV` decays are not implemented;
 - no NLO / UFO 2.0 extensions.
 
 Unsupported cases raise `NotImplementedError` rather than returning a

@@ -139,7 +139,8 @@ def test_gluon_vertex_is_stripped_to_one_mediator(qcd, component):
     """Whichever colour component the species is declared on, the eight
     component vertices collapse to one ``q̄ q g`` vertex with ``i g_s``."""
     calc, u, d = qcd["setup"](component=component)
-    gluon = [v for v in calc.vertices() if v.particles[2] == calc.gluon]
+    gluon = [v for v in calc.vertices()
+             if v.vertex_type == "FFV" and v.particles[2] == calc.gluon]
     assert {(str(v.particles[0]), str(v.particles[1])) for v in gluon} == {
         ("cubar", "cu"), ("cdbar", "cd")}
     for v in gluon:
@@ -352,13 +353,13 @@ def test_coloured_external_needs_the_colour_group(qcd):
         qcd["setup"](gluon=None)
 
 
-def test_external_gluon_is_stage_5b(qcd):
+def test_gluon_component_is_not_an_external_state(qcd):
+    """An external gluon is ``calc.gluon`` (stage 5b, ``test_gluons.py``);
+    one colour component of it is refused."""
     calc, u, _ = qcd["setup"]()
-    for gluon in (calc.gluon, qcd["G"].components[0]):
-        with pytest.raises(NotImplementedError, match="stage 5b"):
-            calc.process((u.particle, u.antiparticle), (gluon, gluon))
-    with pytest.raises(NotImplementedError, match="stage 5b"):
-        calc.process((u.particle, u.antiparticle), (qcd["A"], qcd["A"]))
+    component = qcd["G"].components[0]
+    with pytest.raises(KeyError, match="colour component"):
+        calc.process((u.particle, u.antiparticle), (component, component))
 
 
 def test_declared_colour_must_match_the_field(qcd):

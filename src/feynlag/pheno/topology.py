@@ -102,12 +102,14 @@ class ExternalBoson:
         spin: ``0`` or ``1``.
         mass: its mass.
         incoming: ``True`` for an initial-state particle.
+        color: its colour dimension (``N²−1`` for a gluon, ``1`` otherwise).
     """
 
     symbol: sp.Expr
     spin: int
     mass: sp.Expr
     incoming: bool
+    color: int = 1
 
     def __post_init__(self):
         object.__setattr__(self, "symbol", sp.sympify(self.symbol))
@@ -278,6 +280,12 @@ class LineDiagramInfo:
             line order (bar-slot end first) for ``'fermion'``; the line
             vertex then the bosonic vertex for ``'boson'``.
         terms: the diagram's :class:`~feynlag.pheno.line.LineTerm`\\ s.
+        order: for ``'fermion'``, ``(first, second)`` — which external boson
+            (``0`` or ``1``, in the order they appear among the externals)
+            sits at the vertex next to the bar slot and which next to the
+            field slot.  A ``'boson'`` diagram's three-boson vertex has its
+            legs in the order (mediator, boson 0, boson 1).  Colour tensors
+            are built from this.
     """
 
     channel: str
@@ -285,6 +293,7 @@ class LineDiagramInfo:
     kind: str
     vertices: tuple
     terms: tuple
+    order: tuple = ()
 
     def __repr__(self):
         return f"LineDiagramInfo({self.channel}-channel {self.mediator})"
@@ -426,7 +435,8 @@ def enumerate_line_diagrams(externals, vertices, kin, species,
                 out.append(LineDiagramInfo(
                     channel=channel, mediator=exchanged.particle,
                     kind="fermion", vertices=(vertex_1, vertex_2),
-                    terms=(term,)))
+                    terms=(term,),
+                    order=(bosons.index(first), bosons.index(second))))
         # the mirror-image check: a vertex next to the bar slot whose other
         # fermion leg is undeclared would also complete a diagram
         for vertex_1 in vertices:
@@ -535,8 +545,13 @@ def _require_gauge_vertices(externals, bosons, vertices, conjugates):
                 f"output to `vertices`)")
 
 
-def line_amplitude(externals, infos, kin):
-    """The :class:`~feynlag.pheno.line.LineAmplitude` of enumerated diagrams."""
+def line_amplitude(externals, infos, kin, references=None):
+    """The :class:`~feynlag.pheno.line.LineAmplitude` of enumerated diagrams.
+
+    ``references`` maps an external position to the light-like momentum head
+    its physical polarization sum is built with
+    (:class:`~feynlag.pheno.line.VectorLeg`); legs not listed use ``−g``."""
+    references = references or {}
     bar, field, bosons = _split_externals(externals)
     heads = (kin.k1, kin.k2, kin.k3, kin.k4)
     masses = (kin.m1, kin.m2, kin.m3, kin.m4)
@@ -544,7 +559,8 @@ def line_amplitude(externals, infos, kin):
     def leg(j):
         return Leg(heads[j], masses[j], anti=externals[j].anti)
 
-    vectors = tuple(VectorLeg(_external_index(j), heads[j], masses[j])
+    vectors = tuple(VectorLeg(_external_index(j), heads[j], masses[j],
+                              reference=references.get(j))
                     for j in bosons if externals[j].spin == 1)
     return LineAmplitude(out=leg(bar), inn=leg(field),
                          diagrams=tuple(info.terms for info in infos),

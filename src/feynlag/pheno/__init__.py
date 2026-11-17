@@ -54,7 +54,9 @@ from .scattering import (
     ffs_s_channel_squared, ffv_s_channel_squared, forward_backward_asymmetry,
 )
 from .scattering_calculator import ScatteringCalculator, ScatteringProcess
-from .colour import colour_matrix, four_fermion_colour_tensor
+from .colour import (
+    colour_matrix, four_fermion_colour_tensor, line_colour_tensor,
+)
 from .boson_vertices import (
     VSS_KAPPA, VVV_KAPPA, sss_tensor, vss_tensor, vvs_tensor, vvv_tensor,
 )
@@ -74,7 +76,7 @@ __all__ = [
     "ExternalBoson", "ExternalFermion", "ExternalState", "Leg",
     "LineAmplitude", "LineDiagramInfo", "LineTerm", "ScatteringCalculator",
     "VSS_KAPPA", "VVV_KAPPA", "VectorLeg", "boson_exchange_terms",
-    "colour_matrix", "four_fermion_colour_tensor",
+    "colour_matrix", "four_fermion_colour_tensor", "line_colour_tensor",
     "enumerate_line_diagrams", "fermion_exchange_term", "sss_tensor",
     "vss_tensor", "vvs_tensor", "vvv_tensor",
     "fermion_propagator_phase", "line_amplitude",

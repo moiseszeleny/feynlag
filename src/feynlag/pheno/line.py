@@ -145,22 +145,42 @@ def primed(name):
 
 @dataclass(frozen=True)
 class VectorLeg:
-    """An external spin-1 boson: its open index name, momentum head and mass."""
+    """An external spin-1 boson: its open index name, momentum head and mass.
+
+    ``reference`` is an optional **light-like** momentum head ``n`` with
+    ``k·n ≠ 0``.  A massless leg that has one sums over its two physical
+    polarizations, ``−g_{μν} + (k_μn_ν + n_μk_ν)/(k·n)``, instead of
+    ``−g_{μν}``.  Two external gluons need this: with ``−g`` on both the
+    unphysical polarizations do not cancel (that is what ghosts are for).
+    """
 
     index: str
     momentum: object
     mass: sp.Expr
+    reference: object = None
 
     def __post_init__(self):
         object.__setattr__(self, "mass", sp.sympify(self.mass))
 
-    def polarization_sum(self):
+    def polarization_sum(self, dot=None):
         """``Σ ε_μ ε*_{μ'}`` as ``[(coeff, tensors)]`` on ``index`` and its
-        primed partner: ``−g`` and, for a massive vector, ``+k k/m²``."""
+        primed partner: ``−g`` and, for a massive vector, ``+k k/m²``; for a
+        massless one with a ``reference``, ``+(k n + n k)/(k·n)`` (``dot``,
+        the kinematics' ``dot``, is then required)."""
         a, b = self.index, primed(self.index)
         pieces = [(-sp.S.One, (("g", a, b),))]
         if self.mass != 0:
             pieces.append((1 / self.mass**2, self.longitudinal()))
+        elif self.reference is not None:
+            if dot is None:
+                raise ValueError(
+                    "VectorLeg.polarization_sum: a physical (reference-"
+                    "vector) sum needs the kinematics' `dot`")
+            kn = dot(self.momentum, self.reference)
+            k = ((sp.S.One, self.momentum),)
+            n = ((sp.S.One, self.reference),)
+            pieces.append((1 / kn, (("v", k, a), ("v", n, b))))
+            pieces.append((1 / kn, (("v", n, a), ("v", k, b))))
         return pieces
 
     def longitudinal(self):
@@ -274,39 +294,53 @@ class LineAmplitude:
     def terms(self):
         return [term for diagram in self.diagrams for term in diagram]
 
-    def _summed(self, kin, polarization):
-        """``Σ_{a,b}`` with the given ``{index: [(coeff, tensors)]}`` sums."""
+    def _summed(self, kin, polarization, colour=None):
+        """``Σ_{a,b}`` with the given ``{index: [(coeff, tensors)]}`` sums,
+        each pair of diagrams weighted by ``colour[d][d']`` (``1`` without a
+        colour matrix)."""
         external = {leg.index for leg in self.vectors}
-        terms = self.terms()
-        barred = [term.bar(external) for term in terms]
+        barred = [[term.bar(external) for term in diagram]
+                  for diagram in self.diagrams]
         choices = list(itertools.product(
             *(polarization[leg.index] for leg in self.vectors)))
         memo = {}
         total = sp.S.Zero
-        for a in terms:
-            for b in barred:
-                factors = ((("S", self.out),) + a.string
-                           + (("S", self.inn),) + b.string)
-                piece = sp.S.Zero
-                for choice in choices:
-                    weight = sp.S.One
-                    tensors = a.tensors + b.tensors
-                    for c, extra in choice:
-                        weight *= c
-                        tensors += extra
-                    piece += weight * contract_trace(factors, tensors,
-                                                     kin.dot, memo)
-                total += a.coeff * b.coeff * piece
+        for i, diagram in enumerate(self.diagrams):
+            for j, conjugate in enumerate(barred):
+                factor = sp.S.One if colour is None else colour[i][j]
+                if factor == 0:
+                    continue
+                pair = sp.S.Zero
+                for a in diagram:
+                    for b in conjugate:
+                        factors = ((("S", self.out),) + a.string
+                                   + (("S", self.inn),) + b.string)
+                        piece = sp.S.Zero
+                        for choice in choices:
+                            weight = sp.S.One
+                            tensors = a.tensors + b.tensors
+                            for c, extra in choice:
+                                weight *= c
+                                tensors += extra
+                            piece += weight * contract_trace(
+                                factors, tensors, kin.dot, memo)
+                        pair += a.coeff * b.coeff * piece
+                total += factor * pair
         return total
 
-    def squared(self, kin, ward_check=True):
+    def squared(self, kin, ward_check=True, colour=None):
         """The spin/polarization-**summed** ``|M|²`` (no averaging — see
         :func:`~feynlag.pheno.scattering.average_factor`).
 
         Args:
             kin: a :class:`~feynlag.pheno.kinematics.TwoToTwoKinematics`.
             ward_check: verify ``k_μ M^μ = 0`` for every massless external
-                vector before trusting its ``−g`` polarization sum.
+                vector before trusting its polarization sum.  The leg's sum
+                is replaced by ``k_μk_{μ'}`` while the *other* legs keep
+                theirs, so with physical sums on the gluons this is the
+                non-abelian identity.
+            colour: optional colour matrix ``C[d][d']``, one row per diagram
+                (:func:`~feynlag.pheno.colour.colour_matrix`).
 
         Raises:
             NotImplementedError: a massless external vector whose Ward
@@ -315,22 +349,44 @@ class LineAmplitude:
         if any(term.is_chiral() for term in self.terms()):
             assert_epsilon_single_vanishes(
                 [kin.k1, kin.k2, kin.k3, kin.k4], kin.dot)
-        sums = {leg.index: leg.polarization_sum() for leg in self.vectors}
-        total = self._summed(kin, sums)
+        if colour is not None and len(colour) != len(self.diagrams):
+            raise ValueError(
+                "LineAmplitude.squared: the colour matrix needs one row per "
+                "diagram")
+        sums = {leg.index: leg.polarization_sum(kin.dot)
+                for leg in self.vectors}
+        total = self._summed(kin, sums, colour)
         if ward_check:
             for leg in self.vectors:
                 if leg.mass != 0:
                     continue
                 probe = dict(sums)
                 probe[leg.index] = [(sp.S.One, leg.longitudinal())]
-                residue = self._summed(kin, probe)
-                if not _is_zero(residue, total, (kin.s, kin.t)):
+                probes = [probe]
+                # ``k_μ M^{μν}`` must vanish as a vector on every other leg
+                # that is summed with −g.  For two non-abelian vectors it is
+                # ∝ k'^ν instead, which −g squares to k'² = 0 and so cannot
+                # see: also contract that leg with this leg's own momentum.
+                k = ((sp.S.One, leg.momentum),)
+                for other in self.vectors:
+                    if (other is leg or other.mass != 0
+                            or other.reference is not None):
+                        continue
+                    sharper = dict(probe)
+                    sharper[other.index] = [(sp.S.One, (
+                        ("v", k, other.index),
+                        ("v", k, primed(other.index))))]
+                    probes.append(sharper)
+                residues = [self._summed(kin, p, colour) for p in probes]
+                if not all(_is_zero(residue, total, (kin.s, kin.t))
+                           for residue in residues):
                     raise NotImplementedError(
                         f"LineAmplitude.squared: the Ward identity "
                         f"k·M = 0 fails for the massless external vector "
                         f"with momentum {leg.momentum.name}, so its "
-                        f"polarization sum is not −g. Two external massless "
-                        f"non-abelian vectors need ghosts or physical "
-                        f"polarizations (Tier 5 of the scattering roadmap); "
-                        f"otherwise a diagram is missing.")
+                        f"polarization sum cannot be trusted. Two external "
+                        f"massless non-abelian vectors need physical "
+                        f"polarization sums (VectorLeg.reference) and their "
+                        f"colour matrix; otherwise a diagram is missing or "
+                        f"a relative sign is wrong.")
         return sp.expand(total)
