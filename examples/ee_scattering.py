@@ -18,20 +18,19 @@ Run with::
     python examples/ee_scattering.py
 """
 
-import math
-
 import sympy as sp
 
 from feynlag import (
     Lagrangian, Model, WeylFermion, electroweak_inputs, electroweak_scaffold,
     fermion_gauge_current, to_physical_basis,
 )
-from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno import (
+    DiracParticle, ScatteringCalculator, cross_section_in, eta_acceptance,
+)
 
 # MadGraph's stock electroweak input scheme (docs/benchmark.md)
 INPUTS = electroweak_inputs(alpha_inv=132.50698, GF=1.16639e-5, MZ=91.1876)
 WZ = 2.4952
-GEV2_TO_PB = 0.3893794e9
 SQRT_S = 200.0
 
 
@@ -63,30 +62,31 @@ def build():
 
     e = DiracParticle("e", Le.components[1], eR.components[0], 0)
     mu = DiracParticle("mu", Lmu.components[1], muR.components[0], 0)
-    # bosons, masses, conjugates and the parameter point come from the model
-    calc = ScatteringCalculator.from_model(model, [e, mu], widths={ph.Z: WZ})
-    return calc, e, mu
+    # bosons, masses, conjugates and the parameter point come from the model;
+    # the lepton names are ours to choose
+    calc = ScatteringCalculator.from_model(
+        model, [e, mu], widths={ph.Z: WZ},
+        aliases={"e-": e.particle, "e+": e.antiparticle,
+                 "mu-": mu.particle, "mu+": mu.antiparticle})
+    return calc
 
 
 def pb(sigma, proc):
-    return float(sigma.subs(proc.kinematics.s, SQRT_S**2)) * GEV2_TO_PB
+    return cross_section_in(float(sigma.subs(proc.kinematics.s, SQRT_S**2)),
+                            "pb")
 
 
 def main():
-    calc, e, mu = build()
-    eta_cut = math.tanh(2.5)
+    calc = build()
 
     print("=" * 68)
     print(f"e+e- -> mu+mu- at sqrt(s) = {SQRT_S:.0f} GeV (feynlag.pheno, Tier 3)")
     print("=" * 68)
-    mumu = calc.process((e.particle, e.antiparticle),
-                        (mu.particle, mu.antiparticle))
-    for d in mumu.diagrams:
-        print(f"  diagram: {d.channel}-channel {d.mediator}, fermion sign {d.sign:+d}")
-    full = pb(mumu.cross_section(), mumu)
-    cut = pb(mumu.cross_section(cos_range=(-eta_cut, eta_cut)), mumu)
-    afb = float(mumu.forward_backward_asymmetry().subs(mumu.kinematics.s,
-                                                       SQRT_S**2))
+    mumu = calc.process("e- e+ > mu- mu+")
+    print(mumu.summary())
+    full = pb(mumu.cross_section(), mumu)          # exact t-integral
+    cut = pb(mumu.cross_section(cos_range=eta_acceptance(2.5)), mumu)
+    afb = mumu.numeric_forward_backward_asymmetry(sqrt_s=SQRT_S)
     print(f"  sigma (full angle)        = {full:.4f} pb")
     print(f"  sigma (|eta| < 2.5)       = {cut:.4f} pb   "
           f"[MadGraph: 2.7878 +- 0.0027 pb]")
@@ -95,12 +95,10 @@ def main():
     print("\n" + "=" * 68)
     print("Bhabha e+e- -> e+e-")
     print("=" * 68)
-    bhabha = calc.process((e.particle, e.antiparticle),
-                          (e.particle, e.antiparticle))
-    for d in bhabha.diagrams:
-        print(f"  diagram: {d.channel}-channel {d.mediator}, fermion sign {d.sign:+d}")
-    sigma = bhabha.numeric_cross_section(SQRT_S**2, cos_range=(-eta_cut, eta_cut))
-    sigma *= GEV2_TO_PB
+    bhabha = calc.process("e- e+ > e- e+")
+    print(bhabha.summary())
+    sigma = bhabha.numeric_cross_section(sqrt_s=SQRT_S, unit="pb",
+                                         eta_max=2.5)
     print(f"  sigma (|eta| < 2.5)       = {sigma:.2f} pb")
 
     print("\nThe interference terms (gamma-Z; s-t) are what Tiers 1-2 could not "

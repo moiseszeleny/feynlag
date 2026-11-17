@@ -306,6 +306,23 @@ and of the `docs/benchmark.md` parameter point, and
 `tests/test_pheno_setup.py` pins all of the above, including $\sigma(e^+e^-\to
 W^+W^-) = 19.447$ pb from a `from_model` calculator.
 
+**Decay tables.** `decay_table(parent, unit=, min_br=)` collects one
+parent's channels at the parameter point into a `DecayTable`: the widths in
+`unit` (`GeV`, `MeV`, `keV`, …), the branching ratios, largest first, and the
+total width. The parent can be a name (`"h"`, an alias such as `"z"`).
+
+```python
+print(decays.decay_table("Z", unit="MeV"))
+table = decays.decay_table("Z")
+table[("nu", "nubar")].branching_ratio
+```
+
+It is built on `numeric_partial_widths`, so a channel closed at the point
+(`h→WW` at $m_h=125$ GeV) shows 0 instead of an imaginary width. Channels
+with a branching ratio below `min_br` are folded into one `other` row. The
+table prints as text and renders as markdown in a notebook
+(`tests/test_pheno_usability.py`).
+
 ## 15.9 References
 
 - [PDG-EW] Particle Data Group, *Electroweak Model and Constraints on New

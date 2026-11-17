@@ -104,17 +104,8 @@ def main():
     widths = calc.partial_widths(h)
     numeric = calc.numeric_partial_widths(h, extra=mass_vals)
     total = sum(numeric.values())
-
-    # order by width, descending
-    ordered = sorted(numeric, key=lambda k: -numeric[k])
-    print(f"\n{'channel':<16}{'Γ [MeV]':>12}{'BR (Tier 1)':>14}")
-    print("-" * 42)
-    for children in ordered:
-        kids = "".join(str(c) for c in children)
-        w = numeric[children]
-        print(f"h -> {kids:<11}{w * 1e3:>12.4f}{w / total:>14.4f}")
-    print("-" * 42)
-    print(f"{'total (Tier 1)':<16}{total * 1e3:>12.4f}")
+    print()
+    print(calc.decay_table(h, extra=mass_vals, unit="MeV"))
     assert calc.unmatched_channels == [], calc.unmatched_channels
 
     # --- cross-check: the symbolic bb width is N_c y_b² m_h β³/16π ----------
@@ -171,8 +162,8 @@ def main():
     grand = total + gWW + gZZ + Ggg + Ggaga + GZga
     rows = [("WW*", gWW), ("ZZ*", gZZ), ("gg", Ggg),
             ("γγ", Ggaga), ("Zγ", GZga)]
-    for children in ordered:
-        rows.append(("".join(str(c) for c in children), numeric[children]))
+    for children, w in numeric.items():
+        rows.append(("".join(str(c) for c in children), w))
 
     print("\n" + "=" * 60)
     print("Complete Higgs branching ratios at m_h = 125 GeV")

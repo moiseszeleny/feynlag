@@ -24,6 +24,20 @@ All notable changes to feynlag are documented here. The format follows
   input scheme (`ElectroweakInputs`; `.couplings` feeds
   `electroweak_scaffold`).
 - `docs/manual/decays.md` §15.8 documents the setup.
+- **Process names.** `ScatteringCalculator.process("e- e+ > w+ w-")`, or
+  tuples of names; symbol names match exactly, aliases case-insensitively.
+  `to_physical_basis` registers the SM bosons' MadGraph names on the new
+  `model.physical.aliases`, `from_model` picks them up, and both calculators
+  take `aliases=` and list their names with `particle_names()`
+  (`pheno.names.ParticleNames`). A `DecayCalculator` parent can be a name.
+- **Units and cuts.** `numeric_cross_section(sqrt_s=, unit="pb", eta_max=)`
+  (the GeV⁻² default is unchanged) and `numeric_forward_backward_asymmetry`;
+  new `pheno.units` (`cross_section_in`, `energy_in`, `eta_acceptance`, the
+  PDG `(ħc)²`).
+- **Readable results.** `ScatteringProcess.summary()` (`ProcessSummary`:
+  diagrams, σ, A_FB), a readable `repr` and notebook markdown for a process,
+  and `DecayCalculator.decay_table()` (`DecayTable`: widths in a unit, BRs,
+  total). Documented in `scattering_roadmap.md` §17.6 and `decays.md` §15.8.
 
 - 2→2 scattering, Tier 5 stage 5c: **`gg→gg`**, the first amplitude with no
   fermion line and the first four-point contact vertex in a diagram. New
@@ -152,6 +166,13 @@ All notable changes to feynlag are documented here. The format follows
   `gauge_groups` is not given.
 
 ### Fixed
+- **`DecayCalculator` built fake channels with Goldstones left out of
+  `boson_fields`** (the `from_model` default): the extractor read a four-leg
+  term `h A W⁺ G⁻` as a three-leg `h→AW⁺` with coupling `∝ G⁻` (and `Z→hW±`),
+  so `numeric_partial_widths(h)` failed on the leftover symbol. Vertices are
+  now taken at zero fields, as `ScatteringCalculator` already did; the filter
+  is shared as `pheno.vertices.at_zero_fields`. Channels of a calculator that
+  lists every field are unchanged.
 - The Ward-identity guard of `LineAmplitude.squared` did not catch two
   non-abelian massless vectors both summed with `−g`: there
   `k_μM^{μν} ∝ k′^ν`, and `−g` squares that to `k′² = 0`. The check now also
