@@ -23,27 +23,21 @@ import math
 import sympy as sp
 
 from feynlag import (
-    Lagrangian, Model, WeylFermion, electroweak_scaffold,
+    Lagrangian, Model, WeylFermion, electroweak_inputs, electroweak_scaffold,
     fermion_gauge_current, to_physical_basis,
 )
 from feynlag.pheno import DiracParticle, ScatteringCalculator
 
 # MadGraph's stock electroweak input scheme (docs/benchmark.md)
-AEWM1, GF, MZ, WZ = 132.50698, 1.16639e-5, 91.1876, 2.4952
-AEW = 1 / AEWM1
-EE = math.sqrt(4 * math.pi * AEW)
-MW = math.sqrt(MZ**2 / 2 + math.sqrt(MZ**4 / 4 - AEW * math.pi * MZ**2
-                                     / (GF * math.sqrt(2))))
-SW2 = 1 - MW**2 / MZ**2
-GW, G1 = EE / math.sqrt(SW2), EE / math.sqrt(1 - SW2)
-VEV = 2 * MW * math.sqrt(SW2) / EE
+INPUTS = electroweak_inputs(alpha_inv=132.50698, GF=1.16639e-5, MZ=91.1876)
+WZ = 2.4952
 GEV2_TO_PB = 0.3893794e9
 SQRT_S = 200.0
 
 
 def build():
     """SM electroweak gauge sector + two massless lepton generations."""
-    ew = electroweak_scaffold(gw=GW, g1=G1, v=VEV, mh=125.0)
+    ew = electroweak_scaffold(**INPUTS.couplings, mh=125.0)
     SU2L, U1Y = ew.SU2L, ew.U1Y
     i = sp.Symbol("i", integer=True)
 
@@ -69,10 +63,9 @@ def build():
 
     e = DiracParticle("e", Le.components[1], eR.components[0], 0)
     mu = DiracParticle("mu", Lmu.components[1], muR.components[0], 0)
-    calc = ScatteringCalculator(
-        model, [e, mu], masses={ph.A: 0, ph.Z: MZ}, widths={ph.Z: WZ},
-        boson_fields=[ph.Z, ph.A], conjugate_map=ph.cmap)
-    return calc, e, mu, {ew.gw.s: GW, ew.g1.s: G1}
+    # bosons, masses, conjugates and the parameter point come from the model
+    calc = ScatteringCalculator.from_model(model, [e, mu], widths={ph.Z: WZ})
+    return calc, e, mu
 
 
 def pb(sigma, proc):
@@ -80,15 +73,14 @@ def pb(sigma, proc):
 
 
 def main():
-    calc, e, mu, values = build()
+    calc, e, mu = build()
     eta_cut = math.tanh(2.5)
 
     print("=" * 68)
     print(f"e+e- -> mu+mu- at sqrt(s) = {SQRT_S:.0f} GeV (feynlag.pheno, Tier 3)")
     print("=" * 68)
     mumu = calc.process((e.particle, e.antiparticle),
-                        (mu.particle, mu.antiparticle),
-                        numeric=True, extra=values)
+                        (mu.particle, mu.antiparticle))
     for d in mumu.diagrams:
         print(f"  diagram: {d.channel}-channel {d.mediator}, fermion sign {d.sign:+d}")
     full = pb(mumu.cross_section(), mumu)
@@ -104,8 +96,7 @@ def main():
     print("Bhabha e+e- -> e+e-")
     print("=" * 68)
     bhabha = calc.process((e.particle, e.antiparticle),
-                          (e.particle, e.antiparticle),
-                          numeric=True, extra=values)
+                          (e.particle, e.antiparticle))
     for d in bhabha.diagrams:
         print(f"  diagram: {d.channel}-channel {d.mediator}, fermion sign {d.sign:+d}")
     sigma = bhabha.numeric_cross_section(SQRT_S**2, cos_range=(-eta_cut, eta_cut))

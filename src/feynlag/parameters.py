@@ -15,7 +15,7 @@ import sympy as sp
 from .texsymbol import tex_symbol
 
 __all__ = ["Parameter", "ExternalParameter", "InternalParameter",
-           "ParameterSet"]
+           "ParameterPoint", "ParameterSet"]
 
 
 class Parameter:
@@ -245,17 +245,50 @@ class ParameterSet:
             resolution[p.symbol] = p.expr.subs(resolution)
         return resolution
 
-    def numeric(self):
+    def _external_overrides(self, overrides):
+        """``{symbol: value}`` from ``{name | Symbol | Parameter: value}``."""
+        out = {}
+        for key, value in (overrides or {}).items():
+            if isinstance(key, Parameter):
+                key = key.symbol
+            if key not in self:
+                raise KeyError(
+                    f"override of {key!r}: no such parameter in the "
+                    f"ParameterSet (known: {sorted(self._by_name)})")
+            param = self[key]
+            if not isinstance(param, ExternalParameter):
+                raise ValueError(
+                    f"override of {param.name}: it is an internal (derived) "
+                    f"parameter, fixed by its defining expression; override "
+                    f"the external parameters it depends on instead")
+            out[param.symbol] = value
+        return out
+
+    def numeric(self, overrides=None):
         """Numeric value of every parameter (externals must have values).
+
+        Args:
+            overrides: optional ``{name | Symbol | Parameter: value}`` for
+                **external** parameters, used instead of their stored
+                ``value``; the internals are re-derived from them.  Nothing
+                is mutated, so one ``ParameterSet`` serves many points (see
+                :class:`ParameterPoint`).
 
         Returns:
             dict ``{symbol: float/complex}``.
+
+        Raises:
+            KeyError: an override names no parameter of the set.
+            ValueError: an override targets an internal parameter, or an
+                external parameter has no value.
         """
+        over = self._external_overrides(overrides)
         values = {}
         for p in self.externals:
-            if p.value is None:
+            value = over.get(p.symbol, p.value)
+            if value is None:
                 raise ValueError(f"external parameter {p.name} has no value")
-            values[p.symbol] = sp.sympify(p.value)
+            values[p.symbol] = sp.sympify(value)
         # substitute progressively so external expressions of externals work
         for s in list(values):
             values[s] = values[s].subs(values)
@@ -263,3 +296,109 @@ class ParameterSet:
             values[p.symbol] = p.expr.subs(values)
         return {s: complex(v) if v.is_complex and not v.is_real else float(v)
                 for s, v in values.items()}
+
+
+class ParameterPoint:
+    """One numeric point of a model: a :class:`ParameterSet`, overrides of
+    its external parameters, and values for symbols outside the set.
+
+    ::
+
+        point = ParameterPoint(model.parameters, {"gw": 0.65, "v": 246.0},
+                               extra={m_b: 4.18})
+        point.values()          # {symbol: number}, internals re-derived
+        point["gw"]             # by name, Symbol or Parameter
+        point.replace(v=250.0)  # a new point; this one is unchanged
+
+    The point is immutable and never touches the parameters' stored values,
+    so a scan is ``[point.replace(v=x) for x in xs]``.  ``numeric()`` is an
+    alias of :meth:`values`, which makes a point usable wherever a
+    ``ParameterSet`` is passed as ``parameters=``.
+
+    Args:
+        parameters: the :class:`ParameterSet` (e.g. ``model.parameters``).
+        overrides: ``{name | Symbol | Parameter: value}`` for externals.
+        extra: ``{symbol: value}`` for symbols that are not parameters of
+            the set (a fermion-mass symbol, a width).
+    """
+
+    def __init__(self, parameters, overrides=None, extra=None):
+        if isinstance(parameters, ParameterPoint):
+            overrides = {**parameters._overrides, **(
+                parameters.parameters._external_overrides(overrides))}
+            extra = {**parameters._extra, **{
+                sp.sympify(k): v for k, v in (extra or {}).items()}}
+            parameters = parameters.parameters
+        self.parameters = parameters
+        # normalised to symbols and validated here, so a bad name fails at
+        # construction and not at the first evaluation
+        self._overrides = dict(parameters._external_overrides(overrides))
+        self._extra = {sp.sympify(k): v for k, v in (extra or {}).items()}
+        self._values = None
+
+    @property
+    def overrides(self):
+        """``{symbol: value}`` of the overridden external parameters."""
+        return dict(self._overrides)
+
+    @property
+    def extra(self):
+        """``{symbol: value}`` of the non-parameter symbols."""
+        return dict(self._extra)
+
+    def values(self):
+        """``{symbol: number}``: every parameter, plus ``extra``."""
+        if self._values is None:
+            values = self.parameters.numeric(self._overrides)
+            values.update(self._extra)
+            self._values = values
+        return dict(self._values)
+
+    numeric = values
+
+    def replace(self, overrides=None, extra=None, **named):
+        """A new point with further overrides (``named``: by parameter
+        name).  This point is left unchanged."""
+        return ParameterPoint(self, {**(overrides or {}), **named}, extra)
+
+    def __getitem__(self, key):
+        values = self.values()
+        if isinstance(key, Parameter):
+            key = key.symbol
+        if isinstance(key, str):
+            if key in self.parameters:
+                return values[self.parameters[key].symbol]
+            for sym in self._extra:
+                if str(sym) == key:
+                    return values[sym]
+            raise KeyError(key)
+        return values[sp.sympify(key)]
+
+    def __contains__(self, key):
+        try:
+            self[key]
+        except KeyError:
+            return False
+        return True
+
+    def _rows(self):
+        values = self.values()
+        rows = []
+        for p in self.parameters:
+            if isinstance(p, ExternalParameter):
+                kind = ("override" if p.symbol in self._overrides
+                        else "external")
+            else:
+                kind = "derived"
+            rows.append((p.name, values[p.symbol], kind))
+        rows += [(str(s), v, "extra") for s, v in self._extra.items()]
+        return rows
+
+    def __repr__(self):
+        body = ", ".join(f"{n}={v:.6g}" for n, v, _ in self._rows())
+        return f"ParameterPoint({body})"
+
+    def _repr_markdown_(self):
+        lines = ["| parameter | value | kind |", "|---|---|---|"]
+        lines += [f"| `{n}` | {v:.6g} | {k} |" for n, v, k in self._rows()]
+        return "\n".join(lines)

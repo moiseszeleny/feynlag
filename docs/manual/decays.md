@@ -235,6 +235,84 @@ Higgs branching-ratio picture, from the tree-level quark channels through
 off-shell $WW^*$ to the loop-induced $gg/\gamma\gamma$ — see
 {doc}`decays_roadmap`.
 
+## 15.8 Setting up a calculator from the model
+
+Both calculators can be built from what the {class}`~feynlag.lagrangian.Model`
+already knows, instead of re-typing it:
+
+```python
+from feynlag import ParameterPoint, electroweak_inputs, electroweak_scaffold
+from feynlag.pheno import DecayCalculator, ScatteringCalculator
+
+inputs = electroweak_inputs(alpha_inv=132.50698, GF=1.16639e-5, MZ=91.1876)
+ew = electroweak_scaffold(**inputs.couplings, mh=125.0)
+# ... fields, Lagrangian, Model, solve_tadpoles, to_physical_basis ...
+
+decays = DecayCalculator.from_model(model, particles=[e, nu])
+decays.numeric_branching_ratios(Z)
+
+scatter = ScatteringCalculator.from_model(model, [e, nu], widths={Z: 2.4952})
+scatter.process((e.particle, e.antiparticle), (Wp, Wm))   # numeric by default
+```
+
+`from_model` derives, each overridable by its keyword:
+
+| argument | derived from |
+|---|---|
+| `boson_fields` | `model.physical.unitary_bosons` (the physical bosons, Goldstones left out: unitary gauge) |
+| `conjugate_map`, `conjugates` | `model.physical.cmap`, `model.physical.conjugates` |
+| `masses` | $\sqrt{m^2}$ of each boson, read off the quadratic terms of the physical Lagrangian ({func}`~feynlag.vacuum.physical.physical_boson_masses`); a `masses=` entry replaces a derived one |
+| `gauge_groups` (scattering) | {func}`~feynlag.gauge_basis.broken_nonabelian_groups`: the non-abelian groups a registered rotation touches |
+| `parameters` | `point=` (a {class}`~feynlag.parameters.ParameterPoint` or a `{name: value}` dict), else `model.parameters` |
+
+Widths, `colour_group` and `gluon` are not tree-level model data and stay
+explicit. The masses are derived lazily and with the Lagrangian's own
+normalisation ($+\tfrac12 m^2V^2$ for a real vector, $-m^2\phi\phi^\dagger$ for
+a complex scalar, and so on), so hand-registered rotations such as
+`to_physical_basis` or a chained Z–Z′ are covered too. A field that is **not a
+mass eigenstate** (a non-zero quadratic term with another field) gets *no*
+mass, and `mass_of` then raises and names the fix. It never gets a plausible
+wrong one.
+
+**Parameter points.** `ParameterSet.numeric(overrides)` evaluates at changed
+external values without mutating the parameters, re-deriving every internal
+one. `ParameterPoint` wraps that as an immutable object:
+
+```python
+point = ParameterPoint(model.parameters, {"v": 250.0}, extra={m_b: 4.18})
+point["mu2"]                 # the tadpole-derived internal, re-evaluated
+scan = [point.replace(v=x) for x in (240.0, 250.0, 260.0)]
+decays.numeric_partial_widths(h, point=scan[0])   # per-call override
+```
+
+Overriding an internal parameter, or naming an unknown one, raises.
+`ScatteringCalculator.process(numeric=None)` (the default) is numeric exactly
+when the calculator has parameters, or a `point`/`extra` is passed, so an
+explicitly configured calculator without parameters stays symbolic as before.
+
+**The $(\alpha, G_F, M_Z)$ input scheme.** `electroweak_inputs` gives the
+couplings and VEV from the three inputs through the tree-level relations
+$M_W = gv/2$, $M_Z = M_W/c_w$, $e = g s_w$ and
+$G_F/\sqrt2 = g^2/8M_W^2$ (so $v^2 = 1/\sqrt2 G_F$) [PDG-EW]. Eliminating $g$
+and $v$ gives $M_W^2(1-M_W^2/M_Z^2) = \pi\alpha/\sqrt2 G_F$, whose larger root
+is
+
+$$M_W^2 = \frac{M_Z^2}{2} + \sqrt{\frac{M_Z^4}{4} - \frac{\pi\alpha M_Z^2}{\sqrt2\,G_F}}.$$
+
+With these couplings the model's *derived* masses reproduce the inputs, so no
+boson mass is typed by hand. This is the scheme of MadGraph's stock `sm` model
+and of the `docs/benchmark.md` parameter point, and
+`examples/ee_to_ww.py`/`examples/ee_scattering.py` use it.
+`tests/test_pheno_setup.py` pins all of the above, including $\sigma(e^+e^-\to
+W^+W^-) = 19.447$ pb from a `from_model` calculator.
+
+## 15.9 References
+
+- [PDG-EW] Particle Data Group, *Electroweak Model and Constraints on New
+  Physics* (review in the Review of Particle Physics, §"The Fermi constant"),
+  <https://pdg.lbl.gov/>. This is cited without a year pin, since the PDG
+  republishes annually and section numbers shift.
+
 ## Minimal example
 
 ```python

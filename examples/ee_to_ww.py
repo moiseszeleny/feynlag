@@ -13,31 +13,25 @@ and the cross section is compared with MadGraph's 19.498 ± 0.058 pb at
 Run:  python examples/ee_to_ww.py
 """
 
-import math
-
 import sympy as sp
 
 from feynlag import (
-    Lagrangian, Model, WeylFermion, electroweak_scaffold,
+    Lagrangian, Model, WeylFermion, electroweak_inputs, electroweak_scaffold,
     fermion_gauge_current, to_physical_basis,
 )
 from feynlag.pheno import DiracParticle, ScatteringCalculator, line_amplitude
 
-# MadGraph's stock electroweak input scheme (docs/benchmark.md)
-AEWM1, GF, MZ, WZ, MH = 132.50698, 1.16639e-5, 91.1876, 2.4952, 125.0
-AEW = 1 / AEWM1
-EE = math.sqrt(4 * math.pi * AEW)
-MW = math.sqrt(MZ**2 / 2 + math.sqrt(MZ**4 / 4 - AEW * math.pi * MZ**2
-                                     / (GF * math.sqrt(2))))
-SW2 = 1 - MW**2 / MZ**2
-GW, G1 = EE / math.sqrt(SW2), EE / math.sqrt(1 - SW2)
-VEV = 2 * MW * math.sqrt(SW2) / EE
+# MadGraph's stock (α, G_F, M_Z) input scheme (docs/benchmark.md): the
+# couplings and VEV follow at tree level, and the model derives M_W, M_Z
+# from them, so no boson mass is typed below.
+INPUTS = electroweak_inputs(alpha_inv=132.50698, GF=1.16639e-5, MZ=91.1876)
+WZ, MH = 2.4952, 125.0
 GEV2_TO_PB = 0.3893794e9
 
 
 def build():
     """SM electroweak gauge sector + one massless lepton generation."""
-    ew = electroweak_scaffold(gw=GW, g1=G1, v=VEV, mh=MH)
+    ew = electroweak_scaffold(**INPUTS.couplings, mh=MH)
     SU2L, U1Y = ew.SU2L, ew.U1Y
     i = sp.Symbol("i", integer=True)
     Le = WeylFermion("Le", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
@@ -57,24 +51,22 @@ def build():
     e = DiracParticle("e", Le.components[1], eR.components[0], 0)
     # the neutrino is left-handed only: right=None
     nu = DiracParticle("nu_e", Le.components[0], None, 0)
-    calc = ScatteringCalculator(
-        model, [e, nu],
-        masses={ph.A: 0, ph.Z: MZ, ph.Wp: MW, ph.h: MH}, widths={ph.Z: WZ},
-        boson_fields=[ph.Z, ph.A, ph.Wp, ph.Wm, ph.h],   # unitary gauge: no Goldstones
-        conjugate_map=ph.cmap, conjugates={ph.Wp: ph.Wm, ph.Wm: ph.Wp},
-        gauge_groups=[SU2L])                             # collect AWW / ZWW
-    values = {ew.gw.s: GW, ew.g1.s: G1, ew.v.s: VEV}
-    return calc, ph, e, values
+    # Everything else comes from the model: the unitary-gauge bosons (no
+    # Goldstones), the W± conjugate pair, the masses read off the physical
+    # Lagrangian, the broken SU(2) whose AWW/ZWW vertices are collected, and
+    # the parameter point (so process() is numeric by default).
+    calc = ScatteringCalculator.from_model(model, [e, nu], widths={ph.Z: WZ})
+    return calc, ph, e
 
 
 def main():
-    calc, ph, e, values = build()
+    calc, ph, e = build()
     ee = (e.particle, e.antiparticle)
 
     print("=" * 68)
     print("e+e- -> W+W-  (feynlag.pheno, Tier 4)")
     print("=" * 68)
-    ww = calc.process(ee, (ph.Wp, ph.Wm), numeric=True, extra=values)
+    ww = calc.process(ee, (ph.Wp, ph.Wm))
     for d in ww.diagrams:
         print(f"  diagram: {d.channel}-channel {d.mediator} ({d.kind} exchange)")
     sigma = ww.numeric_cross_section(200.0**2) * GEV2_TO_PB
@@ -97,7 +89,7 @@ def main():
     print("\n" + "=" * 68)
     print("e+e- -> Z h  (Higgsstrahlung)")
     print("=" * 68)
-    zh = calc.process(ee, (ph.Z, ph.h), numeric=True, extra=values)
+    zh = calc.process(ee, (ph.Z, ph.h))
     for d in zh.diagrams:
         print(f"  diagram: {d.channel}-channel {d.mediator} ({d.kind} exchange)")
     for rs in (240.0, 250.0, 500.0):
