@@ -7,8 +7,11 @@ import sympy as sp
 
 from .amplitudes import amplitude_squared
 from .kinematics import TwoBodyKinematics, is_allowed
+from .names import ParticleNames
 from .particles import expand_particles
-from .vertices import collect_decay_vertices
+from .summary import DecayRow, DecayTable
+from .units import energy_in
+from .vertices import at_zero_fields, collect_decay_vertices
 
 __all__ = ["DecayCalculator", "DecayChannel", "partial_width"]
 
@@ -82,11 +85,15 @@ class DecayCalculator:
             surfaced in :attr:`unmatched_channels` (with a warning) instead of
             silently vanishing. Merges with ``masses`` (bosons stay there) and
             with an explicit ``particle_map``/``color_factors`` if also given.
+        aliases: ``{name: symbol}`` extra names for a ``parent`` given as a
+            string and for :meth:`DecayTable` lookups
+            (:class:`~feynlag.pheno.names.ParticleNames`).
     """
 
     def __init__(self, model, masses, boson_fields=(), fermion_sectors=(),
                  conjugate_map=None, color_factors=None, parameters=None,
-                 simplifier=None, particle_map=None, particles=()):
+                 simplifier=None, particle_map=None, particles=(),
+                 aliases=None):
         self.model = model
         self.masses = dict(masses)
         self.boson_fields = list(boson_fields)
@@ -110,11 +117,21 @@ class DecayCalculator:
             self._particle_color = pcolors
         self._vertices = None
         self._unmatched = None
+        symbols = list(self.boson_fields)
+        for dp in self.particles:
+            symbols += [dp.particle, dp.antiparticle]
+        symbols += [k for k in self.masses if isinstance(k, sp.Symbol)]
+        self.names = ParticleNames(symbols, aliases)
+
+    def particle_names(self):
+        """``{name: symbol}`` of every name a ``parent`` may be given as."""
+        return self.names.as_dict()
 
     @classmethod
     def from_model(cls, model, particles=(), *, point=None, masses=None,
                    boson_fields=None, fermion_sectors=("gauge", "yukawa"),
-                   simplifier=None, particle_map=None, color_factors=None):
+                   simplifier=None, particle_map=None, color_factors=None,
+                   aliases=None):
         """A calculator set up from what ``model`` already knows.
 
         ::
@@ -129,7 +146,8 @@ class DecayCalculator:
         the physical Lagrangian, ``parameters`` = ``point`` or
         ``model.parameters``.  Fermion masses come from the
         :class:`~feynlag.pheno.particles.DiracParticle`\\ s as before; a
-        ``masses=`` entry replaces a derived one.
+        ``masses=`` entry replaces a derived one.  ``aliases`` =
+        ``model.physical.aliases`` updated by ``aliases=``.
 
         Raises:
             ValueError: the model has no physical basis yet.
@@ -143,7 +161,8 @@ class DecayCalculator:
                    conjugate_map=cmap or None, color_factors=color_factors,
                    parameters=resolve_point(model, point),
                    simplifier=simplifier, particle_map=particle_map,
-                   particles=particles)
+                   particles=particles,
+                   aliases={**model.physical.aliases, **(aliases or {})})
 
     # ------------------------------------------------------------- vertices
 
@@ -156,6 +175,12 @@ class DecayCalculator:
                 conjugate_map=self.conjugate_map,
                 simplifier=self.simplifier,
                 particle_map=self.particle_map)
+            # with Goldstones left out of boson_fields (unitary gauge, as
+            # from_model does) four-leg terms would otherwise come back as
+            # fake three-leg vertices (h A W⁺ ∝ G⁻)
+            self._vertices = at_zero_fields(
+                self._vertices,
+                self.model.spin_map(conjugate_map=self.conjugate_map))
         return self._vertices
 
     # --------------------------------------------------------------- lookup
@@ -212,8 +237,10 @@ class DecayCalculator:
         A vertex contributes when one of its legs is ``parent``; the other two
         are the daughters. A daughter with an undeclared mass is skipped — but
         recorded in :attr:`unmatched_channels` when ``particles=`` is in use,
-        so the skip is visible rather than silent.
+        so the skip is visible rather than silent.  ``parent`` may be a name
+        (``"h"``, ``"Z"``).
         """
+        parent = self.names.resolve(parent)
         M = self.mass_of(parent)
         out = []
         for vertex in self.vertices():
@@ -339,6 +366,7 @@ class DecayCalculator:
         calculator's ``parameters`` for this call.
         """
         values = self._substitutions(extra, point)
+        parent = self.names.resolve(parent)
 
         def as_number(expr):
             return complex(sp.sympify(expr).subs(values).evalf())
@@ -366,6 +394,37 @@ class DecayCalculator:
         if total == 0:
             return {k: 0.0 for k in widths}
         return {k: w / total for k, w in widths.items()}
+
+    def decay_table(self, parent, extra=None, point=None, unit="GeV",
+                    min_br=0.0):
+        """A :class:`~feynlag.pheno.summary.DecayTable` of ``parent``: every
+        two-body channel's width (in ``unit``) and branching ratio, largest
+        first, and the total width.
+
+        ::
+
+            print(calc.decay_table("h", unit="MeV"))
+
+        Built on :meth:`numeric_partial_widths`, so a channel closed at this
+        parameter point shows ``0`` rather than an imaginary width.
+        Channels with ``BR < min_br`` are folded into one ``other`` row.
+        """
+        parent = self.names.resolve(parent)
+        widths = self.numeric_partial_widths(parent, extra=extra, point=point)
+        total = sum(widths.values())
+        rows, other = [], [0.0, 0.0]
+        for children, w in sorted(widths.items(), key=lambda kv: -kv[1]):
+            br = w / total if total else 0.0
+            if min_br and br < min_br:
+                other[0] += w
+                other[1] += br
+                continue
+            rows.append(DecayRow(children, energy_in(w, unit), br))
+        folded = len(rows) < len(widths)
+        return DecayTable(
+            parent, tuple(rows), energy_in(total, unit), unit,
+            other=(energy_in(other[0], unit), other[1]) if folded else None,
+            _names=self.names)
 
     # ----------------------------------------------------------- off-shell
 

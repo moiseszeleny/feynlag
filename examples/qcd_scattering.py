@@ -42,7 +42,6 @@ from feynlag.pheno import DiracParticle, ScatteringCalculator
 
 ALPHA_S, ALPHA = 0.118, 1 / 128.0
 GS, EE = math.sqrt(4 * math.pi * ALPHA_S), math.sqrt(4 * math.pi * ALPHA)
-GEV2_TO_PB = 0.3893794e9
 
 
 def build():
@@ -152,7 +151,8 @@ def main():
     cut = (-0.9, 0.9)
     for label, incoming, outgoing in processes:
         proc = calc.process(incoming, outgoing, numeric=True, extra=values)
-        sigma = proc.numeric_cross_section(100.0**2, cos_range=cut) * GEV2_TO_PB
+        sigma = proc.numeric_cross_section(sqrt_s=100.0, cos_range=cut,
+                                           unit="pb")
         print(f"  {label}:  {sigma:12.2f} pb")
     ratio = calc.process((e.particle, e.antiparticle),
                          (u.particle, u.antiparticle))

@@ -176,7 +176,7 @@ def test_vss_tensor_guards():
 def test_scalar_pair_production_closed_form(sqed, rs):
     """``σ(e⁺e⁻→φ⁺φ⁻) = πα²β³/(3s)`` for a point-like charged scalar and a
     massless electron (Bystritskiy, Fedotovich, Ignatov, Kuraev, Phys. Rev. D 72, 114019,
-    arXiv:hep-ph/0505236; cited in docs/manual/scattering_roadmap.md §17.7)."""
+    arXiv:hep-ph/0505236; cited in docs/manual/scattering_roadmap.md §17.8)."""
     calc, e, values = sqed["setup"](yukawa=0)
     proc = calc.process((e.particle, e.antiparticle),
                         (sqed["phip"], sqed["phim"]), numeric=True, extra=values)

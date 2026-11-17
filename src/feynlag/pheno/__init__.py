@@ -74,8 +74,17 @@ from .topology import (
     enumerate_diagrams, enumerate_line_diagrams, line_amplitude,
 )
 from .vertices import DecayVertex, classify_gamma, collect_decay_vertices
+from .names import ParticleNames
+from .summary import DecayRow, DecayTable, ProcessSummary, diagram_row
+from .units import (
+    CROSS_SECTION_UNITS, ENERGY_UNITS, HBARC2_GEV2_MB, cross_section_in,
+    energy_in, eta_acceptance,
+)
 
 __all__ = [
+    "CROSS_SECTION_UNITS", "DecayRow", "DecayTable", "ENERGY_UNITS",
+    "HBARC2_GEV2_MB", "ParticleNames", "ProcessSummary", "cross_section_in",
+    "diagram_row", "energy_in", "eta_acceptance",
     "Amplitude", "BosonAmplitude", "BosonDiagramInfo", "BosonPropagator",
     "BosonTerm", "ChainVertex", "DecayCalculator",
     "boson_amplitude", "contract_tensors", "contract_trace",

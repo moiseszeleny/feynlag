@@ -30,10 +30,9 @@ from feynlag import (
     Bilinear, ExternalParameter, Lagrangian, Model, Scalar, U1, WeylFermion,
     conjugate_pair, diracPR,
 )
-from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno import DiracParticle, ScatteringCalculator, cross_section_in
 
 E_EM, Y_CHI, M_PHI = 0.303, 0.5, 30.0
-GEV2_TO_PB = 0.3893794e9
 
 
 def build():
@@ -97,9 +96,9 @@ def main():
         s = rs**2
         beta = math.sqrt(1 - 4 * M_PHI**2 / s)
         closed = math.pi * alpha**2 * beta**3 / (3 * s)
-        sigma = pair.numeric_cross_section(s)
-        print(f"  sqrt s = {rs:>6.0f} GeV   sigma = {sigma * GEV2_TO_PB:10.5f} pb"
-              f"   pi alpha^2 beta^3/(3s) = {closed * GEV2_TO_PB:10.5f} pb")
+        sigma = pair.numeric_cross_section(s, unit="pb")
+        print(f"  sqrt s = {rs:>6.0f} GeV   sigma = {sigma:10.5f} pb"
+              f"   pi alpha^2 beta^3/(3s) = {cross_section_in(closed, 'pb'):10.5f} pb")
 
     print("\n" + "=" * 68)
     print("e+e- -> phi+ phi-  (photon + chi exchange)")
@@ -109,7 +108,7 @@ def main():
     for d in full.diagrams:
         print(f"  diagram: {d.channel}-channel {d.mediator} ({d.kind} exchange)")
     print(f"  sigma(sqrt s = 200 GeV) = "
-          f"{full.numeric_cross_section(200.0**2) * GEV2_TO_PB:.4f} pb")
+          f"{full.numeric_cross_section(sqrt_s=200.0, unit='pb'):.4f} pb")
 
     print("\n" + "=" * 68)
     print("e- gamma -> chi phi-  (the Ward identity is checked)")
@@ -120,7 +119,7 @@ def main():
         print(f"  diagram: {d.channel}-channel {d.mediator} ({d.kind} exchange)")
     photo.squared()         # raises if k.M != 0 for the photon
     print(f"  sigma(sqrt s = 200 GeV) = "
-          f"{photo.numeric_cross_section(200.0**2) * GEV2_TO_PB:.4f} pb")
+          f"{photo.numeric_cross_section(sqrt_s=200.0, unit='pb'):.4f} pb")
 
 
 if __name__ == "__main__":

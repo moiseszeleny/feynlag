@@ -796,7 +796,56 @@ the connected components of its index graph.
 - The cross section inside an angular cut against the integrated closed
   form (the $t$- and $u$-channel poles need a cut).
 
-## 17.6 Summary
+## 17.6 Using the calculator: names, units, cuts and summaries
+
+A process can be named instead of spelled out in symbols, and the numbers
+come back in the unit asked for:
+
+```python
+calc = ScatteringCalculator.from_model(
+    model, [e, nu, mu], widths={Z: 2.4952},
+    aliases={"e-": e.particle, "e+": e.antiparticle,
+             "mu-": mu.particle, "mu+": mu.antiparticle})
+
+ww = calc.process("e- e+ > w+ w-")
+ww.numeric_cross_section(sqrt_s=200, unit="pb")          # 19.447
+mumu = calc.process("e- e+ > mu- mu+")
+mumu.numeric_cross_section(sqrt_s=200, unit="pb", eta_max=2.5)   # 2.7876
+mumu.numeric_forward_backward_asymmetry(sqrt_s=200)       # 0.565
+print(ww.summary(sqrt_s=200, unit="pb"))
+```
+
+- **Names.** Every external's symbol name works as is (`e`, `ebar`, `Wp`,
+  `A`, the gluon's name), matched exactly. *Aliases* are matched
+  case-insensitively: `to_physical_basis` registers the SM bosons' MadGraph
+  names (`a`/`gamma`, `z`, `w+`, `w-`, `h`) on `model.physical.aliases`, which
+  `from_model` picks up, and `aliases=` adds more. Fermion names are not
+  guessed (which member of a pair is "the particle" is a convention), so
+  `e-`/`e+` are the user's to declare. An alias that would make a name mean
+  two things raises, and an unknown name raises with the closest matches;
+  `calc.particle_names()` lists them all. Tuples of names or symbols still
+  work: `process(("e", "ebar"), ("Wp", "Wm"))`.
+- **Units.** Without `unit=` a cross section is in the inverse square of the
+  units of `s` (GeV⁻²), as before. `unit="pb"` (or `fb`, `nb`, `ub`, `mb`)
+  converts with $(\hbar c)^2 = 0.389\,379\,372\,1~\mathrm{GeV^2\,mb}$,
+  exact since the 2019 SI redefinition [PDG-PC] (`feynlag.pheno.units`).
+- **Cuts.** `eta_max=η` integrates over $\lvert\eta\rvert<\eta$, i.e.
+  $\cos\theta\in(-\tanh\eta,\tanh\eta)$ (`eta_acceptance`). Pseudorapidity
+  depends on the angle only, so this holds for massive final states too, in
+  the CM frame.
+- **Summaries.** `repr(proc)` names the process and its diagrams;
+  `proc.summary(sqrt_s=, unit=, eta_max=)` returns a `ProcessSummary` with
+  the diagram table (channel, mediator, exchange, fermion sign or contact
+  structure), the initial-state average, the symmetry factor and, at a given
+  energy, $\sigma$ and $A_{FB}$ (left out for identical final-state
+  particles). It prints as a text table and renders as markdown in a
+  notebook. Every number in it is what `numeric_cross_section` and
+  `numeric_forward_backward_asymmetry` return.
+
+`tests/test_pheno_usability.py` pins all of this against the Tier 3 and 4
+benchmarks.
+
+## 17.7 Summary
 
 | tier | channels | new machinery | effort | oracle |
 |---|---|---|---|---|
@@ -821,8 +870,13 @@ pin, `tests/test_interference.py` for Tier 3 and
 for Tier 4's stages 4a, 4b and 4c, and `tests/test_colour.py`, `tests/test_gluons.py`
 and `tests/test_four_gluons.py` for Tier 5's stages 5a, 5b and 5c.
 
-## 17.7 References
+## 17.8 References
 
+- **[PDG-PC]** Particle Data Group, *Physical Constants* (review in the
+  Review of Particle Physics), <https://pdg.lbl.gov/> — the conversion
+  constant $(\hbar c)^2 = 0.389\,379\,372\,1~\mathrm{GeV^2\,mbarn}$
+  (exact), used by `feynlag.pheno.units`. Cited without a year pin, since the
+  PDG republishes annually.
 - **[PS95]** M. E. Peskin and D. V. Schroeder, *An Introduction to Quantum
   Field Theory*, Addison-Wesley (1995), ISBN 0-201-50397-2 — Chapter 5,
   "Elementary Processes of Quantum Electrodynamics," §5.1, the

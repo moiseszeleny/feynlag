@@ -26,7 +26,6 @@ from feynlag.pheno import DiracParticle, ScatteringCalculator, line_amplitude
 # from them, so no boson mass is typed below.
 INPUTS = electroweak_inputs(alpha_inv=132.50698, GF=1.16639e-5, MZ=91.1876)
 WZ, MH = 2.4952, 125.0
-GEV2_TO_PB = 0.3893794e9
 
 
 def build():
@@ -55,23 +54,23 @@ def build():
     # Goldstones), the W± conjugate pair, the masses read off the physical
     # Lagrangian, the broken SU(2) whose AWW/ZWW vertices are collected, and
     # the parameter point (so process() is numeric by default).
-    calc = ScatteringCalculator.from_model(model, [e, nu], widths={ph.Z: WZ})
-    return calc, ph, e
+    # The bosons' MadGraph names (a, z, w+, w-, h) come with the physical
+    # basis; the electron's are ours to choose.
+    calc = ScatteringCalculator.from_model(
+        model, [e, nu], widths={ph.Z: WZ},
+        aliases={"e-": e.particle, "e+": e.antiparticle})
+    return calc
 
 
 def main():
-    calc, ph, e = build()
-    ee = (e.particle, e.antiparticle)
+    calc = build()
 
     print("=" * 68)
     print("e+e- -> W+W-  (feynlag.pheno, Tier 4)")
     print("=" * 68)
-    ww = calc.process(ee, (ph.Wp, ph.Wm))
-    for d in ww.diagrams:
-        print(f"  diagram: {d.channel}-channel {d.mediator} ({d.kind} exchange)")
-    sigma = ww.numeric_cross_section(200.0**2) * GEV2_TO_PB
-    print(f"  sigma(sqrt s = 200 GeV) = {sigma:.3f} pb   "
-          f"[MadGraph: 19.498 +- 0.058 pb]")
+    ww = calc.process("e- e+ > w+ w-")
+    print(ww.summary(sqrt_s=200.0, unit="pb"))
+    print("  [MadGraph: 19.498 +- 0.058 pb]")
 
     kin = ww.kinematics
     nu_only = line_amplitude(
@@ -89,12 +88,11 @@ def main():
     print("\n" + "=" * 68)
     print("e+e- -> Z h  (Higgsstrahlung)")
     print("=" * 68)
-    zh = calc.process(ee, (ph.Z, ph.h))
-    for d in zh.diagrams:
-        print(f"  diagram: {d.channel}-channel {d.mediator} ({d.kind} exchange)")
+    zh = calc.process("e- e+ > z h")
+    print(zh.summary())
     for rs in (240.0, 250.0, 500.0):
         print(f"  sigma(sqrt s = {rs:.0f} GeV) = "
-              f"{zh.numeric_cross_section(rs**2) * GEV2_TO_PB * 1e3:.1f} fb")
+              f"{zh.numeric_cross_section(sqrt_s=rs, unit='fb'):.1f} fb")
 
 
 if __name__ == "__main__":

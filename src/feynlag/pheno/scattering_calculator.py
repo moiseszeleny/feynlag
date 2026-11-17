@@ -54,12 +54,15 @@ from .colour import (
     line_colour_tensor,
 )
 from .diagrams import Amplitude
+from .names import _ARROW, ParticleNames
+from .summary import ProcessSummary, diagram_row
+from .units import cross_section_in, eta_acceptance
 from .topology import (
     ExternalBoson, ExternalFermion, boson_amplitude,
     enumerate_boson_diagrams, enumerate_diagrams, enumerate_line_diagrams,
     line_amplitude,
 )
-from .vertices import DecayVertex, collect_decay_vertices
+from .vertices import DecayVertex, at_zero_fields, collect_decay_vertices
 
 __all__ = ["ScatteringCalculator", "ScatteringProcess"]
 
@@ -92,12 +95,16 @@ class ScatteringCalculator:
             calculator extracts over its components itself and exposes one
             mediator symbol, :attr:`gluon`; do not list the components in
             ``boson_fields``.
+        aliases: ``{name: symbol}`` extra names for :meth:`process` strings
+            (``{"e-": e.particle, "e+": e.antiparticle}``), matched
+            case-insensitively; symbol names (``e``, ``ebar``, ``Wp``) always
+            work (:class:`~feynlag.pheno.names.ParticleNames`).
     """
 
     def __init__(self, model, particles, masses, widths=None, boson_fields=(),
                  fermion_sectors=("gauge",), conjugate_map=None,
                  conjugates=None, parameters=None, gauge_groups=None,
-                 colour_group=None, gluon=None):
+                 colour_group=None, gluon=None, aliases=None):
         self.model = model
         self.particles = list(particles)
         self.masses = dict(masses)
@@ -119,19 +126,35 @@ class ScatteringCalculator:
         self.gluon = sp.Symbol(gluon.name) if gluon is not None else None
         self.particle_map, _, _ = expand_particles(self.particles)
         self._vertices = None
+        self.names = ParticleNames(self._resolvable(), aliases)
+
+    def _resolvable(self):
+        symbols = []
+        for dp in self.particles:
+            symbols += [dp.particle, dp.antiparticle]
+        symbols += self.boson_fields
+        for b, partner in self.conjugates.items():
+            symbols += [b, partner]
+        if self.gluon is not None:
+            symbols.append(self.gluon)
+        return symbols
+
+    def particle_names(self):
+        """``{name: symbol}`` of every name :meth:`process` accepts."""
+        return self.names.as_dict()
 
     @classmethod
     def from_model(cls, model, particles=(), *, point=None, widths=None,
                    masses=None, boson_fields=None, gauge_groups=None,
                    colour_group=None, gluon=None,
-                   fermion_sectors=("gauge",)):
+                   fermion_sectors=("gauge",), aliases=None):
         """A calculator set up from what ``model`` already knows.
 
         ::
 
             calc = ScatteringCalculator.from_model(model, [e, nu],
                                                    widths={Z: 2.4952})
-            calc.process((e.particle, e.antiparticle), (Wp, Wm))
+            calc.process("e ebar > w+ w-")
 
         Derived (each overridable by its keyword):
 
@@ -147,7 +170,9 @@ class ScatteringCalculator:
           triple-gauge vertices are collected;
         - ``parameters``: ``point`` (a :class:`~feynlag.parameters.ParameterPoint`
           or a ``{name: value}`` dict of external overrides), else
-          ``model.parameters`` — so :meth:`process` is numeric by default.
+          ``model.parameters`` — so :meth:`process` is numeric by default;
+        - ``aliases``: ``model.physical.aliases`` (the SM bosons' MadGraph
+          names after ``to_physical_basis``), updated by ``aliases=``.
 
         ``widths``, ``colour_group`` and ``gluon`` are not tree-level model
         data and stay explicit.  A boson whose mass cannot be derived (not a
@@ -168,7 +193,8 @@ class ScatteringCalculator:
                    conjugate_map=cmap or None, conjugates=conjugates,
                    parameters=resolve_point(model, point),
                    gauge_groups=gauge_groups, colour_group=colour_group,
-                   gluon=gluon)
+                   gluon=gluon,
+                   aliases={**model.physical.aliases, **(aliases or {})})
 
     def vertices(self):
         """All three-leg vertices, extracted once and cached: the
@@ -209,36 +235,10 @@ class ScatteringCalculator:
         return self._vertices
 
     def _at_zero_fields(self, vertices):
-        """Bosonic vertices evaluated at zero for every field that is not an
-        extraction leg.
-
-        The extractor treats a field missing from ``boson_fields`` as a
-        parameter, so with the Goldstones left out (unitary gauge) a
-        four-leg term ``A h W⁺ G⁻`` shows up as a three-leg "vertex"
-        ``A h W⁺`` with coupling ``∝ G⁻``.  A vertex is a derivative **at
-        zero fields**: setting the stray field symbols to zero removes those
-        and leaves the genuine three-point couplings untouched.
-        """
-        fields = set(self.model.spin_map(conjugate_map=self.conjugate_map))
-        out = []
-        for vertex in vertices:
-            if vertex.vertex_type.startswith("FF"):
-                out.append(vertex)
-                continue
-            # a VSS coupling's momentum tags p(φ) name their legs: they are
-            # not field dependence, so hide them from the substitution
-            coupling = sp.sympify(vertex.coupling)
-            tags = {tag: sp.Dummy() for tag in coupling.atoms(momentum)}
-            hidden = coupling.xreplace(tags)
-            stray = [sym for sym in hidden.free_symbols if sym in fields]
-            if stray:
-                hidden = hidden.subs({sym: 0 for sym in stray})
-                if hidden == 0:
-                    continue
-                vertex = _replace(vertex, coupling=hidden.xreplace(
-                    {dummy: tag for tag, dummy in tags.items()}))
-            out.append(vertex)
-        return out
+        """:func:`~feynlag.pheno.vertices.at_zero_fields` over the model's
+        fields."""
+        return at_zero_fields(
+            vertices, self.model.spin_map(conjugate_map=self.conjugate_map))
 
     def colour_rep(self, particle):
         """The colour-group rep label of a declared species (``None`` for a
@@ -438,14 +438,21 @@ class ScatteringCalculator:
             f"{symbol!r} is neither a declared DiracParticle (or its "
             f"antiparticle) nor one of the calculator's `boson_fields`")
 
-    def process(self, incoming, outgoing, numeric=None, extra=None,
+    def process(self, incoming, outgoing=None, numeric=None, extra=None,
                 point=None):
         """The 2→2 process ``incoming → outgoing``.
 
+        ::
+
+            calc.process("e- e+ > w+ w-")
+            calc.process(("e", "ebar"), ("Wp", "Wm"))
+            calc.process((e.particle, e.antiparticle), (Wp, Wm))
+
         Args:
-            incoming, outgoing: 2-tuples of particle/antiparticle symbols
-                (momenta ``k1, k2`` and ``k3, k4`` in that order; the CM
-                angle ``θ`` is between ``k1`` and ``k3``).
+            incoming, outgoing: 2-tuples of particle/antiparticle symbols or
+                names (momenta ``k1, k2`` and ``k3, k4`` in that order; the
+                CM angle ``θ`` is between ``k1`` and ``k3``) — or one
+                process string ``"a b > c d"`` as ``incoming`` alone.
             numeric: substitute the parameter point (``parameters`` +
                 ``extra``) into every coupling, mass and width *before* the
                 Dirac algebra — much faster than carrying symbolic
@@ -460,6 +467,18 @@ class ScatteringCalculator:
         Returns:
             :class:`ScatteringProcess`.
         """
+        if isinstance(incoming, str):
+            if outgoing is not None:
+                raise TypeError("pass a process string alone, or two tuples")
+            label = " → ".join(" ".join(side.split())
+                               for side in _ARROW.split(incoming.strip()))
+            incoming, outgoing = self.names.parse_process(incoming)
+        else:
+            if outgoing is None:
+                raise TypeError("process() needs `outgoing`")
+            incoming = tuple(self.names.resolve(p) for p in incoming)
+            outgoing = tuple(self.names.resolve(p) for p in outgoing)
+            label = None
         externals = ([self._external(p, True) for p in incoming]
                      + [self._external(p, False) for p in outgoing])
         if numeric is None:
@@ -526,7 +545,8 @@ class ScatteringCalculator:
                 f"{tuple(map(str, outgoing))} through the extracted vertices "
                 f"(check `boson_fields`, `fermion_sectors` and `particles`)")
         return ScatteringProcess(externals, kin, diagrams,
-                                 amplitude=amplitude, colour=colour)
+                                 amplitude=amplitude, colour=colour,
+                                 label=label)
 
 
 def _colour_dim(external):
@@ -569,7 +589,7 @@ class ScatteringProcess:
     """
 
     def __init__(self, externals, kinematics, diagrams, amplitude=None,
-                 colour=None):
+                 colour=None, label=None):
         self.externals = list(externals)
         self.kinematics = kinematics
         self.diagrams = list(diagrams)
@@ -583,11 +603,43 @@ class ScatteringProcess:
         identical = self.externals[2].symbol == self.externals[3].symbol
         self.symmetry_factor = sp.Rational(1, 2) if identical else sp.S.One
         self._squared = None
+        names = [str(e.symbol) for e in self.externals]
+        #: the process as typed (``"e- e+ → w+ w-"``), else its symbol names
+        self.label = label or f"{names[0]} {names[1]} → {names[2]} {names[3]}"
 
     def __repr__(self):
-        names = [str(e.symbol) for e in self.externals]
-        return (f"ScatteringProcess({names[0]} {names[1]} -> {names[2]} "
-                f"{names[3]}: {self.diagrams})")
+        rows = [diagram_row(d) for d in self.diagrams]
+        shown = ", ".join(f"{c}-channel {m}" for c, m, _, _ in rows)
+        n = len(rows)
+        return (f"ScatteringProcess({self.label}; {n} diagram"
+                f"{'s' * (n != 1)}: {shown})")
+
+    def _repr_markdown_(self):
+        return self.summary()._repr_markdown_()
+
+    def summary(self, sqrt_s=None, unit="pb", cos_range=None, eta_max=None):
+        """A :class:`~feynlag.pheno.summary.ProcessSummary`: the diagrams
+        and, at ``sqrt_s`` (GeV), the cross section in ``unit`` inside the
+        acceptance (``cos_range`` or ``|η| < eta_max``) and ``A_FB``.
+
+        Without ``sqrt_s`` nothing is evaluated (the diagram list only).
+        """
+        dof = 1
+        for state in self.initial_states:
+            dof *= state.dof()
+        fields = dict(label=self.label,
+                      diagrams=tuple(diagram_row(d) for d in self.diagrams),
+                      initial_dof=dof, symmetry_factor=self.symmetry_factor)
+        if sqrt_s is not None:
+            cut = _acceptance(cos_range, eta_max)
+            fields.update(
+                sqrt_s=float(sqrt_s), unit=unit, cos_range=cut,
+                sigma=self.numeric_cross_section(sqrt_s=sqrt_s, cos_range=cut,
+                                                 unit=unit))
+            if self.symmetry_factor == 1:
+                fields["afb"] = self.numeric_forward_backward_asymmetry(
+                    sqrt_s=sqrt_s)
+        return ProcessSummary(**fields)
 
     def amplitude(self):
         """The four-fermion :class:`~feynlag.pheno.diagrams.Amplitude`, or
@@ -627,10 +679,44 @@ class ScatteringProcess:
     def forward_backward_asymmetry(self):
         return forward_backward_asymmetry(self.squared(), self.kinematics)
 
-    def numeric_cross_section(self, s, cos_range=(-1, 1), backend="auto"):
-        """``σ`` at a numeric ``s`` by 1-D quadrature over ``cosθ``
-        (:func:`~feynlag.pheno.integrate.quad_1d`), in the inverse-square
-        units of ``s``.
+    def numeric_forward_backward_asymmetry(self, s=None, *, sqrt_s=None):
+        """``A_FB = (σ_F − σ_B)/(σ_F + σ_B)`` as a float at ``s`` (or ``sqrt_s``),
+        ``σ_F``/``σ_B`` over ``cos θ ∈ (0, 1)``/``(−1, 0)`` by quadrature.
+
+        Raises:
+            ValueError: identical final-state particles, whose forward and
+                backward hemispheres cannot be told apart.
+        """
+        if self.symmetry_factor != 1:
+            raise ValueError(f"{self.label}: identical final-state particles "
+                             f"have no forward-backward asymmetry")
+        s = _s_of(s, sqrt_s)
+        # by quadrature, like numeric_cross_section: the exact t-integral of
+        # forward_backward_asymmetry() is slow for a many-diagram |M|²
+        # (e⁺e⁻→W⁺W⁻ does not finish), and only a number is wanted
+        forward = self.numeric_cross_section(s, cos_range=(0, 1))
+        backward = self.numeric_cross_section(s, cos_range=(-1, 0))
+        return (forward - backward) / (forward + backward)
+
+    def numeric_cross_section(self, s=None, cos_range=None, backend="auto", *,
+                              sqrt_s=None, unit=None, eta_max=None):
+        """``σ`` at a numeric ``s`` (or ``sqrt_s``) by 1-D quadrature over
+        ``cosθ`` (:func:`~feynlag.pheno.integrate.quad_1d`).
+
+        ::
+
+            proc.numeric_cross_section(sqrt_s=200, unit="pb", eta_max=2.5)
+
+        Args:
+            s, sqrt_s: the CM energy squared, or the CM energy (exactly one).
+            cos_range: the ``cos θ`` acceptance (default the full angle).
+            unit: ``None`` (default) returns the inverse-square units of
+                ``s`` (GeV⁻² for GeV); ``'pb'``, ``'fb'``, ``'nb'`` … convert
+                (:func:`~feynlag.pheno.units.cross_section_in`, which assumes
+                GeV).
+            eta_max: the acceptance ``|η| < eta_max``
+                (:func:`~feynlag.pheno.units.eta_acceptance`), instead of
+                ``cos_range``.
 
         The fast route once every coupling is a number (``process(...,
         numeric=True)``): SymPy's symbolic ``t``-integral of a ``|M|²`` with
@@ -640,10 +726,29 @@ class ScatteringProcess:
         ``cos_range`` away from ``cosθ = 1``.
         """
         from .integrate import quad_1d
+        s = _s_of(s, sqrt_s)
+        cos_range = _acceptance(cos_range, eta_max)
         cos = sp.Symbol("_sigma_cos", real=True)
         kin = self.kinematics
         density = (self.differential_cross_section(variable="cos")
                    .subs(kin.t, kin.t_of_cos(cos)).subs(kin.s, s))
         f = sp.lambdify(cos, density, "numpy")
         lo, hi = (float(c) for c in cos_range)
-        return quad_1d(lambda c: complex(f(c)).real, lo, hi, backend=backend)
+        sigma = quad_1d(lambda c: complex(f(c)).real, lo, hi, backend=backend)
+        return sigma if unit is None else cross_section_in(sigma, unit)
+
+
+def _s_of(s, sqrt_s):
+    """``s`` from exactly one of ``s`` and ``sqrt_s``."""
+    if (s is None) == (sqrt_s is None):
+        raise TypeError("give exactly one of `s` and `sqrt_s`")
+    return s if sqrt_s is None else sp.sympify(sqrt_s) ** 2
+
+
+def _acceptance(cos_range, eta_max):
+    """The ``cos θ`` range from ``cos_range`` or ``eta_max`` (not both)."""
+    if eta_max is not None:
+        if cos_range is not None:
+            raise TypeError("give `cos_range` or `eta_max`, not both")
+        return eta_acceptance(eta_max)
+    return (-1, 1) if cos_range is None else tuple(cos_range)

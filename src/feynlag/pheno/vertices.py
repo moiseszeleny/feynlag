@@ -20,11 +20,14 @@ from dataclasses import dataclass, field as dc_field
 
 import sympy as sp
 
+from dataclasses import replace as _replace
+
+from ..operators import momentum
 from ..dirac import DiracGamma, DiracGammaLower, DiracIdentity, PL, PR
 from ..vertices.bilinear import extract_fermion_vertices
 from ..vertices.extract import vertex_multiplicity
 
-__all__ = ["DecayVertex", "classify_gamma", "collect_decay_vertices",
+__all__ = ["DecayVertex", "at_zero_fields", "classify_gamma", "collect_decay_vertices",
            "fermion_decay_vertices", "resolve_leg"]
 
 
@@ -222,4 +225,38 @@ def collect_decay_vertices(model, boson_fields, fermion_sectors=(),
             vertex.meta["source"] = f"fermionic:{sector}"
             out.append(vertex)
 
+    return out
+
+
+def at_zero_fields(vertices, fields):
+    """Bosonic vertices evaluated at zero for every field that is not an
+    extraction leg.
+
+    The extractor treats a field missing from its field list as a parameter,
+    so with the Goldstones left out (unitary gauge) a four-leg term
+    ``A h W⁺ G⁻`` shows up as a three-leg "vertex" ``A h W⁺`` with coupling
+    ``∝ G⁻``.  A vertex is a derivative **at zero fields**: setting the stray
+    field symbols (those in ``fields``) to zero removes such vertices and
+    leaves the genuine three-point couplings untouched.  Fermion vertices
+    pass through.
+    """
+    fields = set(fields)
+    out = []
+    for vertex in vertices:
+        if vertex.vertex_type.startswith("FF"):
+            out.append(vertex)
+            continue
+        # a VSS coupling's momentum tags p(φ) name their legs: they are not
+        # field dependence, so hide them from the substitution
+        coupling = sp.sympify(vertex.coupling)
+        tags = {tag: sp.Dummy() for tag in coupling.atoms(momentum)}
+        hidden = coupling.xreplace(tags)
+        stray = [sym for sym in hidden.free_symbols if sym in fields]
+        if stray:
+            hidden = hidden.subs({sym: 0 for sym in stray})
+            if hidden == 0:
+                continue
+            vertex = _replace(vertex, coupling=hidden.xreplace(
+                {dummy: tag for tag, dummy in tags.items()}))
+        out.append(vertex)
     return out

@@ -677,6 +677,9 @@ class PhysicalRegistry:
         unitary_bosons: ``bosons`` without the Goldstones.
         masses: ``{field: m²}`` for scalars, ``{name: m}`` for fermions.
         fermions: new fermion ``IndexedBase``\\ s (left, right and bars).
+        aliases: ``{name: symbol}`` extra process names for the ``pheno``
+            calculators (``to_physical_basis`` registers the SM bosons' MadGraph
+            names ``a``, ``z``, ``w+``, ``w-``, ``h``).
     """
 
     def __init__(self, model):
@@ -687,6 +690,7 @@ class PhysicalRegistry:
         self.goldstones = []
         self.masses = {}
         self.fermions = []
+        self.aliases = {}
 
     def add_bosons(self, symbols, goldstones=()):
         for s in symbols:

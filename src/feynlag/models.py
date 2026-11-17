@@ -353,6 +353,9 @@ def to_physical_basis(model, scaffold, gm_name="Gm", tex=None):
     bosons = [h, G0, Gp, Gm, Z, A, Wp, Wm]
     model.physical.add_bosons([h, G0, Gp, Gm], goldstones=[G0, Gp, Gm])
     model.physical.add_conjugate_pair(Gp, Gm, cmap)
+    # MadGraph-style names for the pheno calculators' process strings
+    model.physical.aliases.update(
+        {"a": A, "gamma": A, "z": Z, "w+": Wp, "w-": Wm, "h": h})
     return PhysicalBasis(Z, A, Wp, Wm, h, G0, Gp, Gm, cmap, bosons)
 
 
