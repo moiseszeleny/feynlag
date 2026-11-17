@@ -128,6 +128,9 @@ class DiagramInfo:
         sign: the fermion-permutation sign (±1).
         vertices: the two :class:`~feynlag.pheno.vertices.DecayVertex` used.
         diagram: the :class:`~feynlag.pheno.diagrams.Diagram`.
+        lines: ``((bar_a, field_a), (bar_b, field_b))`` — the external
+            positions ``0..3`` each fermion line joins (what a colour
+            tensor is built from).
     """
 
     channel: str
@@ -135,6 +138,7 @@ class DiagramInfo:
     sign: int
     vertices: tuple
     diagram: Diagram
+    lines: tuple = ()
 
     def __repr__(self):
         sign = "+" if self.sign > 0 else "-"
@@ -222,12 +226,13 @@ def enumerate_diagrams(externals, vertices, kin, mass_of, width_of=None,
                 out.append(_build(channel, sign, boson, vertex_a, vertex_b,
                                   (legs[bar_a], legs[field_a]),
                                   (legs[bar_b], legs[field_b]),
-                                  kin, mass_of, width_of))
+                                  kin, mass_of, width_of,
+                                  lines=((bar_a, field_a), (bar_b, field_b))))
     return out
 
 
 def _build(channel, sign, boson, vertex_a, vertex_b, line_a, line_b, kin,
-           mass_of, width_of):
+           mass_of, width_of, lines=()):
     spin = 1 if vertex_a.vertex_type == "FFV" else 0
     structure = "V" if spin == 1 else "S"
     tag = f"td{next(_diagram_counter)}"
@@ -249,7 +254,8 @@ def _build(channel, sign, boson, vertex_a, vertex_b, line_a, line_b, kin,
                            width=sp.sympify(width_of(boson)), momentum=momentum)
     diagram = Diagram(chains=tuple(chains), propagators=(prop,), coefficient=sign)
     return DiagramInfo(channel=channel, mediator=boson, sign=sign,
-                       vertices=(vertex_a, vertex_b), diagram=diagram)
+                       vertices=(vertex_a, vertex_b), diagram=diagram,
+                       lines=lines)
 
 
 # --------------------------------------------------------------------------

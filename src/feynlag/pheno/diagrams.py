@@ -542,7 +542,7 @@ class Amplitude:
 
     diagrams: tuple
 
-    def squared(self, kin):
+    def squared(self, kin, colour=None):
         """The spin/colour-**summed** ``|M|²`` — no averaging (see
         :func:`~feynlag.pheno.scattering.average_factor`).
 
@@ -556,6 +556,14 @@ class Amplitude:
         :func:`~feynlag.pheno.lorentz.contract_to_dots` call on a fully
         contracted expression.
 
+        Args:
+            kin: a :class:`~feynlag.pheno.kinematics.TwoToTwoKinematics`.
+            colour: optional colour matrix ``C[d][d']``
+                (:func:`~feynlag.pheno.colour.colour_matrix`), one row per
+                diagram: ``|M_d|²`` is weighted by ``C[d][d]`` and
+                ``M_d M̄_{d'}`` by ``C[d][d']``.  ``None`` (colour-singlet
+                process) weights everything by ``1``.
+
         Raises:
             NotImplementedError: a diagram that is not the two-chain,
                 one-propagator topology, a pair of diagrams whose pairings
@@ -565,10 +573,25 @@ class Amplitude:
         for diagram in self.diagrams:
             _check_topology(diagram)
         total = sp.S.Zero
-        for diagram in self.diagrams:
-            total += self._diagonal(diagram, kin)
-        for d1, d2 in itertools.combinations(self.diagrams, 2):
-            term = _interference_term(d1, d2, kin)
+        if colour is None:
+            for diagram in self.diagrams:
+                total += self._diagonal(diagram, kin)
+            for d1, d2 in itertools.combinations(self.diagrams, 2):
+                term = _interference_term(d1, d2, kin)
+                total += term + sp.conjugate(term)
+            return sp.expand(total)
+        if len(colour) != len(self.diagrams):
+            raise ValueError(
+                "Amplitude.squared: the colour matrix needs one row per "
+                "diagram")
+        for i, diagram in enumerate(self.diagrams):
+            if colour[i][i] != 0:
+                total += colour[i][i] * self._diagonal(diagram, kin)
+        for i, j in itertools.combinations(range(len(self.diagrams)), 2):
+            if colour[i][j] == 0:
+                continue
+            term = colour[i][j] * _interference_term(
+                self.diagrams[i], self.diagrams[j], kin)
             total += term + sp.conjugate(term)
         return sp.expand(total)
 

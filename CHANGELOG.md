@@ -7,6 +7,18 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- 2→2 scattering, Tier 5 stage 5a: **coloured four-fermion processes**
+  (`qq′→qq′`, `q q̄→q′q̄′`, `qq→qq`, `q q̄→q q̄`, `e⁺e⁻→q q̄`, `q q̄→ℓ⁺ℓ⁻`).
+  `ScatteringCalculator(colour_group=SU3c, gluon=G)` turns the
+  colour-component gluon vertices into one `q̄ q g` vertex with a
+  colour-stripped coupling (`calc.gluon` is the mediator symbol); a quark is
+  a `DiracParticle` on one colour component with `color=3`.
+  `feynlag.pheno.colour` (`four_fermion_colour_tensor`, `colour_matrix`)
+  builds each diagram's colour tensor from the group generators, and
+  `Amplitude.squared(kin, colour=)` weights `M_d M̄_{d′}` by `C_{dd′}`.
+  Reproduces the four-quark entries of the Ellis–Stirling–Webber parton
+  table exactly. `examples/qcd_scattering.py`.
+- `DiagramInfo.lines`: the external positions each fermion line joins.
 - 2→2 scattering, Tier 4 stage 4c: **the `VSS` derivative coupling**. A
   vector meeting two scalars is now a diagram vertex: `e⁺e⁻→φ⁺φ⁻` through a
   photon or Z, and a scalar mediator with one external vector and one
@@ -63,6 +75,12 @@ All notable changes to feynlag are documented here. The format follows
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Changed
+- `ScatteringCalculator` no longer refuses a coloured `DiracParticle` in a
+  four-fermion process when `colour_group` and `gluon` are given; without
+  them it still raises. External gluons raise until stage 5b.
+- `ScatteringProcess.initial_states` carries each fermion's colour
+  multiplicity, so the initial-state average divides by `N_c` per coloured
+  leg.
 - `Model.physical_lagrangian` no longer raises for a model with no VEV'd
   scalar (QED, scalar QED): there is nothing to shift, so it returns the
   Lagrangian as written (with any rotations applied).
@@ -81,6 +99,11 @@ All notable changes to feynlag are documented here. The format follows
   `gauge_groups` is not given.
 
 ### Fixed
+- The γ₅ guard (`assert_epsilon_single_vanishes`) refused valid processes
+  whose masses were floats: the Gram determinant of four dependent momenta
+  then survives as a round-off residue (`3e-17·s³t²`) instead of `0`. A
+  float-valued table is now tested for singularity numerically; exact input
+  is treated as before.
 - `ScatteringCalculator`'s stray-field filter read the scalar symbols inside
   a `VSS` coupling's `p(φ)` tags as field dependence and would have turned
   them into `p(0)`.

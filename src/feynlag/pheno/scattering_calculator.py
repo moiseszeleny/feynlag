@@ -20,9 +20,12 @@ Scope, enforced rather than documented only:
   triple-gauge vertices are only collected when ``gauge_groups`` is given;
   a charged external vector without them raises rather than returning the
   fermion-exchange diagrams alone;
-- **colour-singlet** external fermions only — a coloured one raises, since
-  the colour-flow bookkeeping (``N_c`` per closed line, ``T^a`` traces for
-  gluon exchange) is Tier 5's;
+- **coloured fermions** in four-fermion processes (Tier 5, stage 5a): pass
+  ``colour_group`` and ``gluon``, and declare a quark as a
+  :class:`~feynlag.pheno.particles.DiracParticle` on **one** colour component
+  with ``color=N_c``.  The gluon becomes one mediator (``calc.gluon``) with a
+  colour-stripped coupling, and the colour factors come from
+  :mod:`~feynlag.pheno.colour`.  External gluons raise (stage 5b);
 - mediators are the declared bosons in **unitary gauge**: leave Goldstones out
   of ``boson_fields`` (a massive vector's propagator already carries their
   physics as ``q_μq_ν/m²``).
@@ -38,6 +41,7 @@ from .particles import ExternalState, expand_particles
 from .scattering import (
     cross_section, differential_cross_section, forward_backward_asymmetry,
 )
+from .colour import colour_matrix, four_fermion_colour_tensor
 from .diagrams import Amplitude
 from .topology import (
     ExternalBoson, ExternalFermion, enumerate_diagrams,
@@ -70,11 +74,18 @@ class ScatteringCalculator:
             :meth:`~feynlag.lagrangian.Model.gauge_vertices`, e.g.
             ``[SU2L]`` — needed for ``e⁺e⁻→W⁺W⁻``.  An unbroken group
             (colour) must not be listed.
+        colour_group: the unbroken colour group (e.g. ``SU3c``), needed for
+            coloured external fermions.
+        gluon: its :class:`~feynlag.fields.GaugeBoson` field.  The
+            calculator extracts over its components itself and exposes one
+            mediator symbol, :attr:`gluon`; do not list the components in
+            ``boson_fields``.
     """
 
     def __init__(self, model, particles, masses, widths=None, boson_fields=(),
                  fermion_sectors=("gauge",), conjugate_map=None,
-                 conjugates=None, parameters=None, gauge_groups=None):
+                 conjugates=None, parameters=None, gauge_groups=None,
+                 colour_group=None, gluon=None):
         self.model = model
         self.particles = list(particles)
         self.masses = dict(masses)
@@ -85,6 +96,15 @@ class ScatteringCalculator:
         self.conjugates = dict(conjugates or {})
         self.parameters = parameters
         self.gauge_groups = list(gauge_groups or [])
+        if (colour_group is None) != (gluon is None):
+            raise ValueError(
+                "ScatteringCalculator: pass `colour_group` and `gluon` "
+                "together")
+        self.colour_group = colour_group
+        self._gluon_components = (list(gluon.components) if gluon is not None
+                                  else [])
+        #: the single gluon mediator symbol (``None`` without a colour group)
+        self.gluon = sp.Symbol(gluon.name) if gluon is not None else None
         self.particle_map, _, _ = expand_particles(self.particles)
         self._vertices = None
 
@@ -94,11 +114,13 @@ class ScatteringCalculator:
         plus, with ``gauge_groups``, the triple-gauge ones."""
         if self._vertices is None:
             vertices = collect_decay_vertices(
-                self.model, self.boson_fields,
+                self.model, self.boson_fields + self._gluon_components,
                 fermion_sectors=self.fermion_sectors,
                 conjugate_map=self.conjugate_map,
                 particle_map=self.particle_map)
             vertices = self._at_zero_fields(vertices)
+            if self.colour_group is not None:
+                vertices = self._colour_stripped(vertices)
             if self.gauge_groups:
                 wanted = set(self.boson_fields)
                 for vertex in self.model.gauge_vertices(
@@ -143,7 +165,99 @@ class ScatteringCalculator:
             out.append(vertex)
         return out
 
+    def colour_rep(self, particle):
+        """The colour-group rep label of a declared species (``None`` for a
+        colour singlet), read from the model field owning its left leg."""
+        if self.colour_group is None:
+            return None
+        for field in self.model.fields:
+            if any(particle.left == comp
+                   for comp in getattr(field, "components", ())):
+                return field.reps.get(self.colour_group)
+        return None
+
+    def _generators(self, particle):
+        """The colour generators of a coloured species, checked against its
+        declared ``color``."""
+        rep = self.colour_rep(particle)
+        if rep is None or self.colour_group.rep_dim(rep) != particle.color:
+            raise ValueError(
+                f"ScatteringCalculator: {particle.particle} is declared with "
+                f"color={particle.color}, but its field's "
+                f"{self.colour_group.name} rep is {rep!r}")
+        return self.colour_group.generators(rep)
+
+    def _colour_stripped(self, vertices):
+        """Replace the colour-component gluon vertices by one vertex per
+        coloured species on the single mediator :attr:`gluon`.
+
+        A species is declared on one colour component ``r``, so the
+        extractor reports ``(q̄, q, G_a)`` with ``g·T^a[r, r]`` for the
+        diagonal generators only.  Dividing by ``T^a[r, r]`` must give the
+        same ``g`` for each of them — that fixes ``r`` and is a check that
+        the vertex really has the ``g T^a`` colour structure.
+        """
+        components = set(self._gluon_components)
+        out = [v for v in vertices
+               if not (v.vertex_type.startswith("FF")
+                       and v.particles[2] in components)]
+        for dp in self.particles:
+            if dp.color == 1:
+                continue
+            T = self._generators(dp)
+            found = {}
+            for v in vertices:
+                if (v.vertex_type == "FFV" and v.particles[2] in components
+                        and v.particles[0] == dp.antiparticle
+                        and v.particles[1] == dp.particle):
+                    found[self._gluon_components.index(v.particles[2])] = v
+            if not found:
+                continue
+            stripped = None
+            for r in range(dp.color):
+                expected = {a for a, Ta in enumerate(T)
+                            if Ta.is_diagonal() and Ta[r, r] != 0}
+                if set(found) != expected:
+                    continue
+                values = {(sp.simplify(found[a].g_left / T[a][r, r]),
+                           sp.simplify(found[a].g_right / T[a][r, r]))
+                          for a in expected}
+                if len(values) == 1:
+                    (stripped,) = values
+                    break
+            if stripped is None:
+                raise ValueError(
+                    f"ScatteringCalculator: the {self.colour_group.name} "
+                    f"couplings of {dp.particle} are not g·T^a for one "
+                    f"colour component; declare the DiracParticle on a "
+                    f"single colour component of its field(s)")
+            out.append(DecayVertex(
+                particles=(dp.antiparticle, dp.particle, self.gluon),
+                vertex_type="FFV", g_left=stripped[0], g_right=stripped[1],
+                meta={"source": "colour", "bar": dp.antiparticle,
+                      "field": dp.particle, "boson": self.gluon}))
+        return out
+
+    def _colour_matrix(self, externals, diagrams):
+        """The colour matrix of a four-fermion process, or ``None`` when
+        every external is a colour singlet."""
+        dims = [ext.particle.color for ext in externals]
+        if all(d == 1 for d in dims):
+            return None
+        tensors = []
+        for info in diagrams:
+            generators = None
+            if info.mediator == self.gluon:
+                generators = tuple(
+                    self._generators(externals[bar].particle)
+                    for bar, _ in info.lines)
+            tensors.append(four_fermion_colour_tensor(
+                info.lines, dims, generators))
+        return colour_matrix(tensors)
+
     def mass_of(self, boson):
+        if self.gluon is not None and boson == self.gluon:
+            return sp.S.Zero
         if boson in self.masses:
             return sp.sympify(self.masses[boson])
         partner = self.conjugates.get(boson)
@@ -169,13 +283,19 @@ class ScatteringCalculator:
         symbol = sp.sympify(symbol)
         for dp in self.particles:
             if symbol in (dp.particle, dp.antiparticle):
-                if dp.color != 1:
+                if dp.color != 1 and self.colour_group is None:
                     raise NotImplementedError(
                         f"ScatteringCalculator: {symbol} is coloured "
-                        f"(N_c={dp.color}); coloured external states need the "
-                        f"colour-flow layer of Tier 5 of the scattering roadmap")
+                        f"(N_c={dp.color}); pass `colour_group` and `gluon` "
+                        f"to the calculator")
                 return ExternalFermion(dp, anti=(symbol == dp.antiparticle),
                                        incoming=incoming)
+        if self.gluon is not None and (symbol == self.gluon
+                                       or symbol in self._gluon_components):
+            raise NotImplementedError(
+                f"ScatteringCalculator: an external gluon ({symbol}) needs "
+                f"physical polarization sums and the ggg vertex — stage 5b "
+                f"of Tier 5 of the scattering roadmap")
         if symbol in self.boson_fields or symbol in self.conjugates:
             spin = self.model.spin_map(conjugate_map=self.conjugate_map).get(symbol)
             if spin is None:
@@ -222,12 +342,19 @@ class ScatteringCalculator:
             vertices = [_substituted(v, values) for v in vertices]
         n_bosons = sum(isinstance(ext, ExternalBoson) for ext in externals)
         amplitude = None
+        colour = None
+        if n_bosons and any(isinstance(ext, ExternalFermion)
+                            and ext.particle.color != 1 for ext in externals):
+            raise NotImplementedError(
+                "ScatteringCalculator: coloured fermions with external "
+                "bosons are stage 5b of Tier 5 of the scattering roadmap")
         if n_bosons == 0:
             diagrams = enumerate_diagrams(
                 externals, vertices, kin,
                 mass_of=lambda b: num(self.mass_of(b)),
                 width_of=lambda b: num(self.width_of(b)),
                 conjugates=self.conjugates)
+            colour = self._colour_matrix(externals, diagrams)
         elif n_bosons == 2:
             diagrams = enumerate_line_diagrams(
                 externals, vertices, kin, self.particles,
@@ -248,7 +375,14 @@ class ScatteringCalculator:
                 f"no tree diagram connects {tuple(map(str, incoming))} -> "
                 f"{tuple(map(str, outgoing))} through the extracted vertices "
                 f"(check `boson_fields`, `fermion_sectors` and `particles`)")
-        return ScatteringProcess(externals, kin, diagrams, amplitude=amplitude)
+        return ScatteringProcess(externals, kin, diagrams,
+                                 amplitude=amplitude, colour=colour)
+
+
+def _colour_dim(external):
+    if isinstance(external, ExternalFermion):
+        return external.particle.color
+    return 1
 
 
 def _mass(external):
@@ -275,15 +409,20 @@ class ScatteringProcess:
         initial_states: the two :class:`~feynlag.pheno.particles.ExternalState`
             averaged over.
         symmetry_factor: ``1/2`` for identical final-state particles.
+        colour: the colour matrix ``C[d][d']`` of a process with coloured
+            externals (:mod:`~feynlag.pheno.colour`), else ``None``.
     """
 
-    def __init__(self, externals, kinematics, diagrams, amplitude=None):
+    def __init__(self, externals, kinematics, diagrams, amplitude=None,
+                 colour=None):
         self.externals = list(externals)
         self.kinematics = kinematics
         self.diagrams = list(diagrams)
         self._amplitude = amplitude
+        self.colour = colour
         self.initial_states = tuple(
-            ExternalState(ext.symbol, kinematics_mass, ext.spin)
+            ExternalState(ext.symbol, kinematics_mass, ext.spin,
+                          color=_colour_dim(ext))
             for ext, kinematics_mass in zip(self.externals[:2],
                                             (kinematics.m1, kinematics.m2)))
         identical = self.externals[2].symbol == self.externals[3].symbol
@@ -304,10 +443,14 @@ class ScatteringProcess:
         return Amplitude(tuple(d.diagram for d in self.diagrams))
 
     def squared(self):
-        """``Σ|M|²`` (spin-summed, not averaged), as a function of
-        ``kinematics.s``/``.t``; cached."""
+        """``Σ|M|²`` (spin- and colour-summed, not averaged), as a function
+        of ``kinematics.s``/``.t``; cached."""
         if self._squared is None:
-            self._squared = self.amplitude().squared(self.kinematics)
+            if self.colour is not None:
+                self._squared = self.amplitude().squared(
+                    self.kinematics, colour=self.colour)
+            else:
+                self._squared = self.amplitude().squared(self.kinematics)
         return self._squared
 
     def differential_cross_section(self, variable="cos"):

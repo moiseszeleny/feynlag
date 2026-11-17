@@ -676,7 +676,7 @@ def test_calculator_guards(sm_leptons):
     quark = DiracParticle("Tq", sm["e"].left, sm["e"].right, 0, color=3)
     qcalc = ScatteringCalculator(sm["model"], [quark], masses={A: 0},
                                  boson_fields=[A])
-    with pytest.raises(NotImplementedError, match="Tier 5"):
+    with pytest.raises(NotImplementedError, match="colour_group"):
         qcalc.process((quark.particle, quark.antiparticle),
                       (quark.particle, quark.antiparticle))
 

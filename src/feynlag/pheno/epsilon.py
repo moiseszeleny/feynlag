@@ -201,6 +201,37 @@ def gram_determinant(heads, dot):
     return sp.Matrix(n, n, entry).det()
 
 
+def _float_singular(heads, dot):
+    """Whether a Gram matrix with **floating-point** entries is singular up
+    to round-off.
+
+    With float masses the exact cancellation ``det = 0`` survives only as a
+    residue like ``3e-17·s³t²`` that no simplification removes.  The matrix
+    is evaluated at a few points of its free symbols and its determinant
+    compared with Hadamard's bound ``∏‖row‖`` (what a generic matrix of that
+    size would give).  Exact (symbolic or rational) input never takes this
+    path: there a non-zero determinant is a genuine one.
+    """
+    n = len(heads)
+    matrix = sp.Matrix(n, n, lambda i, j: dot(heads[i], heads[j]))
+    if not matrix.has(sp.Float):
+        return False
+    symbols = sorted(matrix.free_symbols, key=str)
+    for trial in range(3):
+        point = {sym: sp.Float(37.0 * (trial + 2) + 11.3 * k * (trial + 1))
+                 for k, sym in enumerate(symbols, start=1)}
+        try:
+            rows = [[complex(matrix[i, j].subs(point)) for j in range(n)]
+                    for i in range(n)]
+        except TypeError:
+            return False
+        numeric = sp.Matrix(rows)
+        bound = sp.prod(sp.sqrt(sum(abs(x)**2 for x in row)) for row in rows)
+        if abs(complex(numeric.det(method="berkowitz"))) > 1e-9 * float(bound):
+            return False
+    return True
+
+
 def assert_epsilon_single_vanishes(heads, dot):
     """Prove-or-refuse guard for the single-ε cross terms.
 
@@ -225,6 +256,8 @@ def assert_epsilon_single_vanishes(heads, dot):
         return
     for subset in itertools.combinations(unique, 4):
         det = sp.simplify(gram_determinant(subset, dot))
+        if det != 0 and _float_singular(subset, dot):
+            continue
         if det != 0:
             names = [h.name for h in subset]
             raise NotImplementedError(
