@@ -65,6 +65,15 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
   vertex on field leg `φ` (physical plane waves, `∂_μ → −i p_μ` — the same
   origin as `VVV_KAPPA`). For a scalar of charge `Q` this is the textbook
   `i g Q (p_φ − p_φ†)^μ`.
+- **Colour.** Colour is factorised: a diagram is a colour tensor times the
+  Lorentz amplitude with a colour-stripped coupling. A fermion line
+  `ψ̄_x … ψ_y` emitting the colour group's gauge boson carries `T^a[x, y]`
+  (`x` the bar-slot leg's colour index, `y` the field-slot leg's, `T^a` in
+  the field's rep) and the stripped vertex is `i g γ^μ`; a colour-singlet
+  mediator carries `δ[x, y]`. `Σ|M|²` is summed over all external colours;
+  the initial-state average divides by each incoming leg's colour
+  dimension. A coloured species is declared as a `DiracParticle` on one
+  colour component with `color=N_c`.
 - **Polarization sums.** `−g_{μμ'} + k_μk_{μ'}/m²` for a massive external
   vector; `−g_{μμ'}` for a massless one, used only after the Ward identity
   `k_μM^μ = 0` has been checked on that amplitude. Mediators are in unitary

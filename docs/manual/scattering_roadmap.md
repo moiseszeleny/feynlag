@@ -571,24 +571,110 @@ four-point contact vertices, boson–boson scattering.
 
 ## 17.5 Tier 5 — coloured / hadronic 2→2 (parton level)
 
-**Channels**: $q\bar q\to q'\bar q'$, $qg\to qg$, $gg\to gg$. **Effort:
-medium–large.**
+**Channels**: four-quark scattering and quark–lepton processes (stage 5a,
+delivered); $q\bar q\to gg$, $qg\to qg$ (stage 5b); $gg\to gg$ (stage 5c).
+**Effort: medium–large.** Parton level only: **no PDFs, no hadronic
+luminosity, fixed $\alpha_s$** — the same "no proton structure" scope as the
+rest of the library.
 
-Needs a colour-flow layer producing the colour factor
-$C_{dd'}=\sum_{\text{colour}} T_d\bar T_{d'}$ separated from the Lorentz part,
-colour averaging over the initial state (already slotted via
-{class}`~feynlag.pheno.particles.ExternalState.color`, unused until now), and
-lifting `collect_decay_vertices`/`fermion_decay_vertices`'s twin 3-leg hard
-filters so the `VVVV` ($gggg$) contact vertex — already assembled by
-`export/ufo/vvvv.py`'s `assemble_vvvv` — becomes reachable.
+Three separate things are missing after Tier 4, and only the first is a
+colour factor:
 
-**Oracle**: the standard parton-level $|\mathcal M|^2$ table (Ellis, Stirling
-& Webber [ESW96], e.g. $q\bar q\to q'\bar q' = \tfrac49\cdot\tfrac{t^2+u^2}{s^2}$,
-$gg\to gg = \tfrac92(3-\tfrac{tu}{s^2}-\tfrac{su}{t^2}-\tfrac{st}{u^2})$),
-with colour factors $C_F=4/3$, $C_A=3$, $T_R=1/2$. **Explicitly excludes
-PDFs and hadronic luminosity** — this tier stops at the parton-level $2\to2$
-cross section, matching the "no PDFs" scope already implicit in the rest of
-the library (no proton structure anywhere).
+1. **Colour bookkeeping** for diagrams and their interference.
+2. **External gluons.** Two external massless non-abelian vectors do not
+   obey the abelian Ward identity diagram set by diagram set, so $-g$ is not
+   their polarization sum; the engine already checks this and refuses
+   (stage 4a). They need physical polarization sums.
+3. **A four-boson amplitude** for $gg\to gg$: three exchange diagrams and the
+   $gggg$ contact vertex (already assembled, colour-stripped, by
+   `export/ufo/vvvv.py`'s `adjoint_vvvv`). Nothing in `pheno` has an
+   amplitude without a fermion line.
+
+So the tier is staged like Tier 4, one oracle per stage.
+
+### Stage 5a — colour, and coloured four-fermion processes ✅ (delivered)
+
+`feynlag.pheno.colour`, `Amplitude.squared(kin, colour=)`, and
+`ScatteringCalculator(colour_group=, gluon=)`.
+
+**Colour is factorised, not enumerated.** Every diagram is a colour tensor
+$K_d$ over the four external colour indices times the Lorentz amplitude
+$L_d$ the Tier 1–3 engine computes with a colour-stripped coupling, so
+
+$$\sum_{\rm colours}\Big|\sum_d K_dL_d\Big|^2=\sum_{d,d'}C_{dd'}\,L_d\bar L_{d'},
+\qquad C_{dd'}=\sum_{\rm colours}K_d\bar K_{d'} .$$
+
+A fermion line $\bar\psi_x\ldots\psi_y$ carries $T^a_{xy}$ when it emits the
+gluon and $\delta_{xy}$ when it emits a colour singlet, with $T^a$ taken from
+{meth}`~feynlag.groups.gauge.SUN.generators` in the field's rep. No Casimir
+is typed in: for SU(3) the four-quark matrix elements $2$
+($=\mathrm{Tr}(T^aT^b)\mathrm{Tr}(T^aT^b)$) and $-\tfrac23$
+($=\mathrm{Tr}(T^aT^bT^aT^b)$), and the vanishing of a singlet × octet
+s channel ($\mathrm{Tr}\,T^a=0$), come out of the index sums, for any SU(N)
+and any irrep. The Dirac algebra is untouched: `Amplitude.squared` already
+computes each $M_d\bar M_{d'}$ separately and now multiplies it by
+$C_{dd'}$; without a colour matrix every earlier result is unchanged.
+
+**Declaring a quark.** Colour is explicit in feynlag's components (a triplet
+is three `IndexedBase` components, the gluon eight symbols), and the
+extractor reports $(\bar q_r,q_c,G_a)$ with coefficient $g_sT^a_{rc}$. A
+coloured species is declared as the decay calculator already does it: a
+`DiracParticle` on **one** colour component, with `color=3`. Colour-singlet
+vertices are then right as extracted. For the gluon, the calculator extracts
+over the gluon components itself and replaces what it finds by **one** vertex
+$(\bar q,q,g)$ on a single mediator symbol (`calc.gluon`), with the stripped
+coupling $\text{coefficient}/T^a_{rr}$ read from the diagonal generators. It
+requires every non-zero diagonal generator to give the same value — that
+identifies the component $r$ and checks the vertex really is $g\,T^a$ — and
+raises otherwise.
+
+**Refused, not approximated**: a coloured species without `colour_group`; a
+declared `color` that disagrees with the field's rep; a fermion line joining
+different colour dimensions through a singlet (a leptoquark-like coloured
+mediator); an external gluon, and coloured fermions with external bosons
+(stage 5b).
+
+**Fixed along the way**: the γ₅ guard refused valid processes with float
+masses, because the Gram determinant of four dependent momenta then survives
+as a round-off residue instead of an exact zero. Float-valued tables are now
+tested for singularity numerically (against Hadamard's bound); exact input
+is handled as before.
+
+**Verified** (`tests/test_colour.py`):
+
+- **The colour matrices** against the SU(N) trace identities for
+  $N=2,3,4$: $(N^2-1)/4$, $-(N^2-1)/(4N)$, $N^2$, $N$, $(N^2-1)/2$ and $0$.
+- **The parton table [ESW96, Table 7.1]**, exactly and symbolically, with
+  the couplings extracted from a QCD × QED model (averaged over initial and
+  summed over final spins and colours, $g_s^4$ removed):
+  $qq'\to qq'$ and $q\bar q'\to q\bar q'$: $\tfrac49\frac{s^2+u^2}{t^2}$;
+  $q\bar q\to q'\bar q'$: $\tfrac49\frac{t^2+u^2}{s^2}$;
+  $qq\to qq$: $\tfrac49\big(\frac{s^2+u^2}{t^2}+\frac{s^2+t^2}{u^2}\big)-\tfrac{8}{27}\frac{s^2}{tu}$;
+  $q\bar q\to q\bar q$: $\tfrac49\big(\frac{s^2+u^2}{t^2}+\frac{t^2+u^2}{s^2}\big)-\tfrac{8}{27}\frac{u^2}{st}$.
+  All five matched on the first run.
+- **QCD and QED together, massive quarks**: $u\bar u\to u\bar u$ with photon
+  and gluon in both channels, against an explicit evaluator that sums the
+  amplitude over diagrams for each colour and spin configuration with
+  explicit $T^a$ matrices and spinors — no colour matrix and no trace.
+- **Colour-singlet limits**: $\sigma(e^+e^-\to q\bar q)=N_cQ_q^2\cdot4\pi\alpha^2/3s$
+  and $\sigma(q\bar q\to e^+e^-)=(Q_q^2/N_c)\cdot4\pi\alpha^2/3s$;
+  $\sigma(q\bar q\to q'\bar q')=8\pi\alpha_s^2/27s$.
+
+Worked example: `examples/qcd_scattering.py`.
+
+### Stage 5b — external gluons
+
+$q\bar q\to gg$, $qg\to qg$, $gg\to q\bar q$ on the Tier 4 line engine:
+physical polarization sums for the gluons, the $ggg$ vertex with colour
+$f^{abc}$ (`adjoint_vvv`), and colour tensors with adjoint indices.
+**Oracle**: the $q\bar q\to gg$ entry of [ESW96, Table 7.1] and its
+crossings, plus an explicit polarization-vector evaluator.
+
+### Stage 5c — $gg\to gg$
+
+A pure-boson amplitude (three exchange diagrams and the $gggg$ contact
+vertex). **Oracle**: [ESW96]
+$\tfrac92\big(3-\tfrac{tu}{s^2}-\tfrac{su}{t^2}-\tfrac{st}{u^2}\big)$.
 
 ## 17.6 Summary
 
@@ -598,21 +684,22 @@ the library (no proton structure anywhere).
 | 2 ✅ | $e^+e^-\to\mu^+\mu^-$ (Z only); any single chiral-current diagram | ε (γ₅) algebra (`pheno.epsilon`): $\mathrm{Tr}[\gamma\gamma\gamma\gamma\gamma_5]$, ε·ε → Gram determinant, `forward_backward_asymmetry` | large | $d\sigma/d\cos\theta$ shape + $A_{FB}=\tfrac34A_eA_f$ vs [LEPEWWG06]; γ₅-carrying matrix oracle (massless + massive mediator) |
 | 3 ✅ | full $e^+e^-\to f\bar f$ (γ/Z interference); Bhabha, Møller, $\nu_ee$ | multi-diagram double sum (same-pairing product of traces; exchanged-pairing single trace); s/t/u topology enumeration; permutation-parity fermion signs; `ScatteringCalculator` | medium–large | **MadGraph 2.7878 pb** (inside $\lvert\eta\rvert<2.5$); Bhabha/Møller closed forms; explicit-spinor oracle |
 | 4 ✅ | 4a: $e^+e^-\to\gamma\gamma$, Compton, $e^+e^-\to ZZ/Z\gamma$; 4b: $e^+e^-\to Zh$, $W^+W^-$; 4c: $e^+e^-\to\phi^+\phi^-$ (`VSS`) | 4a: external bosons, fermion propagator, polarization sums with a Ward check, scalar-level contraction (**done**); 4b: `VVS`/`VVV` vertex tensors, boson exchange (**done**); 4c: `VSS` momentum tags (**done**) | large | 4a: Klein–Nishina and its crossing [PS95], explicit spinor + polarization oracle; 4b: **MadGraph 19.498 pb** (engine: 19.447), exact high-energy cancellation, Higgsstrahlung closed form [Djouadi08]; 4c: scalar-QED closed form [BFIK05], Ward identity |
-| 5 | $q\bar q\to q\bar q$, $qg\to qg$, $gg\to gg$ | colour-flow algebra; colour averaging; 4-point contact vertices | medium–large | ESW parton-level table (no PDFs) |
+| 5 (5a ✅) | 5a: four-quark scattering, $e^+e^-\to q\bar q$; 5b: $q\bar q\to gg$, $qg\to qg$; 5c: $gg\to gg$ | 5a: colour tensors and the colour matrix from the group generators (**done**); 5b: external gluons, physical polarization sums, $ggg$ colour; 5c: pure-boson amplitude, 4-point contact vertex | medium–large | 5a: ESW four-quark entries [ESW96], explicit colour + spinor sum; 5b, 5c: remaining ESW entries (no PDFs) |
 
 The recommended order is the table order: Tier 1 gave the first native cross
 section for the cost of an object layer that reuses the existing covariant
 engine unchanged; Tier 2 was the genuinely new algebra 2→2 requires that 1→2
 never did; Tier 3 is where the first MadGraph benchmark stops being
 aspirational and is reproduced (the second, $e^+e^-\to W^+W^-$, by Tier 4's stage 4b); Tier 4 is the hardest single piece (derivative
-couplings); Tier 5 generalizes to QCD but adds no new *kind* of physics beyond
-colour bookkeeping.
+couplings); Tier 5 generalizes to QCD: colour bookkeeping first (stage 5a),
+then external gluons and the four-gluon amplitude.
 
 See {doc}`decays_roadmap` for the parallel decay-side roadmap and its
 `n_momenta`/ε-drop precedent, `tests/test_scattering.py` for what Tiers 1–2
 pin, `tests/test_interference.py` for Tier 3 and
 `tests/test_line_scattering.py`, `tests/test_ww.py` and `tests/test_vss.py`
-for Tier 4's stages 4a, 4b and 4c.
+for Tier 4's stages 4a, 4b and 4c, and `tests/test_colour.py` for Tier 5's
+stage 5a.
 
 ## 17.7 References
 
@@ -639,7 +726,8 @@ for Tier 4's stages 4a, 4b and 4c.
 - **[ESW96]** R. K. Ellis, W. J. Stirling and B. R. Webber, *QCD and Collider
   Physics*, Cambridge Monographs on Particle Physics, Nuclear Physics and
   Cosmology 8, Cambridge University Press (1996), ISBN 978-0-521-54589-1 —
-  the parton-level $2\to2$ $|\mathcal M|^2$ table Tier 5 targets.
+  Table 7.1, the parton-level $2\to2$ $|\mathcal M|^2$ table; Tier 5's stage
+  5a reproduces its four-quark entries.
 - **[LEPEWWG06]** ALEPH, DELPHI, L3, OPAL, SLD Collaborations, LEP
   Electroweak Working Group, SLD Electroweak and Heavy Flavour Groups,
   "Precision Electroweak Measurements on the Z Resonance," Phys. Rept. 427
