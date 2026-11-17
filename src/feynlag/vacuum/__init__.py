@@ -12,12 +12,12 @@ from .diagonalize import (
 
 from .physical import (
     Diagonalization, MassBlock, PhysicalRegistry, diagonalize_block,
-    goldstone_directions, mass_blocks,
+    goldstone_directions, mass_blocks, physical_boson_masses,
 )
 
 __all__ = [
     "MassBlock", "Diagonalization", "PhysicalRegistry", "mass_blocks",
-    "diagonalize_block", "goldstone_directions",
+    "diagonalize_block", "goldstone_directions", "physical_boson_masses",
     "Vacuum", "extract_tadpoles", "solve_tadpoles",
     "build_mass_matrix", "scalar_mass_matrix", "charged_mass_matrix",
     "seesaw_mass_matrix", "seesaw_light_mass",

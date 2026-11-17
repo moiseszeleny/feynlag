@@ -26,7 +26,7 @@ from .vertices.vertex import Vertex
 from .vertices.yangmills import cubic_couplings, quartic_couplings
 
 __all__ = ["physical_vector_basis", "adjoint_rotation",
-           "gauge_self_couplings"]
+           "broken_nonabelian_groups", "gauge_self_couplings"]
 
 
 def _rotate_symbol(model, sym):
@@ -98,6 +98,23 @@ def adjoint_rotation(model, group, basis=None, simplifier=sp.expand):
     return U, basis
 
 
+def _is_rotated(model, group):
+    """True when a registered rotation mixes one of the group's adjoint
+    components (so its physical basis differs from its weak basis)."""
+    return any(_rotate_symbol(model, comp) != comp
+               for comp in group.bosons().components)
+
+
+def broken_nonabelian_groups(model):
+    """The model's non-abelian gauge groups whose adjoint components a
+    registered rotation touches — the groups
+    :meth:`~feynlag.lagrangian.Model.gauge_vertices` accepts.  An unbroken
+    group (colour) is left out: its self-couplings need the colour-stripped
+    ``adjoint_vvv``/``adjoint_vvvv`` route."""
+    return [g for g in model.gauge_groups
+            if not g.abelian and _is_rotated(model, g)]
+
+
 def _reject_unrotated(model, group):
     """Refuse a group whose adjoint components no rotation touches.
 
@@ -114,9 +131,8 @@ def _reject_unrotated(model, group):
     look correct, because ``f^{123} = 1``.  Refuse instead, and name the two
     helpers that do it properly.
     """
-    for comp in group.bosons().components:
-        if _rotate_symbol(model, comp) != comp:
-            return                      # something mixed it: physical basis
+    if _is_rotated(model, group):
+        return                          # something mixed it: physical basis
     raise NotImplementedError(
         f"no registered rotation touches {group.name}'s adjoint components, "
         f"so its self-couplings are weak-basis values carrying the colour "

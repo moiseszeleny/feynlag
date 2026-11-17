@@ -27,7 +27,8 @@ from .verify import (
 from .export import latex_feynman_table
 from .texsymbol import TexSymbol, tex_symbol
 from .parameters import (
-    ExternalParameter, InternalParameter, Parameter, ParameterSet,
+    ExternalParameter, InternalParameter, Parameter, ParameterPoint,
+    ParameterSet,
 )
 from .groups import (
     SU2, SU3, SUN, U1, S3, ZN, DiscreteSymmetry, GaugeGroup, GlobalU1,
@@ -38,6 +39,7 @@ from .fields import (
 )
 from .vacuum import (
     Diagonalization, MassBlock, PhysicalRegistry, goldstone_directions,
+    physical_boson_masses,
     MajoranaRotation, Rotation, Vacuum, build_mass_matrix, charged_mass_matrix,
     diagonalize_orthogonal_2x2, diagonalize_svd, diagonalize_svd_2x2,
     diagonalize_takagi,
@@ -77,12 +79,14 @@ from .charges import (
 )
 from .flavor import CKM_ELEMENT_NAMES, cabibbo_2x2, standard_ckm
 from .gauge_basis import (
-    adjoint_rotation, gauge_self_couplings, physical_vector_basis,
+    adjoint_rotation, broken_nonabelian_groups, gauge_self_couplings,
+    physical_vector_basis,
 )
 from .export.ufo.legs import ufo_leg_sign
 from .models import (
-    ElectroweakScaffold, PhysicalBasis, StandardModel,
-    charged_current_rotation, electroweak_gauge, electroweak_scaffold,
+    ElectroweakInputs, ElectroweakScaffold, PhysicalBasis, StandardModel,
+    charged_current_rotation, electroweak_gauge, electroweak_inputs,
+    electroweak_scaffold,
     higgs_doublet, standard_model, to_physical_basis, weinberg_rotation,
 )
 from .suggest import (
@@ -91,6 +95,8 @@ from .suggest import (
 )
 
 __all__ = [
+    "ParameterPoint", "ElectroweakInputs", "electroweak_inputs",
+    "broken_nonabelian_groups", "physical_boson_masses",
     "GeneralLagrangian", "TermCoverage", "most_general_lagrangian",
     "term_coverage",
     "MassBlock", "Diagonalization", "PhysicalRegistry", "goldstone_directions",

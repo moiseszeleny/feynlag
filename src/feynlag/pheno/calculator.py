@@ -111,6 +111,40 @@ class DecayCalculator:
         self._vertices = None
         self._unmatched = None
 
+    @classmethod
+    def from_model(cls, model, particles=(), *, point=None, masses=None,
+                   boson_fields=None, fermion_sectors=("gauge", "yukawa"),
+                   simplifier=None, particle_map=None, color_factors=None):
+        """A calculator set up from what ``model`` already knows.
+
+        ::
+
+            calc = DecayCalculator.from_model(model, particles=[e, tau])
+            calc.numeric_branching_ratios(h)
+
+        Derived as in
+        :meth:`~feynlag.pheno.scattering_calculator.ScatteringCalculator.from_model`:
+        ``boson_fields`` = ``model.physical.unitary_bosons``,
+        ``conjugate_map`` = ``model.physical.cmap``, the boson masses from
+        the physical Lagrangian, ``parameters`` = ``point`` or
+        ``model.parameters``.  Fermion masses come from the
+        :class:`~feynlag.pheno.particles.DiracParticle`\\ s as before; a
+        ``masses=`` entry replaces a derived one.
+
+        Raises:
+            ValueError: the model has no physical basis yet.
+        """
+        from .setup import model_setup, resolve_point
+
+        bosons, cmap, _conjugates, derived = model_setup(
+            model, boson_fields=boson_fields, masses=masses)
+        return cls(model, derived, boson_fields=bosons,
+                   fermion_sectors=fermion_sectors,
+                   conjugate_map=cmap or None, color_factors=color_factors,
+                   parameters=resolve_point(model, point),
+                   simplifier=simplifier, particle_map=particle_map,
+                   particles=particles)
+
     # ------------------------------------------------------------- vertices
 
     def vertices(self):
@@ -263,15 +297,16 @@ class DecayCalculator:
 
     # -------------------------------------------------------------- numeric
 
-    def _substitutions(self, extra=None):
+    def _substitutions(self, extra=None, point=None):
         values = {}
-        if self.parameters is not None:
-            values.update(self.parameters.numeric())
+        parameters = self.parameters if point is None else point
+        if parameters is not None:
+            values.update(parameters.numeric())
         if extra:
             values.update({sp.sympify(k): v for k, v in extra.items()})
         return values
 
-    def numeric(self, expr, extra=None):
+    def numeric(self, expr, extra=None, point=None):
         """Evaluate ``expr`` at the model's parameter point.
 
         Uses :meth:`~feynlag.parameters.ParameterSet.numeric`, which already
@@ -284,11 +319,12 @@ class DecayCalculator:
                 (masses, VEVs, anything outside the ``ParameterSet``).
         """
         if isinstance(expr, dict):
-            return {k: self.numeric(v, extra=extra) for k, v in expr.items()}
-        values = self._substitutions(extra)
+            return {k: self.numeric(v, extra=extra, point=point)
+                    for k, v in expr.items()}
+        values = self._substitutions(extra, point)
         return complex(sp.sympify(expr).subs(values).evalf())
 
-    def numeric_partial_widths(self, parent, extra=None):
+    def numeric_partial_widths(self, parent, extra=None, point=None):
         """``{(child1, child2): Γ}`` as **floats**, with closed channels at 0.
 
         This is not just ``numeric(partial_widths(...))``.  With symbolic
@@ -298,8 +334,11 @@ class DecayCalculator:
         would silently poison the total width and every branching ratio.  Here
         the threshold is re-tested against the substituted masses and closed
         channels are set to exactly zero.
+
+        ``point`` (a :class:`~feynlag.parameters.ParameterPoint`) replaces the
+        calculator's ``parameters`` for this call.
         """
-        values = self._substitutions(extra)
+        values = self._substitutions(extra, point)
 
         def as_number(expr):
             return complex(sp.sympify(expr).subs(values).evalf())
@@ -315,13 +354,14 @@ class DecayCalculator:
             out[channel.children] = out.get(channel.children, 0.0) + width
         return out
 
-    def numeric_total_width(self, parent, extra=None):
+    def numeric_total_width(self, parent, extra=None, point=None):
         """``Γ_tot`` as a float, counting only channels open at this point."""
-        return sum(self.numeric_partial_widths(parent, extra=extra).values())
+        return sum(self.numeric_partial_widths(
+            parent, extra=extra, point=point).values())
 
-    def numeric_branching_ratios(self, parent, extra=None):
+    def numeric_branching_ratios(self, parent, extra=None, point=None):
         """``{(child1, child2): BR}`` as floats, closed channels at 0."""
-        widths = self.numeric_partial_widths(parent, extra=extra)
+        widths = self.numeric_partial_widths(parent, extra=extra, point=point)
         total = sum(widths.values())
         if total == 0:
             return {k: 0.0 for k in widths}

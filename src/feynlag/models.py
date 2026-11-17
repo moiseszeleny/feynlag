@@ -38,7 +38,8 @@ from .texsymbol import tex_symbol
 from .vertices.bilinear import fermion_gauge_current
 
 __all__ = [
-    "ElectroweakScaffold", "PhysicalBasis", "StandardModel",
+    "ElectroweakInputs", "ElectroweakScaffold", "PhysicalBasis",
+    "StandardModel", "electroweak_inputs",
     "charged_current_rotation", "electroweak_gauge", "electroweak_scaffold",
     "higgs_doublet", "standard_model", "to_physical_basis",
     "weinberg_rotation",
@@ -47,6 +48,77 @@ __all__ = [
 # PDG-ish default parameter point (also used by the examples/tutorials).
 GW_DEFAULT, G1_DEFAULT = 0.6535, 0.3580
 VEV_DEFAULT, MH_DEFAULT = 246.0, 125.25
+
+
+# ------------------------------------------------------------ input scheme
+
+@dataclass(frozen=True)
+class ElectroweakInputs:
+    """The tree-level electroweak parameters in the ``(α, G_F, M_Z)`` scheme.
+
+    Attributes:
+        alpha_inv, GF, MZ: the three inputs (``1/α``, GeV⁻², GeV).
+        ee: the electric charge ``e = √(4πα)``.
+        MW: the W mass, sw2: ``sin²θ_w = 1 − M_W²/M_Z²``.
+        gw, g1: the SU(2) and U(1)_Y couplings ``e/s_w``, ``e/c_w``.
+        v: the VEV, ``v = 2 M_W s_w/e = (√2 G_F)^{-1/2}``.
+    """
+
+    alpha_inv: float
+    GF: float
+    MZ: float
+    ee: float
+    MW: float
+    sw2: float
+    gw: float
+    g1: float
+    v: float
+
+    @property
+    def alpha(self):
+        return 1 / self.alpha_inv
+
+    @property
+    def couplings(self):
+        """``{"gw", "g1", "v"}`` — the keyword arguments of
+        :func:`electroweak_scaffold`."""
+        return {"gw": self.gw, "g1": self.g1, "v": self.v}
+
+
+def electroweak_inputs(alpha_inv=132.50698, GF=1.16639e-5, MZ=91.1876):
+    """Couplings and VEV from ``(α, G_F, M_Z)`` at tree level.
+
+    The three tree-level relations ``M_W = g v/2``, ``M_Z = M_W/c_w`` and
+    ``G_F/√2 = g²/(8 M_W²)`` (so ``v² = 1/(√2 G_F)``), with ``e = g s_w``,
+    give ``M_W² (1 − M_W²/M_Z²) = π α/(√2 G_F)``, whose larger root is
+
+        ``M_W² = M_Z²/2 + √(M_Z⁴/4 − π α M_Z²/(√2 G_F))``.
+
+    With these values the masses the model *derives* (``m_Z² = (g²+g'²)v²/4``,
+    ``m_W² = g²v²/4``) reproduce the inputs, so a calculator built with
+    ``from_model`` needs no hand-typed boson mass.  The defaults are the
+    parameter point of ``docs/benchmark.md`` (MadGraph's stock ``sm`` model
+    uses the same three inputs).
+
+    Returns:
+        :class:`ElectroweakInputs`; ``electroweak_scaffold(**inputs.couplings)``
+        builds the scaffold at that point.
+    """
+    import math
+
+    alpha = 1 / alpha_inv
+    ee = math.sqrt(4 * math.pi * alpha)
+    disc = MZ**4 / 4 - math.pi * alpha * MZ**2 / (math.sqrt(2) * GF)
+    if disc < 0:
+        raise ValueError(
+            f"electroweak_inputs: no real M_W for alpha_inv={alpha_inv}, "
+            f"GF={GF}, MZ={MZ} (the tree-level relation has no solution)")
+    MW = math.sqrt(MZ**2 / 2 + math.sqrt(disc))
+    sw2 = 1 - MW**2 / MZ**2
+    return ElectroweakInputs(
+        alpha_inv=alpha_inv, GF=GF, MZ=MZ, ee=ee, MW=MW, sw2=sw2,
+        gw=ee / math.sqrt(sw2), g1=ee / math.sqrt(1 - sw2),
+        v=2 * MW * math.sqrt(sw2) / ee)
 
 
 # --------------------------------------------------------------- primitives

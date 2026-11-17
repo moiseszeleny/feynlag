@@ -120,6 +120,56 @@ class ScatteringCalculator:
         self.particle_map, _, _ = expand_particles(self.particles)
         self._vertices = None
 
+    @classmethod
+    def from_model(cls, model, particles=(), *, point=None, widths=None,
+                   masses=None, boson_fields=None, gauge_groups=None,
+                   colour_group=None, gluon=None,
+                   fermion_sectors=("gauge",)):
+        """A calculator set up from what ``model`` already knows.
+
+        ::
+
+            calc = ScatteringCalculator.from_model(model, [e, nu],
+                                                   widths={Z: 2.4952})
+            calc.process((e.particle, e.antiparticle), (Wp, Wm))
+
+        Derived (each overridable by its keyword):
+
+        - ``boson_fields``: ``model.physical.unitary_bosons`` (unitary
+          gauge, Goldstones left out);
+        - ``conjugate_map``/``conjugates``: ``model.physical.cmap`` and
+          ``.conjugates``;
+        - ``masses``: ``√m²`` of each boson, read off the physical
+          Lagrangian (:func:`~feynlag.vacuum.physical.physical_boson_masses`)
+          — a ``masses=`` entry replaces the derived one;
+        - ``gauge_groups``: the broken non-abelian groups
+          (:func:`~feynlag.gauge_basis.broken_nonabelian_groups`), whose
+          triple-gauge vertices are collected;
+        - ``parameters``: ``point`` (a :class:`~feynlag.parameters.ParameterPoint`
+          or a ``{name: value}`` dict of external overrides), else
+          ``model.parameters`` — so :meth:`process` is numeric by default.
+
+        ``widths``, ``colour_group`` and ``gluon`` are not tree-level model
+        data and stay explicit.  A boson whose mass cannot be derived (not a
+        mass eigenstate) still raises at :meth:`mass_of`, naming the fix.
+
+        Raises:
+            ValueError: the model has no physical basis yet.
+        """
+        from ..gauge_basis import broken_nonabelian_groups
+        from .setup import model_setup, resolve_point
+
+        bosons, cmap, conjugates, derived = model_setup(
+            model, boson_fields=boson_fields, masses=masses)
+        if gauge_groups is None:
+            gauge_groups = broken_nonabelian_groups(model)
+        return cls(model, particles, masses=derived, widths=widths,
+                   boson_fields=bosons, fermion_sectors=fermion_sectors,
+                   conjugate_map=cmap or None, conjugates=conjugates,
+                   parameters=resolve_point(model, point),
+                   gauge_groups=gauge_groups, colour_group=colour_group,
+                   gluon=gluon)
+
     def vertices(self):
         """All three-leg vertices, extracted once and cached: the
         extractor's (:func:`~feynlag.pheno.vertices.collect_decay_vertices`)
@@ -343,11 +393,13 @@ class ScatteringCalculator:
     def width_of(self, boson):
         return sp.sympify(self.widths.get(boson, 0))
 
-    def values(self, extra=None):
-        """``{symbol: number}`` from ``parameters`` plus ``extra``."""
+    def values(self, extra=None, point=None):
+        """``{symbol: number}`` from ``parameters`` (or ``point``, which
+        replaces it for this call) plus ``extra``."""
         values = {}
-        if self.parameters is not None:
-            values.update(self.parameters.numeric())
+        parameters = self.parameters if point is None else point
+        if parameters is not None:
+            values.update(parameters.numeric())
         if extra:
             values.update({sp.sympify(k): v for k, v in extra.items()})
         return values
@@ -386,7 +438,8 @@ class ScatteringCalculator:
             f"{symbol!r} is neither a declared DiracParticle (or its "
             f"antiparticle) nor one of the calculator's `boson_fields`")
 
-    def process(self, incoming, outgoing, numeric=False, extra=None):
+    def process(self, incoming, outgoing, numeric=None, extra=None,
+                point=None):
         """The 2→2 process ``incoming → outgoing``.
 
         Args:
@@ -397,15 +450,22 @@ class ScatteringCalculator:
                 ``extra``) into every coupling, mass and width *before* the
                 Dirac algebra — much faster than carrying symbolic
                 ``√(g²+g'²)``-type couplings, at the price of a number-valued
-                ``|M|²(s,t)``.
+                ``|M|²(s,t)``.  ``None`` (default) means numeric exactly when
+                the calculator has ``parameters`` (always, after
+                :meth:`from_model`) or a ``point``/``extra`` is passed.
             extra: additional ``{symbol: value}`` for ``numeric``.
+            point: a :class:`~feynlag.parameters.ParameterPoint` used
+                instead of ``parameters`` for this call (a scan).
 
         Returns:
             :class:`ScatteringProcess`.
         """
         externals = ([self._external(p, True) for p in incoming]
                      + [self._external(p, False) for p in outgoing])
-        values = self.values(extra) if numeric else {}
+        if numeric is None:
+            numeric = (self.parameters is not None or point is not None
+                       or bool(extra))
+        values = self.values(extra, point) if numeric else {}
 
         def num(expr):
             expr = sp.sympify(expr)

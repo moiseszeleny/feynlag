@@ -35,7 +35,8 @@ from .diagonalize import (
 from .masses import charged_mass_matrix, scalar_mass_matrix
 
 __all__ = ["MassBlock", "Diagonalization", "PhysicalRegistry", "mass_blocks",
-           "diagonalize_block", "goldstone_directions", "charge_operator"]
+           "diagonalize_block", "goldstone_directions", "charge_operator",
+           "physical_boson_masses"]
 
 
 # --------------------------------------------------------------------------
@@ -673,6 +674,7 @@ class PhysicalRegistry:
         cmap: ``{conjugate(field): partner}`` for the vertex extractor.
         conjugates: the antiparticle pairing, both directions.
         goldstones: the would-be Goldstone symbols (with partners).
+        unitary_bosons: ``bosons`` without the Goldstones.
         masses: ``{field: m²}`` for scalars, ``{name: m}`` for fermions.
         fermions: new fermion ``IndexedBase``\\ s (left, right and bars).
     """
@@ -701,6 +703,13 @@ class PhysicalRegistry:
             self.cmap.update(cmap)
 
     @property
+    def unitary_bosons(self):
+        """The physical bosons without the would-be Goldstones: the field
+        list of a unitary-gauge calculation (what the ``pheno`` calculators
+        extract over)."""
+        return [b for b in self.bosons if b not in self.goldstones]
+
+    @property
     def charges(self):
         """``{physical boson: electric charge}``, derived from the vacuum and
         propagated through the registered rotations
@@ -724,6 +733,79 @@ class PhysicalRegistry:
     def __repr__(self):
         return (f"PhysicalRegistry(bosons={self.bosons}, "
                 f"goldstones={self.goldstones})")
+
+
+def physical_boson_masses(model, bosons=None, simplifier=sp.simplify):
+    """``{boson: m²}`` of the model's physical bosons, read off the
+    quadratic terms of the physical Lagrangian.
+
+    An entry already recorded in ``model.physical.masses`` (the
+    :meth:`~feynlag.lagrangian.Model.diagonalize` route) is used as is.  Any
+    other boson is derived from :meth:`Model.physical_lagrangian` at zero
+    fields, with the Lagrangian's own normalisation::
+
+        real vector     L ⊃ +½ m² V²        complex vector  L ⊃ +m² V V†
+        real scalar     L ⊃ −½ m² s²        complex scalar  L ⊃ −m² φ φ†
+
+    so hand-registered rotations (``to_physical_basis``, a chained Z–Z′)
+    are covered, and an unbroken model gives massless vectors.  Nothing is
+    computed until this is called.
+
+    A boson that is **not a mass eigenstate** (a non-zero quadratic term
+    with another field) or whose spin the model does not know is left out
+    of the result, so a caller sees a missing mass and not a wrong one.
+
+    Args:
+        bosons: the symbols wanted; default ``model.physical.bosons``.
+    """
+    from ..operators import PartialMu
+
+    reg = model.physical
+    bosons = list(reg.bosons if bosons is None else bosons)
+    out = {b: reg.masses[b] for b in bosons if b in reg.masses}
+    todo = [b for b in bosons if b not in out]
+    if not todo:
+        return out
+
+    spins = model.spin_map(conjugate_map=reg.cmap)
+    for b in list(spins):
+        partner = reg.conjugates.get(b)
+        if partner is not None:
+            spins.setdefault(partner, spins[b])
+    fields = set(spins) | set(reg.bosons)
+    quadratic = {}
+
+    def at_rest(spin):
+        """The sector holding this spin's mass term, derivatives dropped."""
+        if spin not in quadratic:
+            sector = "kinetic" if spin == 1 else "potential"
+            L = model.physical_lagrangian(sector)
+            L = L.replace(PartialMu, lambda *args: sp.S.Zero)
+            if reg.cmap:
+                L = L.xreplace(reg.cmap)
+            quadratic[spin] = sp.expand(L)
+        return quadratic[spin]
+
+    def at_zero(expr):
+        expr = expr.subs({f: 0 for f in expr.free_symbols if f in fields})
+        return expr.replace(sp.conjugate, lambda arg: sp.conjugate(arg)
+                            if not (arg.free_symbols & fields) else sp.S.Zero)
+
+    for b in todo:
+        spin = spins.get(b)
+        if spin not in (0, 1):
+            continue
+        L = at_rest(spin)
+        partner = reg.conjugates.get(b, b)
+        first = sp.diff(L, b)
+        m2 = at_zero(sp.diff(first, partner))
+        # a mass eigenstate has no quadratic term with any other field
+        others = [f for f in first.free_symbols
+                  if f in fields and f != partner]
+        if any(simplifier(at_zero(sp.diff(first, f))) != 0 for f in others):
+            continue
+        out[b] = simplifier(m2 if spin == 1 else -m2)
+    return out
 
 
 # --------------------------------------------------------------------------

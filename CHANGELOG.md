@@ -7,6 +7,24 @@ All notable changes to feynlag are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Calculators built from the model.** `DecayCalculator.from_model` and
+  `ScatteringCalculator.from_model` derive the unitary-gauge boson list
+  (`model.physical.unitary_bosons`), the conjugate maps, the boson masses
+  (new `physical_boson_masses`, read off the physical Lagrangian; a field that
+  is not a mass eigenstate gets none), the broken non-abelian groups (new
+  `gauge_basis.broken_nonabelian_groups`) and the parameter point. Every
+  derived value can be overridden by keyword. `examples/ee_to_ww.py` and
+  `examples/ee_scattering.py` now use it, with unchanged output.
+- **`ParameterPoint`** and `ParameterSet.numeric(overrides=)`: numeric
+  evaluation at overridden external values without mutating the parameters,
+  with internals re-derived; `.replace(...)` for scans. The calculators take
+  `point=` per call (`process`, `numeric_partial_widths`,
+  `numeric_total_width`, `numeric_branching_ratios`, `numeric`).
+- **`electroweak_inputs(alpha_inv, GF, MZ)`**: the tree-level `(α, G_F, M_Z)`
+  input scheme (`ElectroweakInputs`; `.couplings` feeds
+  `electroweak_scaffold`).
+- `docs/manual/decays.md` §15.8 documents the setup.
+
 - 2→2 scattering, Tier 5 stage 5c: **`gg→gg`**, the first amplitude with no
   fermion line and the first four-point contact vertex in a diagram. New
   `feynlag.pheno.boson` (`BosonTerm`, `BosonAmplitude`): terms are a
@@ -102,6 +120,10 @@ All notable changes to feynlag are documented here. The format follows
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Changed
+- `ScatteringCalculator.process(numeric=...)` now defaults to `None`, meaning
+  numeric exactly when the calculator has `parameters` or a `point`/`extra`
+  is passed. Calls that passed neither stay symbolic, and so do all existing
+  callers in this repo.
 - `ScatteringCalculator` no longer refuses an external gluon or coloured
   fermions with external bosons. A gluon *component* symbol (`G_1`) as an
   external state raises `KeyError`; four external bosons (`gg→gg`) raise
