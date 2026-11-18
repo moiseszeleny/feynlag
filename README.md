@@ -20,7 +20,12 @@ representations, write the Lagrangian explicitly with library building blocks
 - export: LaTeX vertex tables and UFO (MadGraph et al.),
 - phenomenology (`feynlag.pheno`): decay widths and branching ratios
   (tree-level 1→2, off-shell `h→WW*/ZZ*`, loop-induced `h→gg/γγ/Zγ`) and
-  tree-level 2→2 cross sections with forward–backward asymmetries.
+  tree-level 2→2 cross sections from every diagram with its interference:
+  four-fermion processes, external photons/Z/W/Higgs (`e⁺e⁻→W⁺W⁻`, `Zh`,
+  Compton), and coloured processes at parton level, external gluons and
+  `gg→gg` included. Calculators are built from the model
+  (`ScatteringCalculator.from_model`), processes are named
+  (`"e- e+ > w+ w-"`), and results come in the unit you ask for.
 
 Parameters are split into **external** (fixed by experiment, e.g. `v`, `m_h`,
 `g`) and **internal** (derived: tadpole solutions, mixing angles, inverted
@@ -93,10 +98,40 @@ tadpole conditions force the √3 vacuum alignment), `sm_ckm.py` (CKM quark
 mixing), `fermi_theory.py` (four-fermion muon decay), `sm_weinberg.py` and
 `sm_seesaw.py` (Majorana neutrino masses), `sm_decays.py` and
 `sm_higgs_decays.py` (widths and the full Higgs branching-ratio table), and
-`ee_to_ff.py` and `ee_scattering.py` (2→2 scattering, the latter
-reproducing MadGraph's γ+Z `e+e-→μ+μ-` from the extracted couplings). The
+2→2 scattering: `ee_to_ff.py`, `ee_scattering.py` (MadGraph's γ+Z
+`e+e-→μ+μ-` and Bhabha), `ee_to_ww.py` (`e+e-→W+W-` with its gauge
+cancellation, and `e+e-→Zh`), `scalar_qed.py` (charged scalars through the
+`VSS` vertex) and `qcd_scattering.py` (four-quark, external-gluon and
+`gg→gg` parton scattering). The
 [docs site](https://moiseszeleny.github.io/feynlag/) walks these models
 stage by stage in ten executed tutorial notebooks.
+
+### Phenomenology
+
+```python
+from feynlag import standard_model
+from feynlag.pheno import DecayCalculator, DiracParticle, ScatteringCalculator
+
+sm = standard_model()                       # SM electroweak + one lepton generation
+(L, eR), = sm.leptons
+e  = DiracParticle("e", L.components[1], eR.components[0], 0)
+nu = DiracParticle("nu", L.components[0], None, 0)      # left-handed only
+
+decays = DecayCalculator.from_model(sm.model, particles=[e, nu],
+                                    fermion_sectors=("gauge",))
+print(decays.decay_table("z", unit="MeV"))  # Γ(Z→νν̄), Γ(Z→e⁺e⁻), BRs
+
+calc = ScatteringCalculator.from_model(
+    sm.model, [e, nu], widths={sm.physical.Z: 2.4952},
+    aliases={"e-": e.particle, "e+": e.antiparticle})
+ww = calc.process("e- e+ > w+ w-")          # ν exchange + γ/Z s channel
+print(ww.summary(sqrt_s=200, unit="pb"))    # diagrams, σ, A_FB
+```
+
+The bosons, their masses (read off the physical Lagrangian), the conjugate
+pairs and the parameter point all come from the model. `feynlag.pheno` holds
+this user API, and `feynlag.pheno.engine` the building blocks (traces,
+diagrams, kinematics, colour tensors).
 
 ## Validation
 
@@ -114,14 +149,22 @@ symbolic difference **and** random-point numeric checks):
   system forces the `√3` alignment
 - UFO: generated model imports cleanly; parameters resolve in dependency
   order; `hWW` coupling pinned numerically
+- 2→2 scattering, straight from the extracted couplings:
+  - MadGraph's `e+e-→μ+μ-` (2.7876 pb vs 2.7878 ± 0.0027 inside `|η|<2.5`)
+    and `e+e-→W+W-` (19.447 pb vs 19.498 ± 0.058);
+  - the exact high-energy gauge cancellation in `e+e-→W+W-`;
+  - the Ellis–Stirling–Webber parton table (four-quark, gluon and `gg→gg`
+    entries), exactly and symbolically;
+  - every amplitude against an independent explicit-spinor/polarization
+    evaluator.
 
 ## Status / roadmap
 
-feynlag 0.1 is a **beta**: the tree-level pipeline above is complete and
-tested (400+ tests pinning physical results), and the exported SM UFO is
-**cross-checked against MadGraph** (`e+e-→μ+μ-` and the gauge-cancelling
-`e+e-→W+W-` reproduce the stock `sm` cross sections to MC precision, and a
-four-fermion UFO reproduces the muon width — see
+feynlag 0.5 is a **beta**: the tree-level pipeline above is complete and
+tested (746 tests pinning physical results). Both the exported SM UFO and the
+built-in 2→2 engine are **cross-checked against MadGraph**: `e+e-→μ+μ-` and
+the gauge-cancelling `e+e-→W+W-` reproduce the stock `sm` cross sections to MC
+precision, and a four-fermion UFO reproduces the muon width (see
 [`docs/benchmark.md`](https://github.com/moiseszeleny/feynlag/blob/main/docs/benchmark.md)).
 
 Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszeleny/feynlag/blob/main/docs/roadmap.md)):
@@ -129,12 +172,11 @@ Known limitations (planned, see [`docs/roadmap.md`](https://github.com/moiseszel
 - no R_ξ gauge fixing or ghosts (Goldstone bosons are kept, but no
   gauge-fixing terms, ghost vertices or ξ dependence);
 - Majorana vertices are symbolic-only, not yet exported to UFO;
-- 2→2 scattering covers four-fermion processes (with interference and
-  s/t/u topologies) and two-fermion + two-boson processes (`e+e-→γγ`,
-  `e+e-→ZZ`, Compton, `e+e-→W+W-`, `e+e-→Zh`, scalar pairs through a `VSS`
-  vertex), plus coloured processes at parton level (four-quark scattering,
-  `q q̄→gg`, `qg→qg`, `gg→q q̄`): four-point contact vertices and
-  boson–boson scattering (`gg→gg`) are not yet supported, and `VVV` decays are not implemented;
+- 2→2 scattering does not yet cover electroweak four-boson processes
+  (`WW→WW`, `γγ→WW`, `VV→hh`: `gg→gg` is the only four-boson process);
+  coloured cross sections are parton level, with no PDFs;
+- in 1→2 decays the derivative couplings (`VSS`, `VVV`) are not yet
+  squared;
 - no NLO / UFO 2.0 extensions.
 
 Unsupported cases raise `NotImplementedError` rather than returning a
