@@ -11,8 +11,9 @@ import math
 import pytest
 
 from feynlag.pheno import (
-    A_half, A_one, higgs_gammagamma_width, higgs_gg_width, higgs_zgamma_width,
+    higgs_gammagamma_width, higgs_gg_width, higgs_zgamma_width,
 )
+from feynlag.pheno.engine import A_half, A_one
 from feynlag.pheno.loop import A_half_zgamma, A_one_zgamma
 
 # SM parameter point

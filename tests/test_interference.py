@@ -25,9 +25,10 @@ from feynlag import (
     fermion_gauge_current, to_physical_basis,
 )
 from feynlag.dirac import _dirac_rep
-from feynlag.pheno import (
-    Amplitude, BosonPropagator, ChainVertex, Diagram, DiracParticle, Leg,
-    ScatteringCalculator, SpinorChain, TwoToTwoKinematics,
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import (
+    Amplitude, BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain,
+    TwoToTwoKinematics,
 )
 from feynlag.pheno.diagrams import (
     _chain_indices, _contract_pairs, _slash_trace, _string_tensor,

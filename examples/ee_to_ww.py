@@ -19,7 +19,8 @@ from feynlag import (
     Lagrangian, Model, WeylFermion, electroweak_inputs, electroweak_scaffold,
     fermion_gauge_current, to_physical_basis,
 )
-from feynlag.pheno import DiracParticle, ScatteringCalculator, line_amplitude
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import line_amplitude
 
 # MadGraph's stock (α, G_F, M_Z) input scheme (docs/benchmark.md): the
 # couplings and VEV follow at tree level, and the model derives M_W, M_Z

@@ -35,9 +35,9 @@ from feynlag import (
 )
 from feynlag.dirac import _dirac_rep
 from feynlag.export.ufo.vvvv import adjoint_vvv
-from feynlag.pheno import (
-    DiracParticle, ScatteringCalculator, line_amplitude, line_colour_tensor,
-    colour_matrix,
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import (
+    line_amplitude, line_colour_tensor, colour_matrix,
 )
 from feynlag.pheno import boson_vertices
 from feynlag.pheno.line import VectorLeg

@@ -39,10 +39,11 @@ from feynlag import (
     fermion_gauge_current,
 )
 from feynlag.export.ufo.vvvv import adjoint_vvvv
-from feynlag.pheno import (
-    BosonAmplitude, BosonTerm, DiracParticle, ScatteringCalculator,
-    boson_amplitude, colour_matrix, contract_tensors,
-    enumerate_boson_diagrams, four_boson_colour_tensor, vvvv_tensor,
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import (
+    BosonAmplitude, BosonTerm, boson_amplitude, colour_matrix,
+    contract_tensors, enumerate_boson_diagrams, four_boson_colour_tensor,
+    vvvv_tensor,
 )
 from feynlag.pheno import boson_vertices
 

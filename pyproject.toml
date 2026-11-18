@@ -46,3 +46,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# an engine name imported from the top of feynlag.pheno is deprecated; inside
+# this repo it is an error, so no old-path import survives
+filterwarnings = [
+    "error:.*moved to feynlag.pheno.engine:DeprecationWarning",
+]

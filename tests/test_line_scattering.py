@@ -25,10 +25,11 @@ from feynlag import (
     fermion_gauge_current, to_physical_basis,
 )
 from feynlag.dirac import _dirac_rep
-from feynlag.pheno import (
-    DecayVertex, DiracParticle, ExternalBoson, ExternalFermion, ExternalState,
-    Leg, LineAmplitude, ScatteringCalculator, TwoToTwoKinematics, VectorLeg,
-    average_factor, enumerate_line_diagrams, fermion_exchange_term,
+from feynlag.pheno import DiracParticle, ExternalState, ScatteringCalculator
+from feynlag.pheno.engine import (
+    DecayVertex, ExternalBoson, ExternalFermion, Leg, LineAmplitude,
+    TwoToTwoKinematics, VectorLeg, average_factor, enumerate_line_diagrams,
+    fermion_exchange_term,
 )
 from feynlag.pheno.contraction import contract_trace
 

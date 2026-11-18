@@ -134,6 +134,17 @@ All notable changes to feynlag are documented here. The format follows
   `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Changed
+- **`feynlag.pheno` is split into a user API and `feynlag.pheno.engine`.**
+  The top-level `__all__` is now the 21 names a user calls without knowing
+  the engine: the calculators and what they return, `DiracParticle`,
+  `ExternalState`, the result tables and `ParticleNames`, the unit helpers and
+  the closed-form widths (`higgs_*_width`, `scalar_offshell_vv_width`).
+  Everything else (vertex collection, kinematics, Dirac/ε/tensor algebra,
+  squared amplitudes, the 2→2 diagram objects, colour tensors, `|M|²` →
+  observable functions) is exported from the new `feynlag.pheno.engine`. No
+  file moved: every submodule path (`feynlag.pheno.diagrams`, …) is
+  unchanged. Tests, examples and both pheno tutorials import from the new
+  path.
 - `ScatteringCalculator.process(numeric=...)` now defaults to `None`, meaning
   numeric exactly when the calculator has `parameters` or a `point`/`extra`
   is passed. Calls that passed neither stay symbolic, and so do all existing
@@ -164,6 +175,13 @@ All notable changes to feynlag are documented here. The format follows
 - A two-fermion + two-boson process with a boson-exchange diagram no longer
   raises (stage 4a refused it). A charged external vector still raises when
   `gauge_groups` is not given.
+
+### Deprecated
+- Importing an engine name from `feynlag.pheno` itself (`from feynlag.pheno
+  import SpinorChain`) still works but raises a `DeprecationWarning` naming
+  `feynlag.pheno.engine`; these aliases will be removed in a later release.
+  Inside this repo the warning is an error (`pyproject.toml`
+  `filterwarnings`).
 
 ### Fixed
 - **`DecayCalculator` built fake channels with Goldstones left out of

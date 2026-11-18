@@ -10,9 +10,10 @@ import numpy as np
 import pytest
 import sympy as sp
 
-from feynlag.pheno import (
+from feynlag.pheno import scalar_offshell_vv_width
+from feynlag.pheno.engine import (
     ThreeBodyKinematics, breit_wigner, offshell_scalar_vv_width,
-    scalar_offshell_vv_width, scalar_vv_squared,
+    scalar_vv_squared,
 )
 
 # parameter point (matches examples/sm_decays.py)
@@ -118,7 +119,7 @@ def test_narrow_width_factorisation():
     g3 = offshell_scalar_vv_width(mS, MW, GW, c, backend="gauss")
     # narrow-width expectation: Γ(S→WW on-shell) × BR(W→ this channel)
     # Γ(S→WW) with hWW=g m_W coupling (VVS), and BR = Γ(W→ffbar')/Γ_W
-    from feynlag.pheno import TwoBodyKinematics, vvs_squared
+    from feynlag.pheno.engine import TwoBodyKinematics, vvs_squared
     kin = TwoBodyKinematics(sp.Float(mS), sp.Float(MW), sp.Float(MW))
     gWW = float(sp.simplify(vvs_squared(G * MW, kin) * kin.phase_space()))
     gW_chan = G**2 * MW / (48 * np.pi)               # Γ(W→one massless channel)
@@ -126,7 +127,7 @@ def test_narrow_width_factorisation():
     assert abs(g3 - expected) / expected < 0.05
 
 
-@pytest.mark.skipif(not __import__("feynlag").pheno.have_scipy(),
+@pytest.mark.skipif(not __import__("feynlag.pheno.engine", fromlist=["have_scipy"]).have_scipy(),
                     reason="SciPy not installed")
 def test_scipy_matches_gauss():
     """The SciPy and numpy Gauss–Legendre backends agree."""

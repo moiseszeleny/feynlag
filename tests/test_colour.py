@@ -31,9 +31,9 @@ from feynlag import (
     fermion_gauge_current,
 )
 from feynlag.dirac import _dirac_rep
-from feynlag.pheno import (
-    Amplitude, DiracParticle, ScatteringCalculator, colour_matrix,
-    four_fermion_colour_tensor,
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import (
+    Amplitude, colour_matrix, four_fermion_colour_tensor,
 )
 
 _REP = _dirac_rep()
@@ -377,7 +377,7 @@ def test_float_masses_do_not_trip_the_epsilon_guard():
     """With float masses the Gram determinant of four dependent momenta is a
     round-off residue (``3e-17·s³t²``), not ``0``; the guard must read it as
     singular — and must still see a genuinely non-singular float table."""
-    from feynlag.pheno import TwoToTwoKinematics
+    from feynlag.pheno.engine import TwoToTwoKinematics
     from feynlag.pheno.epsilon import (
         _float_singular, assert_epsilon_single_vanishes,
     )
