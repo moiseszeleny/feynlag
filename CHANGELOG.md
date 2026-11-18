@@ -6,7 +6,111 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-11-17
+
+2→2 scattering from the Lagrangian through Tier 5 — interference, external
+bosons, `VVV`/`VSS` boson exchange, coloured processes, external gluons and
+`gg→gg`, with MadGraph's `e⁺e⁻→μ⁺μ⁻` and `e⁺e⁻→W⁺W⁻` and the
+Ellis–Stirling–Webber parton table reproduced (#34, #52–#57) — and a
+friendlier pheno layer: calculators built from the model, parameter points,
+process names, units, summaries, and a `feynlag.pheno` / `feynlag.pheno.engine`
+split (#58–#60). All additive; 0.4.0 code runs unchanged, with one
+deprecation (engine names imported from `feynlag.pheno` itself).
+
 ### Added
+- 2→2 scattering, Tier 3: multi-diagram **interference**.
+  `Amplitude.squared` sums `Σ_{d,d'} M_d M̄_{d'}`. A pair of diagrams that
+  pair the external fermions the same way (γ/Z s channel) gives a product of
+  two cross traces (`SpinorChain.cross_trace`). An exchanged pair (Bhabha
+  s × t, Møller t × u) gives one trace through all four legs, whose γ₅ part
+  is proven zero by the Gram-determinant guard.
+- `feynlag.pheno.topology.enumerate_diagrams`: s/t/u enumeration of the
+  two-line tree diagrams of a 2→2 four-fermion process, from the extracted
+  vertices. Fermion signs come from permutation parity. Charged mediators
+  join through an explicit `conjugates` map.
+- `ScatteringCalculator` / `ScatteringProcess`: diagrams, `Σ|M|²`, `dσ/dcosθ`,
+  `σ`, `A_FB` and a quadrature `numeric_cross_section` straight from a
+  model and `DiracParticle`s. It reproduces MadGraph's `e+e-→μ+μ-`
+  (2.7876 pb inside `|η|<2.5` vs 2.7878 ± 0.0027 pb). Bhabha/Møller match
+  their closed forms, and `ν_e e` matches the Fierz "g_L+1" shift.
+  `examples/ee_scattering.py`.
+- `cross_section(..., cos_range=)` angular acceptance;
+  `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
+- 2→2 scattering, Tier 4 stage 4a: **external bosons** on one open fermion
+  line, by fermion exchange. `ScatteringCalculator.process` now takes two
+  fermions and two bosons (`e⁺e⁻→γγ`, `e⁺e⁻→ZZ`, `e⁺e⁻→Zγ`, Compton);
+  `feynlag.pheno.line` (`LineAmplitude`, `LineTerm`, `VectorLeg`,
+  `fermion_exchange_term`) holds the amplitude and
+  `topology.enumerate_line_diagrams` builds it from the extracted vertices.
+  Massive vectors use the full polarization sum; a massless one uses `−g`
+  only after its Ward identity has been checked on the amplitude. A process
+  that also has a boson-exchange diagram (`e⁺e⁻→W⁺W⁻`, `e⁺e⁻→Zh`) raises
+  until stage 4b. Checked against the Klein–Nishina form with a massive
+  electron and an explicit spinor + polarization-vector evaluator.
+- `feynlag.pheno.contraction.contract_trace`: a fully contracted Dirac trace
+  with loose metrics and momentum vectors, reduced to dot products without
+  SymPy tensors.
+- `DiracParticle(..., right=None)`: a left-handed-only species (the SM
+  neutrino).
+- `ExternalBoson`, `fermion_propagator_phase`.
+- 2→2 scattering, Tier 4 stage 4b: **boson exchange through a bosonic
+  three-point vertex** — `e⁺e⁻→W⁺W⁻` and `e⁺e⁻→Zh`.
+  `ScatteringCalculator(gauge_groups=[SU2L])` collects the triple-gauge
+  vertices from `Model.gauge_vertices`; `feynlag.pheno.boson_vertices`
+  (`vvv_tensor`, `vvs_tensor`, `sss_tensor`, `VVV_KAPPA`) holds the Lorentz
+  structures and `line.boson_exchange_terms` assembles the diagrams.
+  `σ(e⁺e⁻→W⁺W⁻) = 19.447 pb` at √s = 200 GeV against MadGraph's
+  19.498 ± 0.058 pb; the high-energy cancellation between the ν exchange and
+  the γ/Z s channel is pinned exactly at a rational parameter point;
+  `σ(e⁺e⁻→Zh)` matches the Higgsstrahlung closed form.
+  `examples/ee_to_ww.py`.
+- 2→2 scattering, Tier 4 stage 4c: **the `VSS` derivative coupling**. A
+  vector meeting two scalars is now a diagram vertex: `e⁺e⁻→φ⁺φ⁻` through a
+  photon or Z, and a scalar mediator with one external vector and one
+  external scalar (`e⁻γ→χφ⁻`). `boson_vertices.vss_tensor` resolves each
+  `p(φ)` momentum tag of the extracted coupling to `VSS_KAPPA = −1` times
+  the momentum flowing into the vertex on field leg `φ`. Scalar QED
+  reproduces `σ(e⁺e⁻→φ⁺φ⁻) = πα²β³/(3s)`; the sign is pinned by the Ward
+  identity of `e⁻γ→χφ⁻`. `examples/scalar_qed.py`. This completes Tier 4.
+- 2→2 scattering, Tier 5 stage 5a: **coloured four-fermion processes**
+  (`qq′→qq′`, `q q̄→q′q̄′`, `qq→qq`, `q q̄→q q̄`, `e⁺e⁻→q q̄`, `q q̄→ℓ⁺ℓ⁻`).
+  `ScatteringCalculator(colour_group=SU3c, gluon=G)` turns the
+  colour-component gluon vertices into one `q̄ q g` vertex with a
+  colour-stripped coupling (`calc.gluon` is the mediator symbol); a quark is
+  a `DiracParticle` on one colour component with `color=3`.
+  `feynlag.pheno.colour` (`four_fermion_colour_tensor`, `colour_matrix`)
+  builds each diagram's colour tensor from the group generators, and
+  `Amplitude.squared(kin, colour=)` weights `M_d M̄_{d′}` by `C_{dd′}`.
+  Reproduces the four-quark entries of the Ellis–Stirling–Webber parton
+  table exactly. `examples/qcd_scattering.py`.
+- `DiagramInfo.lines`: the external positions each fermion line joins.
+- 2→2 scattering, Tier 5 stage 5b: **external gluons** on one quark line —
+  `q q̄→gg`, `gg→q q̄`, `qg→qg`, and the mixed `q q̄→gγ`. The external
+  state is `calc.gluon`. `ScatteringCalculator` adds the three-gluon vertex
+  (`adjoint_vvv`, colour `f^{abc}`), builds the colour matrix with
+  `colour.line_colour_tensor`, and sums two external gluons over their
+  physical polarizations: `VectorLeg(reference=n)` gives
+  `−g_{μν} + (k_μn_ν + n_μk_ν)/(k·n)`. `LineAmplitude.squared(colour=)`.
+  Reproduces the three gluon entries of the Ellis–Stirling–Webber parton
+  table exactly; massive quarks (`gg→Q Q̄`) match an explicit evaluator.
+- `ExternalBoson.color`, `LineDiagramInfo.order`,
+  `line_amplitude(..., references=)`.
+- 2→2 scattering, Tier 5 stage 5c: **`gg→gg`**, the first amplitude with no
+  fermion line and the first four-point contact vertex in a diagram. New
+  `feynlag.pheno.boson` (`BosonTerm`, `BosonAmplitude`): terms are a
+  coefficient times loose tensors, squared through the new trace-free
+  `contraction.contract_tensors` with the same polarization sums and Ward
+  check as the line engine. `topology.enumerate_boson_diagrams` builds three
+  colour structures `f^{ije}f^{ekl}`, each an exchange diagram through two
+  three-gluon vertices plus its share of the contact vertex
+  (`boson_vertices.vvvv_tensor`, coupling `adjoint_vvvv = i g²`);
+  `colour.four_boson_colour_tensor` gives the colour matrix. All four gluons
+  are summed over physical polarizations. Reproduces the
+  Ellis–Stirling–Webber entry `9/2 (3 − tu/s² − su/t² − st/u²)` exactly, and
+  SU(3) and SU(2) match an explicit polarization-vector evaluator. Any other
+  four-boson process still raises. This completes Tier 5.
+- `line.check_ward_identities`: the Ward probe of `LineAmplitude.squared`,
+  now shared with `BosonAmplitude.squared`.
 - **Calculators built from the model.** `DecayCalculator.from_model` and
   `ScatteringCalculator.from_model` derive the unitary-gauge boson list
   (`model.physical.unitary_bosons`), the conjugate maps, the boson masses
@@ -38,100 +142,6 @@ All notable changes to feynlag are documented here. The format follows
   diagrams, σ, A_FB), a readable `repr` and notebook markdown for a process,
   and `DecayCalculator.decay_table()` (`DecayTable`: widths in a unit, BRs,
   total). Documented in `scattering_roadmap.md` §17.6 and `decays.md` §15.8.
-
-- 2→2 scattering, Tier 5 stage 5c: **`gg→gg`**, the first amplitude with no
-  fermion line and the first four-point contact vertex in a diagram. New
-  `feynlag.pheno.boson` (`BosonTerm`, `BosonAmplitude`): terms are a
-  coefficient times loose tensors, squared through the new trace-free
-  `contraction.contract_tensors` with the same polarization sums and Ward
-  check as the line engine. `topology.enumerate_boson_diagrams` builds three
-  colour structures `f^{ije}f^{ekl}`, each an exchange diagram through two
-  three-gluon vertices plus its share of the contact vertex
-  (`boson_vertices.vvvv_tensor`, coupling `adjoint_vvvv = i g²`);
-  `colour.four_boson_colour_tensor` gives the colour matrix. All four gluons
-  are summed over physical polarizations. Reproduces the
-  Ellis–Stirling–Webber entry `9/2 (3 − tu/s² − su/t² − st/u²)` exactly, and
-  SU(3) and SU(2) match an explicit polarization-vector evaluator. Any other
-  four-boson process still raises. This completes Tier 5.
-- `line.check_ward_identities`: the Ward probe of `LineAmplitude.squared`,
-  now shared with `BosonAmplitude.squared`.
-- 2→2 scattering, Tier 5 stage 5b: **external gluons** on one quark line —
-  `q q̄→gg`, `gg→q q̄`, `qg→qg`, and the mixed `q q̄→gγ`. The external
-  state is `calc.gluon`. `ScatteringCalculator` adds the three-gluon vertex
-  (`adjoint_vvv`, colour `f^{abc}`), builds the colour matrix with
-  `colour.line_colour_tensor`, and sums two external gluons over their
-  physical polarizations: `VectorLeg(reference=n)` gives
-  `−g_{μν} + (k_μn_ν + n_μk_ν)/(k·n)`. `LineAmplitude.squared(colour=)`.
-  Reproduces the three gluon entries of the Ellis–Stirling–Webber parton
-  table exactly; massive quarks (`gg→Q Q̄`) match an explicit evaluator.
-- `ExternalBoson.color`, `LineDiagramInfo.order`,
-  `line_amplitude(..., references=)`.
-- 2→2 scattering, Tier 5 stage 5a: **coloured four-fermion processes**
-  (`qq′→qq′`, `q q̄→q′q̄′`, `qq→qq`, `q q̄→q q̄`, `e⁺e⁻→q q̄`, `q q̄→ℓ⁺ℓ⁻`).
-  `ScatteringCalculator(colour_group=SU3c, gluon=G)` turns the
-  colour-component gluon vertices into one `q̄ q g` vertex with a
-  colour-stripped coupling (`calc.gluon` is the mediator symbol); a quark is
-  a `DiracParticle` on one colour component with `color=3`.
-  `feynlag.pheno.colour` (`four_fermion_colour_tensor`, `colour_matrix`)
-  builds each diagram's colour tensor from the group generators, and
-  `Amplitude.squared(kin, colour=)` weights `M_d M̄_{d′}` by `C_{dd′}`.
-  Reproduces the four-quark entries of the Ellis–Stirling–Webber parton
-  table exactly. `examples/qcd_scattering.py`.
-- `DiagramInfo.lines`: the external positions each fermion line joins.
-- 2→2 scattering, Tier 4 stage 4c: **the `VSS` derivative coupling**. A
-  vector meeting two scalars is now a diagram vertex: `e⁺e⁻→φ⁺φ⁻` through a
-  photon or Z, and a scalar mediator with one external vector and one
-  external scalar (`e⁻γ→χφ⁻`). `boson_vertices.vss_tensor` resolves each
-  `p(φ)` momentum tag of the extracted coupling to `VSS_KAPPA = −1` times
-  the momentum flowing into the vertex on field leg `φ`. Scalar QED
-  reproduces `σ(e⁺e⁻→φ⁺φ⁻) = πα²β³/(3s)`; the sign is pinned by the Ward
-  identity of `e⁻γ→χφ⁻`. `examples/scalar_qed.py`. This completes Tier 4.
-- 2→2 scattering, Tier 4 stage 4b: **boson exchange through a bosonic
-  three-point vertex** — `e⁺e⁻→W⁺W⁻` and `e⁺e⁻→Zh`.
-  `ScatteringCalculator(gauge_groups=[SU2L])` collects the triple-gauge
-  vertices from `Model.gauge_vertices`; `feynlag.pheno.boson_vertices`
-  (`vvv_tensor`, `vvs_tensor`, `sss_tensor`, `VVV_KAPPA`) holds the Lorentz
-  structures and `line.boson_exchange_terms` assembles the diagrams.
-  `σ(e⁺e⁻→W⁺W⁻) = 19.447 pb` at √s = 200 GeV against MadGraph's
-  19.498 ± 0.058 pb; the high-energy cancellation between the ν exchange and
-  the γ/Z s channel is pinned exactly at a rational parameter point;
-  `σ(e⁺e⁻→Zh)` matches the Higgsstrahlung closed form.
-  `examples/ee_to_ww.py`.
-- 2→2 scattering, Tier 4 stage 4a: **external bosons** on one open fermion
-  line, by fermion exchange. `ScatteringCalculator.process` now takes two
-  fermions and two bosons (`e⁺e⁻→γγ`, `e⁺e⁻→ZZ`, `e⁺e⁻→Zγ`, Compton);
-  `feynlag.pheno.line` (`LineAmplitude`, `LineTerm`, `VectorLeg`,
-  `fermion_exchange_term`) holds the amplitude and
-  `topology.enumerate_line_diagrams` builds it from the extracted vertices.
-  Massive vectors use the full polarization sum; a massless one uses `−g`
-  only after its Ward identity has been checked on the amplitude. A process
-  that also has a boson-exchange diagram (`e⁺e⁻→W⁺W⁻`, `e⁺e⁻→Zh`) raises
-  until stage 4b. Checked against the Klein–Nishina form with a massive
-  electron and an explicit spinor + polarization-vector evaluator.
-- `feynlag.pheno.contraction.contract_trace`: a fully contracted Dirac trace
-  with loose metrics and momentum vectors, reduced to dot products without
-  SymPy tensors.
-- `DiracParticle(..., right=None)`: a left-handed-only species (the SM
-  neutrino).
-- `ExternalBoson`, `fermion_propagator_phase`.
-- 2→2 scattering, Tier 3: multi-diagram **interference**.
-  `Amplitude.squared` sums `Σ_{d,d'} M_d M̄_{d'}`. A pair of diagrams that
-  pair the external fermions the same way (γ/Z s channel) gives a product of
-  two cross traces (`SpinorChain.cross_trace`). An exchanged pair (Bhabha
-  s × t, Møller t × u) gives one trace through all four legs, whose γ₅ part
-  is proven zero by the Gram-determinant guard.
-- `feynlag.pheno.topology.enumerate_diagrams`: s/t/u enumeration of the
-  two-line tree diagrams of a 2→2 four-fermion process, from the extracted
-  vertices. Fermion signs come from permutation parity. Charged mediators
-  join through an explicit `conjugates` map.
-- `ScatteringCalculator` / `ScatteringProcess`: diagrams, `Σ|M|²`, `dσ/dcosθ`,
-  `σ`, `A_FB` and a quadrature `numeric_cross_section` straight from a
-  model and `DiracParticle`s. It reproduces MadGraph's `e+e-→μ+μ-`
-  (2.7876 pb inside `|η|<2.5` vs 2.7878 ± 0.0027 pb). Bhabha/Møller match
-  their closed forms, and `ν_e e` matches the Fierz "g_L+1" shift.
-  `examples/ee_scattering.py`.
-- `cross_section(..., cos_range=)` angular acceptance;
-  `BosonPropagator.phase()`/`.denominator()`; `integrate.quad_1d`.
 
 ### Changed
 - **`feynlag.pheno` is split into a user API and `feynlag.pheno.engine`.**

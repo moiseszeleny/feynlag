@@ -37,6 +37,25 @@ one-flavour Dirac fermions and gauge bosons (photon from the unbroken charge).
 allowed operator, and invariance failures explain themselves. The examples
 and tutorials use the new layer. 601 tests green. See `CHANGELOG.md`.
 
+**v0.5.0** computes 2→2 cross sections from the Lagrangian, through every
+diagram and its interference. Tier 3 adds γ/Z interference, Bhabha and
+Møller. Tier 4 adds external bosons, triple-gauge and `VSS` boson exchange
+(`e⁺e⁻→W⁺W⁻`, `Zh`, `φ⁺φ⁻`, Compton). Tier 5 adds colour, external gluons and
+`gg→gg`. It reproduces MadGraph's `e⁺e⁻→μ⁺μ⁻` (2.7876 pb vs 2.7878 ± 0.0027
+inside `|η|<2.5`) and `e⁺e⁻→W⁺W⁻` (19.447 pb vs 19.498 ± 0.058), and the
+Ellis–Stirling–Webber Table 7.1 parton entries exactly. The pheno layer is
+friendlier:
+- `ScatteringCalculator.from_model` and `DecayCalculator.from_model` read the
+  bosons, masses and parameters off the model;
+- `ParameterPoint` holds parameter scans, and `electroweak_inputs` gives the
+  `(α, G_F, M_Z)` scheme;
+- `calc.process("e- e+ > w+ w-")` takes process names, with `unit="pb"`,
+  `eta_max=`, `summary()` and `decay_table()`;
+- `feynlag.pheno` exports the user API and `feynlag.pheno.engine` the building
+  blocks.
+
+746 tests green. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
