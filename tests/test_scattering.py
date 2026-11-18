@@ -20,10 +20,12 @@ import sympy as sp
 from sympy.physics.hep.gamma_matrices import LorentzIndex
 
 from feynlag.dirac import _dirac_rep
-from feynlag.pheno import (
-    Amplitude, BosonPropagator, ChainVertex, Diagram, ExternalState, Leg,
-    SpinorChain, TwoToTwoKinematics, average_factor, cross_section,
-    ffs_s_channel_squared, ffv_s_channel_squared, forward_backward_asymmetry,
+from feynlag.pheno import ExternalState
+from feynlag.pheno.engine import (
+    Amplitude, BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain,
+    TwoToTwoKinematics, average_factor, cross_section,
+    ffs_s_channel_squared, ffv_s_channel_squared,
+    forward_backward_asymmetry,
 )
 from feynlag.pheno.diagrams import _chain_indices
 from feynlag.pheno.epsilon import (
@@ -543,7 +545,7 @@ def test_qed_mumu_angular_distribution():
     kin = TwoToTwoKinematics(0, 0, 0, 0)
     m2 = ffv_s_channel_squared(e, e, e, e, kin, mediator_mass=0)
     electron = ExternalState('e', 0, sp.Rational(1, 2))
-    from feynlag.pheno import differential_cross_section
+    from feynlag.pheno.engine import differential_cross_section
     dsdcos = differential_cross_section(m2, kin, (electron, electron),
                                         variable="cos")
     t_at_cos = kin.t_of_cos(cosv).subs(kin.s, s)
@@ -605,7 +607,7 @@ def test_averaging_factor_is_declared_not_hardcoded():
     m, e = sp.symbols('m e', positive=True)
     kin = TwoToTwoKinematics(0, 0, m, m)
     m2 = ffv_s_channel_squared(e, e, e, e, kin, mediator_mass=0)
-    from feynlag.pheno import differential_cross_section
+    from feynlag.pheno.engine import differential_cross_section
     dsdt_summed = differential_cross_section(m2, kin, (electron, electron))
     dsdt_manual = sp.Rational(1, 4) * m2 * kin.dsigma_dt_factor()
     assert sp.simplify(sp.expand(dsdt_summed - dsdt_manual)) == 0

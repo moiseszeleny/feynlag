@@ -30,9 +30,8 @@ from feynlag import (
 )
 from feynlag.dirac import _dirac_rep
 from feynlag.gauge_basis import adjoint_rotation, physical_vector_basis
-from feynlag.pheno import (
-    DiracParticle, ScatteringCalculator, VVV_KAPPA, line_amplitude,
-)
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import VVV_KAPPA, line_amplitude
 from feynlag.pheno import boson_vertices
 from feynlag.vertices.yangmills import structure_constants
 

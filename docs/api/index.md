@@ -33,6 +33,8 @@ page lists its public classes and functions with full signatures; cross-refs
    feynlag.export.ufo.writer
    feynlag.export.ufo.vvvv
    feynlag.export.ufo.lorentz_map
+   feynlag.pheno
+   feynlag.pheno.engine
    feynlag.pheno.lorentz
    feynlag.pheno.kinematics
    feynlag.pheno.amplitudes
@@ -53,5 +55,9 @@ page lists its public classes and functions with full signatures; cross-refs
    feynlag.pheno.boson_vertices
    feynlag.pheno.colour
    feynlag.pheno.scattering_calculator
+   feynlag.pheno.setup
+   feynlag.pheno.names
+   feynlag.pheno.summary
+   feynlag.pheno.units
    feynlag.verify.checks
 ```

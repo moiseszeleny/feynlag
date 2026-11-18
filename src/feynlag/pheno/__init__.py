@@ -1,80 +1,49 @@
-"""Phenomenology: tree-level two-body decay widths and branching ratios.
+"""Phenomenology: decay widths, branching ratios and 2→2 cross sections.
 
-Turns the Feynman rules feynlag extracts into partial widths, total widths and
-branching ratios for 1→2 decays.
+Turns the Feynman rules feynlag extracts into observables at tree level:
+1→2 (and off-shell 1→3) partial widths, total widths and branching ratios,
+and 2→2 cross sections with every diagram and its interference.  The path
+is covariant: Dirac traces, ε algebra and polarization sums reduced to
+on-shell invariants, checked against explicit-matrix oracles in the tests.
 
-The computation path is **covariant**: Dirac traces are evaluated with SymPy's
-own Clifford engine (:mod:`sympy.physics.hep.gamma_matrices` — ships with
-SymPy, so the library stays pure-SymPy), contracted with spin and polarization
-sums, and reduced to on-shell invariants ``p_i·p_j`` only at the end.  Explicit
-4×4 Dirac matrices are deliberately kept off this path and used solely as the
-independent test oracle in ``tests/test_pheno.py``.
+This namespace is the user API::
 
-Typical use::
+    from feynlag.pheno import DecayCalculator, DiracParticle, ScatteringCalculator
 
-    calc = DecayCalculator(model, masses=..., boson_fields=[h, Z, Wp, Wm],
-                           fermion_sectors=("gauge", "yukawa"))
-    calc.partial_widths(h)        # {(f, fbar): Γ, ...}
-    calc.branching_ratios(h)
+    decays = DecayCalculator.from_model(model, particles=[e, nu])
+    print(decays.decay_table("Z", unit="MeV"))
+
+    calc = ScatteringCalculator.from_model(model, [e, nu], widths={Z: 2.4952},
+                                           aliases={"e-": e.particle,
+                                                    "e+": e.antiparticle})
+    ww = calc.process("e- e+ > w+ w-")
+    print(ww.summary(sqrt_s=200, unit="pb"))
+
+- calculators: :class:`DecayCalculator`, :class:`ScatteringCalculator` and
+  what they return (:class:`DecayChannel`, :class:`ScatteringProcess`);
+- particles: :class:`DiracParticle`, :class:`ExternalState`;
+- results and names: :class:`ProcessSummary`, :class:`DecayTable`,
+  :class:`DecayRow`, :class:`ParticleNames`, :func:`diagram_row`;
+- units: :func:`cross_section_in`, :func:`energy_in`, :func:`eta_acceptance`
+  and the conversion tables;
+- closed-form widths: the loop-induced ``h→gg/γγ/Zγ`` and the off-shell
+  ``S→VV*``.
+
+The building blocks (vertex collection, kinematics, traces, diagrams,
+colour tensors, ``|M|²`` → observables) are in :mod:`feynlag.pheno.engine`.
+Importing one of those from here still works but raises a
+``DeprecationWarning``.
 """
 
-from .amplitudes import (
-    amplitude_squared, ffs_squared, ffv_squared, polarization_sum, spin_sum,
-    sss_squared, vvs_squared,
-)
-from .calculator import DecayCalculator, DecayChannel, partial_width
-from .diagrams import (
-    Amplitude, BosonPropagator, ChainVertex, Diagram, Leg, SpinorChain,
-)
-from .kinematics import (
-    TwoBodyKinematics, is_allowed, kallen, two_body_momentum,
-    two_body_phase_space,
-)
-from .kinematics import ThreeBodyKinematics, TwoToTwoKinematics
-from .epsilon import (
-    assert_epsilon_single_vanishes, epsilon_pair_tensor, gamma5_trace_coefficient,
-)
-from .lorentz import contract_to_dots, dirac_trace, reduce_projectors
-from .particles import DiracParticle, ExternalState, expand_particles
-from .propagator import (
-    breit_wigner, fermion_propagator_phase, propagator_denominator,
-    scalar_propagator,
-    vector_propagator, vector_propagator_numerator,
-)
-from .integrate import dalitz_integral, have_scipy
-from .loop import (
-    A_half, A_one, higgs_gammagamma_width, higgs_gg_width, higgs_zgamma_width,
-)
-from .offshell import (
-    offshell_scalar_vv_width, scalar_offshell_vv_width, scalar_vv_s12_integral,
-    scalar_vv_squared,
-)
-from .scattering import (
-    average_factor, cross_section, differential_cross_section,
-    ffs_s_channel_squared, ffv_s_channel_squared, forward_backward_asymmetry,
-)
-from .scattering_calculator import ScatteringCalculator, ScatteringProcess
-from .colour import (
-    colour_matrix, four_boson_colour_tensor, four_fermion_colour_tensor,
-    line_colour_tensor,
-)
-from .boson import BosonAmplitude, BosonTerm
-from .boson_vertices import (
-    VSS_KAPPA, VVV_KAPPA, sss_tensor, vss_tensor, vvs_tensor, vvv_tensor,
-    vvvv_tensor,
-)
-from .contraction import contract_tensors, contract_trace
-from .line import (
-    LineAmplitude, LineTerm, VectorLeg, boson_exchange_terms,
-    fermion_exchange_term,
-)
-from .topology import (
-    BosonDiagramInfo, DiagramInfo, ExternalBoson, ExternalFermion,
-    LineDiagramInfo, boson_amplitude, enumerate_boson_diagrams,
-    enumerate_diagrams, enumerate_line_diagrams, line_amplitude,
-)
-from .vertices import DecayVertex, classify_gamma, collect_decay_vertices
+import importlib
+import warnings
+
+from .calculator import DecayCalculator, DecayChannel
+from .loop import higgs_gammagamma_width, higgs_gg_width, higgs_zgamma_width
 from .names import ParticleNames
+from .offshell import scalar_offshell_vv_width
+from .particles import DiracParticle, ExternalState
+from .scattering_calculator import ScatteringCalculator, ScatteringProcess
 from .summary import DecayRow, DecayTable, ProcessSummary, diagram_row
 from .units import (
     CROSS_SECTION_UNITS, ENERGY_UNITS, HBARC2_GEV2_MB, cross_section_in,
@@ -82,37 +51,37 @@ from .units import (
 )
 
 __all__ = [
-    "CROSS_SECTION_UNITS", "DecayRow", "DecayTable", "ENERGY_UNITS",
-    "HBARC2_GEV2_MB", "ParticleNames", "ProcessSummary", "cross_section_in",
-    "diagram_row", "energy_in", "eta_acceptance",
-    "Amplitude", "BosonAmplitude", "BosonDiagramInfo", "BosonPropagator",
-    "BosonTerm", "ChainVertex", "DecayCalculator",
-    "boson_amplitude", "contract_tensors", "contract_trace",
-    "enumerate_boson_diagrams", "four_boson_colour_tensor", "vvvv_tensor",
-    "DecayChannel", "DecayVertex", "Diagram", "DiagramInfo", "DiracParticle",
-    "ExternalBoson", "ExternalFermion", "ExternalState", "Leg",
-    "LineAmplitude", "LineDiagramInfo", "LineTerm", "ScatteringCalculator",
-    "VSS_KAPPA", "VVV_KAPPA", "VectorLeg", "boson_exchange_terms",
-    "colour_matrix", "four_fermion_colour_tensor", "line_colour_tensor",
-    "enumerate_line_diagrams", "fermion_exchange_term", "sss_tensor",
-    "vss_tensor", "vvs_tensor", "vvv_tensor",
-    "fermion_propagator_phase", "line_amplitude",
-    "ScatteringProcess", "SpinorChain",
-    "TwoBodyKinematics", "ThreeBodyKinematics", "TwoToTwoKinematics",
-    "amplitude_squared", "assert_epsilon_single_vanishes", "average_factor",
-    "breit_wigner", "classify_gamma", "collect_decay_vertices",
-    "cross_section", "differential_cross_section",
-    "A_half", "A_one", "contract_to_dots", "dalitz_integral", "dirac_trace",
-    "enumerate_diagrams", "epsilon_pair_tensor", "expand_particles",
-    "ffs_squared",
-    "ffs_s_channel_squared", "ffv_squared", "ffv_s_channel_squared",
-    "forward_backward_asymmetry", "gamma5_trace_coefficient",
+    # calculators
+    "DecayCalculator", "DecayChannel", "ScatteringCalculator",
+    "ScatteringProcess",
+    # particles
+    "DiracParticle", "ExternalState",
+    # results and names
+    "DecayRow", "DecayTable", "ParticleNames", "ProcessSummary", "diagram_row",
+    # units
+    "CROSS_SECTION_UNITS", "ENERGY_UNITS", "HBARC2_GEV2_MB",
+    "cross_section_in", "energy_in", "eta_acceptance",
+    # closed-form widths
     "higgs_gammagamma_width", "higgs_gg_width", "higgs_zgamma_width",
-    "have_scipy", "is_allowed", "kallen",
-    "offshell_scalar_vv_width", "partial_width", "polarization_sum",
-    "propagator_denominator",
-    "reduce_projectors", "scalar_offshell_vv_width", "scalar_propagator",
-    "scalar_vv_s12_integral", "scalar_vv_squared",
-    "spin_sum", "sss_squared", "two_body_momentum", "two_body_phase_space",
-    "vector_propagator", "vector_propagator_numerator", "vvs_squared",
+    "scalar_offshell_vv_width",
 ]
+
+
+def __getattr__(name):
+    """An engine name imported from here: still served, with a warning."""
+    # not `from . import engine`: that looks the name up on this package
+    # first, i.e. calls __getattr__ again
+    engine = importlib.import_module(f"{__name__}.engine")
+    if name in engine.__all__:
+        warnings.warn(
+            f"feynlag.pheno.{name} moved to feynlag.pheno.engine; import it "
+            f"from there (from feynlag.pheno.engine import {name})",
+            DeprecationWarning, stacklevel=2)
+        return getattr(engine, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    import pkgutil
+    submodules = [m.name for m in pkgutil.iter_modules(__path__)]
+    return sorted(set(__all__) | set(submodules))

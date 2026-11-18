@@ -25,10 +25,11 @@ from feynlag import (
     fermion_gauge_current, standard_model, to_physical_basis,
 )
 from feynlag.pheno import (
-    HBARC2_GEV2_MB, BosonDiagramInfo, DecayCalculator, DiracParticle,
-    ParticleNames, ScatteringCalculator, cross_section_in, diagram_row,
-    energy_in, eta_acceptance,
+    HBARC2_GEV2_MB, DecayCalculator, DiracParticle, ParticleNames,
+    ScatteringCalculator, cross_section_in, diagram_row, energy_in,
+    eta_acceptance,
 )
+from feynlag.pheno.engine import BosonDiagramInfo
 
 _INPUTS = electroweak_inputs()          # docs/benchmark.md point
 _WZ, _MH = 2.4952, 125.0

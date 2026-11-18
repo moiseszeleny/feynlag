@@ -18,9 +18,10 @@ from feynlag import (
     diracPL, diracPR, fermion_gauge_current, rotation_2x2,
 )
 from feynlag.dirac import DiracGamma, PL, _dirac_rep, minkowski_metric
-from feynlag.pheno import (
-    DecayCalculator, DiracParticle, TwoBodyKinematics, classify_gamma,
-    ffs_squared, ffv_squared, kallen, reduce_projectors, vvs_squared,
+from feynlag.pheno import DecayCalculator, DiracParticle
+from feynlag.pheno.engine import (
+    TwoBodyKinematics, classify_gamma, ffs_squared, ffv_squared, kallen,
+    reduce_projectors, vvs_squared,
 )
 from feynlag.pheno.trace import dirac_trace as direct_trace
 from feynlag.verify import numeric_equal
@@ -611,7 +612,7 @@ def test_particles_reports_unmatched_fermion(colour_model):
 def test_expand_particles_rejects_conflicts(sm):
     """`expand_particles` raises when two particles claim the same leg or a
     particle gets two masses — a modelling mistake caught, not merged."""
-    from feynlag.pheno import expand_particles
+    from feynlag.pheno.engine import expand_particles
     me = sp.Symbol("m_e", positive=True)
     a = DiracParticle("e", left=sm["eL_base"], right=sm["eR_base"], mass=me)
     b = DiracParticle("mu", left=sm["eL_base"], right=sm["eR_base"], mass=me)

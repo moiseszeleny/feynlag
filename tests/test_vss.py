@@ -31,10 +31,10 @@ from feynlag import (
 )
 from feynlag.dirac import _dirac_rep
 from feynlag.operators import PartialMu, momentum
-from feynlag.pheno import (
-    DecayVertex, DiracParticle, ExternalBoson, ExternalFermion,
-    ScatteringCalculator, TwoToTwoKinematics, VSS_KAPPA,
-    enumerate_line_diagrams, line_amplitude, vss_tensor,
+from feynlag.pheno import DiracParticle, ScatteringCalculator
+from feynlag.pheno.engine import (
+    DecayVertex, ExternalBoson, ExternalFermion, TwoToTwoKinematics,
+    VSS_KAPPA, enumerate_line_diagrams, line_amplitude, vss_tensor,
 )
 from feynlag.pheno import boson_vertices
 

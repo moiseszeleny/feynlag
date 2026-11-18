@@ -25,8 +25,9 @@ from feynlag import (
     Lagrangian, Model, WeylFermion, electroweak_scaffold,
     fermion_gauge_current, to_physical_basis,
 )
-from feynlag.pheno import (
-    ExternalState, TwoToTwoKinematics, collect_decay_vertices, cross_section,
+from feynlag.pheno import ExternalState
+from feynlag.pheno.engine import (
+    TwoToTwoKinematics, collect_decay_vertices, cross_section,
     differential_cross_section, ffv_s_channel_squared,
     forward_backward_asymmetry,
 )
