@@ -120,7 +120,8 @@ def most_general_lagrangian(fields, gauge_groups, discrete_groups=(),
         names: ``{operator label: coupling name}`` overriding the defaults
             (the labels are printed by the returned object).
         max_dim: ``4`` (renormalisable) or ``5`` (adds the Weinberg operator).
-        kinetic: also add ``(D_μφ)†(D^μφ)`` and the fermion gauge currents.
+        kinetic: also add ``(D_μφ)†(D^μφ)`` (``½(D_μφ)(D^μφ)`` for a real
+            scalar) and the fermion gauge currents.
         verify: run the invariance oracle on every operator (default).
 
     Note:

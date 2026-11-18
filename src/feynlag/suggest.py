@@ -560,8 +560,9 @@ def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
 def suggest_kinetic(fields, flavor_index=None):
     """Kinetic/gauge scaffolding — no enumeration, just the canonical terms.
 
-    Per :class:`~feynlag.fields.Scalar`: ``(D_μφ)†(D^μφ)`` (sector
-    ``kinetic``).  Per :class:`~feynlag.fields.Fermion`: its gauge current
+    Per :class:`~feynlag.fields.Scalar`: ``(D_μφ)†(D^μφ)`` for a complex
+    field and the canonical ``½(D_μφ)(D^μφ)`` for a real one (``real=True``)
+    (sector ``kinetic``; CONVENTIONS.md).  Per :class:`~feynlag.fields.Fermion`: its gauge current
     ``fermion_gauge_current`` (sector ``yukawa``, matching how the examples
     add currents; the free kinetic ``iψ̄γ^μ∂_μψ`` carries no coupling and is
     handled at extraction time).  Gauge-boson self-couplings are built by
@@ -578,8 +579,14 @@ def suggest_kinetic(fields, flavor_index=None):
         if isinstance(f, Scalar):
             DH = Dmu(f)
             expr = sp.expand((dag(DH) * DH)[0])
-            out.append(SuggestedTerm(expr, 4, f"(Dμ{f.name})†(Dμ{f.name})",
-                                     "kinetic", False))
+            if f.real:
+                # A real field is its own conjugate: (Dφ)†(Dφ) would double
+                # count, so the canonical term carries ½ (FG-8).
+                expr = sp.expand(sp.Rational(1, 2) * expr)
+                label = f"½(Dμ{f.name})(Dμ{f.name})"
+            else:
+                label = f"(Dμ{f.name})†(Dμ{f.name})"
+            out.append(SuggestedTerm(expr, 4, label, "kinetic", False))
         elif isinstance(f, Fermion):
             if not f.reps:
                 continue

@@ -64,7 +64,8 @@ class Lagrangian:
     def add_kinetic(self, *fields, index=None):
         """Add the canonical kinetic/gauge terms of ``fields``.
 
-        ``(D_μφ)†(D^μφ)`` per scalar (sector ``kinetic``) and the gauge
+        ``(D_μφ)†(D^μφ)`` per complex scalar, ``½(D_μφ)(D^μφ)`` per real
+        one (sector ``kinetic``), and the gauge
         current per charged fermion (sector ``yukawa``), via
         :func:`feynlag.terms.kinetic`.  Gauge bosons need no term here: their
         self-couplings come from the structure constants at extraction time.

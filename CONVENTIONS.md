@@ -11,7 +11,8 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
 - Chiral projectors: `P_L = (1 − γ₅)/2`, `P_R = (1 + γ₅)/2`.
 
 ## Lagrangian signs (mostly-plus for kinetic terms)
-- Scalar kinetic: `+ (D_μ φ)† (D^μ φ)`.
+- Scalar kinetic: `+ (D_μ φ)† (D^μ φ)` for a complex field, `+ ½ (D_μ φ)(D^μ φ)`
+  for a real one (`Scalar(real=True)`; what `kinetic`/`add_kinetic` emit).
 - Fermion kinetic: `+ i ψ̄ γ^μ D_μ ψ`.
 - Gauge kinetic: `− ¼ F_{μν} F^{μν}`.
 - Fermion mass: `− m ψ̄ ψ`.

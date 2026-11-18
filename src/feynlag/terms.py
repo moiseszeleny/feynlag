@@ -477,7 +477,8 @@ def weinberg(coupling, F, S, indices=None, hc=True):
 def kinetic(*fields, index=None):
     """Canonical kinetic/gauge terms of ``fields`` as ``[(expr, sector)]``.
 
-    A scalar gives ``(D_μφ)†(D^μφ)`` (sector ``kinetic``); a charged fermion
+    A complex scalar gives ``(D_μφ)†(D^μφ)`` and a real one the canonical
+    ``½(D_μφ)(D^μφ)`` (sector ``kinetic``); a charged fermion
     gives its gauge current (sector ``yukawa``, where the examples keep
     currents).  The flavour index defaults to :data:`FL_I`.  See
     :meth:`feynlag.lagrangian.Lagrangian.add_kinetic`.
