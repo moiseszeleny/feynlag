@@ -6,6 +6,20 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-11-18
+
+A bug-fix release: real scalars get their canonical kinetic term.
+
+### Fixed
+- FG-8 (feynlag-models): `suggest_kinetic`, and through it
+  `feynlag.terms.kinetic`, `Lagrangian.add_kinetic` and `Model.most_general`,
+  wrote `(D_μφ)†(D^μφ)` for every `Scalar`, so a real field
+  (`Scalar(..., real=True)`) got `(∂_μS)²`, twice the canonical `½(∂_μS)²`.
+  Nothing raised; the propagator normalisation and every amplitude with an
+  `S` leg were off. A real scalar now gets `½(D_μφ)(D^μφ)`; complex scalars
+  are unchanged. `CONVENTIONS.md` states both. No example or tutorial passed a
+  real scalar through these helpers, so none of their outputs change.
+
 ## [0.5.0] — 2026-11-17
 
 2→2 scattering from the Lagrangian through Tier 5 — interference, external

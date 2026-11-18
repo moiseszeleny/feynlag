@@ -11,10 +11,12 @@ import sympy as sp
 
 from feynlag import (
     Bilinear, ExternalParameter, InternalParameter, Lagrangian,
-    MajoranaBilinear, Model, SU2, SU3, Scalar, U1, WeylFermion, dag, diracC,
+    Dmu, MajoranaBilinear, Model, PartialMu, SU2, SU3, Scalar, U1, WeylFermion,
+    dag, diracC,
     diracPL, diracPR, expand_bilinear, fermion_gauge_current, hc,
     majorana_mass_matrix,
 )
+from feynlag.suggest import suggest_kinetic
 from feynlag.terms import (
     FL_I, FL_J, dirac_mass, eps, inner, kinetic, majorana_mass, tilde,
     weinberg, yukawa,
@@ -340,3 +342,67 @@ def test_constructed_vll_model_is_invariant(ew):
         gamma=diracPR)[0, 0])
     s2 = sp.sqrt(2)
     assert M2 == sp.Matrix([[ye.s * v.s / s2, 0], [lamE.s * v.s / s2, MPsi.s]])
+
+
+# ---------------------------------------------------------------- kinetic (FG-8)
+
+class TestRealScalarKinetic:
+    """A real scalar's kinetic term is the canonical ½(∂S)² (feynlag-models FG-8).
+
+    ``(D_μφ)†(D^μφ)`` is right for a complex field, but a real field is its own
+    conjugate, so the same expression would give ``(∂S)²`` — twice the
+    canonical term, silently doubling the propagator normalisation.
+    """
+
+    @staticmethod
+    def _real_singlet():
+        S = Scalar("S", reps={}, real=True)
+        return S, half * PartialMu(S.components[0]) ** 2
+
+    def test_kinetic_real_singlet_is_half(self):
+        S, ref = self._real_singlet()
+        [(expr, sector)] = kinetic(S)
+        assert sector == "kinetic"
+        assert sp.expand(expr - ref) == 0
+
+    def test_add_kinetic_real_singlet_is_half(self):
+        S, ref = self._real_singlet()
+        L = Lagrangian().add_kinetic(S)
+        assert sp.expand(L.sector("kinetic") - ref) == 0
+
+    def test_most_general_real_singlet_is_half(self, ew):
+        SU2L, U1Y, H, params = ew
+        S, ref = self._real_singlet()
+        model = Model.most_general("xSM", [S], [SU2L, U1Y], parameters=params)
+        assert sp.expand(model.lagrangian.sector("kinetic") - ref) == 0
+        # the Higgs doublet beside it keeps (DH)†(DH)
+        model2 = Model.most_general("xSM2", [H, S], [SU2L, U1Y],
+                                    parameters=params)
+        DH = Dmu(H)
+        full = sp.expand((dag(DH) * DH)[0]) + ref
+        assert sp.expand(model2.lagrangian.sector("kinetic") - full) == 0
+
+    def test_suggest_kinetic_label(self):
+        S, _ = self._real_singlet()
+        [t] = suggest_kinetic([S])
+        assert t.label == "½(DμS)(DμS)"
+
+    def test_complex_scalars_unchanged(self, ew):
+        SU2L, U1Y, H, _ = ew
+        DH = Dmu(H)
+        [(expr, _)] = kinetic(H)
+        assert sp.expand(expr - (dag(DH) * DH)[0]) == 0
+        phi = Scalar("phi", reps={})                  # complex singlet
+        p = phi.components[0]
+        [(expr, _)] = kinetic(phi)
+        assert sp.expand(expr - PartialMu(sp.conjugate(p)) * PartialMu(p)) == 0
+
+    def test_canonical_normalisation_matches_handwritten(self):
+        """Same momentum-space two-point coefficient as ½ PartialMu(S)²."""
+        from feynlag import to_momentum_space
+        S, ref = self._real_singlet()
+        [(expr, _)] = kinetic(S)
+        f = S.components
+        mom = sp.expand(to_momentum_space(expr, f))
+        assert mom != 0
+        assert sp.expand(mom - to_momentum_space(ref, f)) == 0

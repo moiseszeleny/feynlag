@@ -56,6 +56,9 @@ friendlier:
 
 746 tests green. See `CHANGELOG.md`.
 
+**v0.5.1** fixes FG-8: `kinetic`/`add_kinetic`/`Model.most_general` give a
+real scalar the canonical `½(∂S)²`, not `(∂S)²`. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish
