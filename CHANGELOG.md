@@ -6,6 +6,42 @@ All notable changes to feynlag are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-11-21
+
+A bug-fix release for five gaps feynlag-models found while moving to the
+0.4.0 API (FG-9 to FG-13).
+
+### Fixed
+- FG-9: `yukawa` and `majorana_mass` (also `dirac_mass` and `weinberg`) with
+  a flavour-universal (non-`IndexedBase`) coupling and an explicit pair of
+  different indices, `indices=(i, j)`, silently built the `(i, i)` term; with
+  integer indices that moved an off-diagonal entry onto the diagonal. They
+  now raise `ValueError`. One index, or a repeated pair `(i, i)`, is
+  unchanged.
+- FG-10: the bare Majorana mass `½ M FᵀC P_L F + h.c.` of a fermion in a
+  real representation is now in the operator basis. `suggest_yukawa`, and
+  through it `term_coverage` and `Model.most_general`, enumerate it for a
+  gauge-singlet `ν_R` or an SU(2) triplet with `Y = 0`. `majorana_mass`
+  accepts a real non-singlet representation (it refused the triplet as
+  "charged"), contracting with the invariant symmetric form from the new
+  `feynlag.terms.majorana_form` (`δ_ab` in the adjoint basis). A
+  pseudo-real or complex representation, or a U(1) charge, still raises.
+- FG-11: `yukawa` with an `IndexedBase` flavour matrix accepts an integer
+  diagonal entry `indices=(a, a)`, which is the element `Y[a, a]`. A repeated
+  *symbolic* index is still refused.
+- FG-12: `Model.mass_blocks(kind="fermion")` raised `NotImplementedError` for
+  a left–right block with different flavour counts (the 3×2 Dirac part of a
+  3+2 seesaw), losing the whole fermion report. The block is now reported
+  with its rectangular matrix, as not diagonalizable: with the Majorana /
+  `diagonalize_takagi` note for a seesaw, or as rectangular for a pure Dirac
+  block.
+- FG-13: `term_coverage` ignored `Model.global_groups`, so operators violating
+  a declared `GlobalU1` were reported missing. `suggest_potential` and
+  `suggest_yukawa` take `global_groups=`, and `term_coverage`,
+  `most_general_lagrangian` and `Model.most_general` pass it. A fermion
+  operator whose legs carry flavour-dependent charges cannot be judged at
+  symbolic flavour indices and is kept.
+
 ## [0.5.1] — 2026-11-18
 
 A bug-fix release: real scalars get their canonical kinetic term.

@@ -321,3 +321,72 @@ def test_oracle_all_suggestions_invariant(ew):
         assert ok, (t.label, worst)
         ok, _ = check_hermiticity(t.expr)
         assert ok, t.label
+
+
+# --------------------------------------------------------------------------
+# bare Majorana masses of real-rep fermions (FG-10)
+# --------------------------------------------------------------------------
+
+def _majorana_terms(terms):
+    from feynlag import MajoranaBilinear
+    return [t for t in terms if t.expr.has(MajoranaBilinear)]
+
+
+def test_majorana_mass_of_a_singlet_and_a_real_triplet():
+    from feynlag import MajoranaBilinear, diracC, diracPL
+    SU2L = SU2("SU2L", coupling=ExternalParameter("gw", 0.65, positive=True))
+    U1Y = U1("U1Y", coupling=ExternalParameter("g1", 0.36, positive=True))
+    H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2)},
+               component_names=["Gp", "H0"])
+    nuR = WeylFermion("nuR", reps={}, chirality="R", component_names=["nR"])
+    Sig = WeylFermion("Sig", reps={SU2L: 3, U1Y: 0}, chirality="R",
+                      component_names=["S1", "S2", "S3"])
+    i = sp.Symbol("i", integer=True)
+    for F in (nuR, Sig):
+        terms = suggest_yukawa([F], [H], [SU2L, U1Y], flavor_indices=(i, i))
+        maj = _majorana_terms(terms)
+        assert len(maj) == 1 and maj[0].dim == 3 and "[Majorana]" in maj[0].label
+        op = sp.Rational(1, 2) * sum(
+            MajoranaBilinear(c[i], diracC * diracPL, c[i]) for c in F.components)
+        assert sp.expand(maj[0].expr - op - sp.conjugate(op)) == 0
+
+
+def test_no_majorana_mass_for_charged_or_pseudoreal_fermions():
+    SU2L = SU2("SU2L", coupling=ExternalParameter("gw", 0.65, positive=True))
+    U1Y = U1("U1Y", coupling=ExternalParameter("g1", 0.36, positive=True))
+    eR = WeylFermion("eR", reps={U1Y: -1}, chirality="R", component_names=["eR"])
+    Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -sp.Rational(1, 2)},
+                     chirality="L", component_names=["nuL", "eL"])
+    D0 = WeylFermion("D0", reps={SU2L: 2}, chirality="L",
+                     component_names=["D1", "D2"])
+    assert _majorana_terms(suggest_yukawa([eR, Ll, D0], [], [SU2L, U1Y])) == []
+
+
+# --------------------------------------------------------------------------
+# global U(1) symmetries (FG-13)
+# --------------------------------------------------------------------------
+
+def test_global_u1_filters_the_potential_and_majorana_mass():
+    from feynlag import GlobalU1
+    SU2L = SU2("SU2L", coupling=ExternalParameter("gw", 0.65, positive=True))
+    U1Y = U1("U1Y", coupling=ExternalParameter("g1", 0.36, positive=True))
+    H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2)},
+               component_names=["Gp", "H0"])
+    phi = Scalar("phi", reps={}, component_names=["phi"])
+    nuR = WeylFermion("nuR", reps={}, chirality="R", component_names=["nR"])
+    free = {t.label for t in suggest_potential([H, phi], [SU2L, U1Y])}
+    assert {"phi phi", "phi (H†H)", "phi phi phi"} <= free
+    G = GlobalU1("U1G").assign(1, phi).assign(1, nuR)
+    pot = suggest_potential([H, phi], [SU2L, U1Y], global_groups=[G])
+    labels = {t.label for t in pot}
+    assert "phi phi†" in labels and "phi phi phi† phi†" in labels
+    assert not labels & {"phi phi", "phi (H†H)", "phi phi phi",
+                         "phi phi phi†", "phi phi (H†H)", "phi phi phi phi"}
+    from feynlag.invariance import check_global_invariance
+    assert all(check_global_invariance(t.expr, G)[0] for t in pot)
+    assert any(not check_global_invariance(t.expr, G)[0]
+               for t in suggest_potential([H, phi], [SU2L, U1Y]))
+    # ν_R with charge 1: its Majorana mass has charge 2 and is dropped
+    assert _majorana_terms(suggest_yukawa([nuR], [H, phi], [SU2L, U1Y])) != []
+    assert _majorana_terms(suggest_yukawa([nuR], [H, phi], [SU2L, U1Y],
+                                          global_groups=[G])) == []

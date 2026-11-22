@@ -27,17 +27,19 @@ from dataclasses import dataclass, field as dc_field
 
 import sympy as sp
 
+from .dirac import diracC, diracPL
 from .fields import Fermion, Scalar, dag
 from .invariance import (
     _apply_field_map, _fermion_transform_discrete, check_gauge_invariance,
-    check_discrete_invariance, check_hermiticity, check_mass_dimension,
+    check_discrete_invariance, check_global_invariance, check_hermiticity,
+    check_mass_dimension,
 )
 from .operators import Dmu
 from .parameters import ExternalParameter
 from .terms import (
     _charge_is_zero, _doublet_setup, _is_su2_doublet, _nonabelian_signature,
-    _u1_groups, contract_bare, contract_direct, contract_tilde,
-    contract_weinberg,
+    _u1_groups, contract_bare, contract_direct, contract_majorana,
+    contract_tilde, contract_weinberg, majorana_form,
 )
 from .vertices.bilinear import (
     Bilinear, MajoranaBilinear, expand_bilinear, fermion_gauge_current,
@@ -296,10 +298,26 @@ class _Block:
     label: str
 
 
-def _scalar_blocks(scalars, gauge_groups):
-    """Gauge-(non-abelian)-invariant building blocks with U(1) charge tags."""
-    u1s = _u1_groups(gauge_groups)
+def _global_charge(group, scalar):
+    """A scalar's charge under a :class:`~feynlag.groups.GlobalU1` (every
+    gauge component shares it; 0 if unassigned)."""
+    return group.scalar_charges.get(scalar.components[0], sp.S.Zero)
+
+
+def _global_neutral(charges, global_groups):
+    """Every global U(1) charge in ``charges`` sums to zero, group by group."""
+    return all(sp.simplify(charges.get(g, sp.S.Zero)) == 0
+               for g in global_groups)
+
+
+def _scalar_blocks(scalars, gauge_groups, global_groups=()):
+    """Gauge-(non-abelian)-invariant building blocks with U(1) charge tags
+    (gauge U(1)s and the global U(1)s in ``global_groups`` alike)."""
+    u1s = list(_u1_groups(gauge_groups)) + list(global_groups)
     blocks = []
+
+    def charge(s, g):
+        return _global_charge(g, s) if g in global_groups else s.charge(g)
 
     # singlet scalars: the component and its conjugate (or just the real
     # component for a self-conjugate scalar)
@@ -307,7 +325,7 @@ def _scalar_blocks(scalars, gauge_groups):
         sig = _nonabelian_signature(s, gauge_groups)
         if all(d == 1 for _, d in sig):
             c = s.components[0]
-            q = {g: s.charge(g) for g in u1s}
+            q = {g: charge(s, g) for g in u1s}
             blocks.append(_Block(c, 1, dict(q), f"{c}"))
             if not s.self_conjugate:
                 blocks.append(_Block(sp.conjugate(c), 1,
@@ -321,7 +339,7 @@ def _scalar_blocks(scalars, gauge_groups):
         if sigA != sigB or all(d == 1 for _, d in sigA):
             continue
         expr = (dag(A) * B.mat)[0]
-        q = {g: B.charge(g) - A.charge(g) for g in u1s}
+        q = {g: charge(B, g) - charge(A, g) for g in u1s}
         blocks.append(_Block(sp.expand(expr), 2, q, f"({A.name}†{B.name})"))
 
     # SU(2) ε-contraction A^T(iσ₂)B for doublet pairs — dim 2, charge sum
@@ -332,7 +350,7 @@ def _scalar_blocks(scalars, gauge_groups):
         a0, a1 = A.components[:2]
         b0, b1 = B.components[:2]
         expr = a0 * b1 - a1 * b0            # A^T (iσ₂) B
-        q = {g: A.charge(g) + B.charge(g) for g in u1s}
+        q = {g: charge(A, g) + charge(B, g) for g in u1s}
         blocks.append(_Block(sp.expand(expr), 2, q,
                              f"({A.name}·{B.name})"))
     return blocks
@@ -343,7 +361,7 @@ def _scalar_blocks(scalars, gauge_groups):
 # --------------------------------------------------------------------------
 
 def suggest_potential(scalars, gauge_groups, discrete_groups=(), max_dim=4,
-                      min_dim=2, verify=True):
+                      min_dim=2, verify=True, global_groups=()):
     """Enumerate scalar-potential invariants up to ``max_dim``.
 
     Args:
@@ -353,13 +371,16 @@ def suggest_potential(scalars, gauge_groups, discrete_groups=(), max_dim=4,
         discrete_groups: discrete symmetries to impose (Reynolds-projected).
         max_dim / min_dim: mass-dimension window (default 2..4).
         verify: assert every emitted term against the invariance oracle.
+        global_groups: :class:`~feynlag.groups.GlobalU1` symmetries to
+            impose; an operator with net charge under any of them is left out.
 
     Returns:
         list of :class:`SuggestedTerm` (sector ``"potential"``), a minimal
         linearly-independent basis.
     """
     u1s = _u1_groups(gauge_groups)
-    blocks = _scalar_blocks(scalars, gauge_groups)
+    global_groups = list(global_groups)
+    blocks = _scalar_blocks(scalars, gauge_groups, global_groups)
 
     # enumerate charge-neutral, gauge-invariant monomials in the blocks
     candidates = []
@@ -375,6 +396,8 @@ def suggest_potential(scalars, gauge_groups, discrete_groups=(), max_dim=4,
                 for g, q in b.charges.items():
                     charges[g] = charges.get(g, sp.S.Zero) + q
             if not _charge_is_zero(charges, u1s):
+                continue
+            if not _global_neutral(charges, global_groups):
                 continue
             expr = sp.expand(sp.Mul(*[b.expr for b in combo]))
             if expr == 0:
@@ -403,7 +426,8 @@ def suggest_potential(scalars, gauge_groups, discrete_groups=(), max_dim=4,
     basis = [completed[i] for i in kept]
 
     if verify:
-        _verify_terms(basis, scalars, gauge_groups, discrete_groups)
+        _verify_terms(basis, scalars, gauge_groups, discrete_groups,
+                      global_groups=global_groups)
     return basis
 
 
@@ -483,8 +507,45 @@ def _majorana_leg_options(FL, scalars, gauge_groups):
         yield builder, 5, charges, f"({FL.name}·ε{S.name})² [Weinberg]"
 
 
+def _majorana_mass_options(F, gauge_groups):
+    """Yield the bare same-chirality Majorana mass ``½ FᵀB C P_L F`` of a
+    fermion in a real representation (FG-10): a gauge singlet (``B = 1``),
+    an SU(2) triplet with ``Y = 0`` (``B = δ``), … — ``B`` from
+    :func:`feynlag.terms.majorana_form`.  The ``½`` makes ``L = −M·O`` the
+    canonical ``−½ M FᵀCF``, the term :func:`feynlag.terms.majorana_mass`
+    builds.  Its U(1) charge is ``2 q_F``.
+    """
+    u1s = _u1_groups(gauge_groups)
+    B = majorana_form(F, gauge_groups)
+    if B is None:
+        return
+
+    def builder(i, j, F=F, B=B):
+        return sp.Rational(1, 2) * contract_majorana(F, B, i, j,
+                                                     diracC * diracPL)
+
+    charges = {g: 2 * F.charge(g) for g in u1s}
+    yield builder, 3, charges, f"½ {F.name}ᵀC{F.name} [Majorana]"
+
+
+def _global_allowed(expr, global_groups):
+    """``False`` if ``expr`` violates a global U(1).  A fermion operator at
+    symbolic flavour indices whose legs carry flavour-dependent charges has
+    no single charge (``check_global_invariance`` raises): it is kept, since
+    only its integer-index entries could be judged one by one."""
+    for g in global_groups:
+        try:
+            ok, _ = check_global_invariance(expr, g)
+        except ValueError:
+            continue
+        if not ok:
+            return False
+    return True
+
+
 def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
-                   flavor_indices=None, max_dim=4, verify=True):
+                   flavor_indices=None, max_dim=4, verify=True,
+                   global_groups=()):
     """Enumerate Yukawa / bare-mass / Weinberg invariants over fermion pairs.
 
     Pairs run over ordered ``(F_L, F_R)`` of opposite chirality (two
@@ -494,6 +555,11 @@ def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
     or a bare mass); U(1) neutrality and discrete invariance filter, and the
     ``+ h.c.`` partner is generated (``Bilinear._eval_conjugate`` produces
     the correct P_L partner).
+
+    Each fermion in a real representation (a gauge singlet ``ν_R``, an
+    SU(2) triplet with ``Y = 0``) is also offered its **bare Majorana mass**
+    ``½ FᵀB C P_L F + h.c.`` (dim 3; ``L = −M·O`` is
+    :func:`feynlag.terms.majorana_mass`).
 
     With ``max_dim >= 5`` it also enumerates the **dim-5 Weinberg operator**
     ``(F ε H)(F ε H)`` — a *same-chirality* Majorana contraction of a doublet
@@ -506,6 +572,9 @@ def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
             (default fresh ``i``, ``j``).
         max_dim: mass-dimension ceiling (default ``4``; ``5`` admits the
             Weinberg operator).
+        global_groups: :class:`~feynlag.groups.GlobalU1` symmetries to
+            impose.  An operator whose legs carry flavour-dependent charges
+            cannot be judged at symbolic flavour indices and is kept.
 
     Returns:
         list of :class:`SuggestedTerm` (sector ``"yukawa"``), a minimal basis.
@@ -521,6 +590,8 @@ def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
     # (F_L, F_R) options + (F, F) same-chirality Majorana options (dim ≥ 5)
     option_sets = [_scalar_leg_options(FL, FR, scalars, gauge_groups)
                    for FL, FR in itertools.product(left, right)]
+    for F in left + right:
+        option_sets.append(_majorana_mass_options(F, gauge_groups))
     if max_dim >= 5:
         for F in left + right:
             option_sets.append(_majorana_leg_options(F, scalars, gauge_groups))
@@ -539,6 +610,8 @@ def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
                 expr = reynolds_project(expr, discrete_groups)
                 if expr == 0:
                     continue
+            if not _global_allowed(expr, global_groups):
+                continue
             # h.c. completion (both bilinears know their conjugate)
             hc = sp.expand(sp.conjugate(expr))
             full = expand_bilinear(sp.expand(expr + hc))
@@ -549,7 +622,8 @@ def suggest_yukawa(fermions, scalars, gauge_groups, discrete_groups=(),
 
     if verify:
         _verify_terms(basis, list(fermions) + list(scalars), gauge_groups,
-                      discrete_groups, max_dim=max_dim)
+                      discrete_groups, max_dim=max_dim,
+                      global_groups=global_groups)
     return basis
 
 
@@ -602,9 +676,12 @@ def suggest_kinetic(fields, flavor_index=None):
 # oracle
 # --------------------------------------------------------------------------
 
-def _verify_terms(terms, fields, gauge_groups, discrete_groups, max_dim=4):
+def _verify_terms(terms, fields, gauge_groups, discrete_groups, max_dim=4,
+                  global_groups=()):
     """Assert every suggested term passes the full invariance battery."""
     for t in terms:
+        assert _global_allowed(t.expr, global_groups), (
+            f"suggested term {t.label} violates a global U(1)")
         for g in gauge_groups:
             ok, viol = check_gauge_invariance(t.expr, fields, g)
             assert ok, f"suggested term {t.label} fails gauge:{g.name}: {viol}"

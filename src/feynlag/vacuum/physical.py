@@ -207,7 +207,9 @@ class MassBlock:
         complex: the basis is made of complex fields.
         goldstones: orthonormal Goldstone vectors in this basis.
         right: fermion blocks — the right-handed components.
-        nflavors: fermion blocks — flavours per component.
+        nflavors: fermion blocks — flavours per component (of the first
+            left-handed member, when the members' counts differ: the matrix
+            is then rectangular, e.g. 3×2 for a 3+2 seesaw's Dirac part).
         diagonalizable: ``False`` when :func:`diagonalize_block` has no route
             for the block; ``note`` then says what to use instead.
     """
@@ -440,13 +442,12 @@ def _fermion_blocks(model, coeffs):
         for b, rc in enumerate(right):
             if not L_mass.has(bar_of[lc]) or not L_mass.has(rc):
                 continue
+            # an n_L × n_R block (a 3+2 seesaw's Dirac part is 3×2, FG-12):
+            # read the square max(n_L, n_R) matrix, keep the physical corner
+            n_max = max(nfl[lc], nfl[rc])
             block = fermion_mass_matrix(L_mass, bar_of[lc], rc, model.vacuum,
-                                        nfl[lc], None, gamma=diracPR) \
-                if nfl[lc] == nfl[rc] else None
-            if block is None:
-                raise NotImplementedError(
-                    f"{lc.label} and {rc.label} have different numbers of "
-                    f"flavours; build this mass matrix by hand")
+                                        n_max, None, gamma=diracPR)
+            block = block[:nfl[lc], :nfl[rc]]
             if any(e != 0 for e in block):
                 sub[(a, b)] = block.applyfunc(
                     lambda e: sp.factor(e) if e != 0 else sp.S.Zero)
@@ -476,9 +477,11 @@ def _fermion_blocks(model, coeffs):
                 note="massless: no Dirac partner"))
             continue
         n = nfl[left[ls[0]]]
+        unequal = len({nfl[left[a]] for a in ls} | {nfl[right[b]] for b in rs}) > 1
         rows = []
         for a in ls:
-            rows.append([sub.get((a, b), sp.zeros(n, n)) for b in rs])
+            rows.append([sub.get((a, b), sp.zeros(nfl[left[a]], nfl[right[b]]))
+                         for b in rs])
         M = sp.Matrix(sp.BlockMatrix(rows))
         block = MassBlock("fermion", [left[k] for k in ls], M,
                           charge=charges[left[ls[0]]],
@@ -488,6 +491,10 @@ def _fermion_blocks(model, coeffs):
             block.diagonalizable = False
             block.note = ("has a Majorana mass term: use seesaw_mass_matrix "
                           "+ diagonalize_takagi + MajoranaRotation")
+        elif unequal:
+            block.diagonalizable = False
+            block.note = ("rectangular: the left- and right-handed fields have "
+                          "different numbers of flavours")
         elif n != 1:
             block.diagonalizable = False
             block.note = ("flavoured: diagonalize the matrix with "
