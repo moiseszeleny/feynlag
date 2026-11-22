@@ -78,8 +78,9 @@ def _is_su2_doublet(field, gauge_groups):
 
 
 def _charge_is_zero(charges, u1s):
-    total = sum((charges.get(g, sp.S.Zero) for g in u1s), sp.S.Zero)
-    return sp.simplify(total) == 0
+    """Every U(1) charge in ``charges`` vanishes, group by group (a sum over
+    the groups would accept charges (+1, −1) under two U(1)s)."""
+    return all(sp.simplify(charges.get(g, sp.S.Zero)) == 0 for g in u1s)
 
 
 def _nonabelian_reps(field, gauge_groups):

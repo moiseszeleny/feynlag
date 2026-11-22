@@ -40,7 +40,16 @@ A bug-fix release for five gaps feynlag-models found while moving to the
   `suggest_yukawa` take `global_groups=`, and `term_coverage`,
   `most_general_lagrangian` and `Model.most_general` pass it. A fermion
   operator whose legs carry flavour-dependent charges cannot be judged at
-  symbolic flavour indices and is kept.
+  symbolic flavour indices and is kept (only that error,
+  `FlavourDependentChargeError`, a `ValueError` subclass, is absorbed; an
+  out-of-range flavour index still raises).
+- The operator basis checked U(1) neutrality on the **sum** of the charges over
+  all gauge U(1)s, so a field with charges (+1, −1) under two U(1)s got
+  non-invariant suggestions (`s s`, a Majorana mass). `suggest_potential` and
+  `suggest_yukawa` now check each U(1) on its own. With `verify=True` the
+  invariance oracle used to catch this with an `AssertionError`;
+  `term_coverage` (`verify=False`) listed the spurious operators as missing.
+- `CONVENTIONS.md` documents the `majorana_form` convention.
 
 ## [0.5.1] — 2026-11-18
 

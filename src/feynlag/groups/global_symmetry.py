@@ -28,6 +28,12 @@ def _real_charge(q):
     return q
 
 
+class FlavourDependentChargeError(ValueError):
+    """A fermion sandwich at a symbolic flavour index whose global charge
+    depends on the flavour: it has no single charge, and must be written at
+    explicit integer flavour indices to be judged."""
+
+
 class GlobalU1(SymmetryGroup):
     """A global U(1) acting by phases, with per-flavour fermion charges.
 
@@ -129,7 +135,7 @@ class GlobalU1(SymmetryGroup):
             return qs[int(k)]
         if len(set(qs)) == 1:
             return qs[0]
-        raise ValueError(
+        raise FlavourDependentChargeError(
             f"{leg} has a symbolic flavour index but {leg.base} carries "
             f"flavour-dependent {self.name} charges {qs}; write the term "
             "with explicit integer flavour indices")
@@ -173,7 +179,7 @@ class GlobalU1(SymmetryGroup):
                       for f in range(n)}
             if len(totals) <= 1:
                 return totals.pop() if totals else sp.S.Zero
-            raise ValueError(
+            raise FlavourDependentChargeError(
                 f"{bilinear}: the legs share the symbolic flavour index {k1} "
                 f"but their {self.name} charge depends on the flavour "
                 f"({sorted(totals, key=str)}); write the term with explicit "

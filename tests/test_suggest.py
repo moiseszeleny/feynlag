@@ -390,3 +390,71 @@ def test_global_u1_filters_the_potential_and_majorana_mass():
     assert _majorana_terms(suggest_yukawa([nuR], [H, phi], [SU2L, U1Y])) != []
     assert _majorana_terms(suggest_yukawa([nuR], [H, phi], [SU2L, U1Y],
                                           global_groups=[G])) == []
+
+
+# --------------------------------------------------------------------------
+# U(1) charges are checked group by group (not summed across groups)
+# --------------------------------------------------------------------------
+
+def test_opposite_charges_under_two_u1s_are_not_neutral():
+    UA = U1("U1A", coupling=sp.Symbol("gA", positive=True))
+    UB = U1("U1B", coupling=sp.Symbol("gB", positive=True))
+    N = WeylFermion("Nab", reps={UA: 1, UB: -1}, chirality="R",
+                    component_names=["Nab"])
+    assert _majorana_terms(suggest_yukawa([N], [], [UA, UB], verify=False)) == []
+    s = Scalar("sab", reps={UA: 1, UB: -1}, component_names=["sab"])
+    pot = suggest_potential([s], [UA, UB], verify=False)
+    assert {t.label for t in pot} == {"sab sab†", "sab sab sab† sab†"}
+    assert all(check_gauge_invariance(t.expr, [s], g)[0]
+               for t in pot for g in (UA, UB))
+
+
+# --------------------------------------------------------------------------
+# global U(1) with flavour-dependent charges (the kept-operator path)
+# --------------------------------------------------------------------------
+
+def _fn_quarks():
+    from feynlag import GlobalU1
+    SU2L = SU2("SU2L", coupling=ExternalParameter("gw", 0.65, positive=True))
+    U1Y = U1("U1Y", coupling=ExternalParameter("g1", 0.36, positive=True))
+    H = Scalar("H", reps={SU2L: 2, U1Y: sp.Rational(1, 2)},
+               component_names=["Gp", "H0"])
+    QL = WeylFermion("QL", reps={SU2L: 2, U1Y: sp.Rational(1, 6)},
+                     chirality="L", nflavors=3, component_names=["uL", "dL"])
+    uR = WeylFermion("uR", reps={U1Y: sp.Rational(2, 3)}, chirality="R",
+                     nflavors=3, component_names=["uR"])
+    G = GlobalU1("U1_FN").assign((3, 2, 0), QL).assign((3, 1, 0), uR)
+    return SU2L, U1Y, H, QL, uR, G
+
+
+def test_flavour_dependent_global_charges_keep_the_symbolic_operator():
+    """Q̄_i H̃ u_j with FN charges (3,2,0)/(3,1,0) has no single charge at
+    symbolic i, j: suggest_yukawa keeps it (only its integer entries could
+    be judged), with and without verify."""
+    SU2L, U1Y, H, QL, uR, G = _fn_quarks()
+    free = {t.label for t in suggest_yukawa([QL, uR], [H], [SU2L, U1Y])}
+    for verify in (False, True):
+        kept = {t.label for t in suggest_yukawa([QL, uR], [H], [SU2L, U1Y],
+                                                global_groups=[G],
+                                                verify=verify)}
+        assert "QL̄·H̃ uR" in kept and kept == free
+
+
+def test_global_check_propagates_other_errors():
+    """Only the flavour-dependent-charge error is absorbed: an out-of-range
+    integer flavour index still raises."""
+    from feynlag.groups.global_symmetry import FlavourDependentChargeError
+    from feynlag.invariance import check_global_invariance
+    from feynlag.suggest import _global_allowed
+    from feynlag.terms import yukawa, tilde
+    SU2L, U1Y, H, QL, uR, G = _fn_quarks()
+    i, j = sp.symbols("i j", integer=True)
+    Y = sp.IndexedBase("Y")
+    sym = yukawa(Y, QL, tilde(H), uR, indices=(i, j))
+    with pytest.raises(FlavourDependentChargeError):
+        check_global_invariance(sym, G)
+    assert _global_allowed(sym, [G]) is True
+    bad = yukawa(Y, QL, tilde(H), uR, indices=(0, 5))
+    with pytest.raises(ValueError, match="out of range") as err:
+        _global_allowed(bad, [G])
+    assert not isinstance(err.value, FlavourDependentChargeError)

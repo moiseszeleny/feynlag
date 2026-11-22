@@ -29,6 +29,7 @@ import sympy as sp
 
 from .dirac import diracC, diracPL
 from .fields import Fermion, Scalar, dag
+from .groups.global_symmetry import FlavourDependentChargeError
 from .invariance import (
     _apply_field_map, _fermion_transform_discrete, check_gauge_invariance,
     check_discrete_invariance, check_global_invariance, check_hermiticity,
@@ -531,12 +532,14 @@ def _majorana_mass_options(F, gauge_groups):
 def _global_allowed(expr, global_groups):
     """``False`` if ``expr`` violates a global U(1).  A fermion operator at
     symbolic flavour indices whose legs carry flavour-dependent charges has
-    no single charge (``check_global_invariance`` raises): it is kept, since
-    only its integer-index entries could be judged one by one."""
+    no single charge (``check_global_invariance`` raises
+    :class:`~feynlag.groups.global_symmetry.FlavourDependentChargeError`): it
+    is kept, since only its integer-index entries could be judged one by
+    one.  Any other error (an out-of-range flavour index, …) propagates."""
     for g in global_groups:
         try:
             ok, _ = check_global_invariance(expr, g)
-        except ValueError:
+        except FlavourDependentChargeError:
             continue
         if not ok:
             return False

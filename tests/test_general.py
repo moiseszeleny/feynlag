@@ -338,3 +338,26 @@ def test_coverage_imposes_the_declared_global_u1():
                              global_groups=[G])
     assert all(check_global_invariance(t.expr, G)[0]
                for _c, t in gen.general.terms)
+
+
+def test_coverage_keeps_flavour_dependent_global_operator():
+    """term_coverage with a GlobalU1 whose quark charges depend on the
+    flavour: the symbolic Q̄ H̃ u operator stays in the basis (here present,
+    since the model writes it at symbolic indices)."""
+    from feynlag import GlobalU1
+    SU2L, U1Y, params = _groups()
+    H = Scalar("H", reps={SU2L: 2, U1Y: half}, component_names=["Gp", "H0"])
+    QL = WeylFermion("QL", reps={SU2L: 2, U1Y: sp.Rational(1, 6)},
+                     chirality="L", nflavors=3, component_names=["uL", "dL"])
+    uR = WeylFermion("uR", reps={U1Y: sp.Rational(2, 3)}, chirality="R",
+                     nflavors=3, component_names=["uR"])
+    G = GlobalU1("U1_FN").assign((3, 2, 0), QL).assign((3, 1, 0), uR)
+    Yu = sp.IndexedBase("Yu")
+    model = Model("fnq", gauge_groups=[SU2L, U1Y], fields=[H, QL, uR],
+                  parameters=params, global_groups=[G],
+                  lagrangian=Lagrangian().add(yukawa(Yu, QL, tilde(H), uR),
+                                              sector="yukawa"))
+    cov = model.term_coverage()
+    present = {t.label: c for t, c in cov.present}
+    assert present["QL̄·H̃ uR"] == Yu[FL_I, FL_J]
+    assert cov.unmatched == {}

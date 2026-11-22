@@ -18,6 +18,18 @@ test in `tests/`. Adapted from `bsm-calc/conventions/` and
 - Fermion mass: `− m ψ̄ ψ`.
 - Covariant derivative: `D_μ = ∂_μ − i g T^a A^a_μ` (all couplings with this sign).
 - Yukawa: `L_Yuk = − Y ψ̄_L Φ ψ_R + h.c.`; `Φ̃ = i σ₂ Φ*`.
+- Bare Majorana mass: `− ½ M Σ_ab B_ab F_aᵀ C P_L F_b + h.c.` (`majorana_mass`; the
+  operator `suggest_yukawa` offers is `½ FᵀB C P_L F`, so `L = −M·O`). The form
+  `B = majorana_form(F)` is the invariant one: symmetric, `TᵀB + BT = 0` for every
+  non-abelian generator `T` acting on `F` (`δF = iαTF`), normalised `B†B = 1` so the
+  mass eigenvalue is `M`, with the phase fixed so the first non-zero diagonal entry
+  (else the first non-zero entry) is `+1`. It exists only for a real representation
+  and must be U(1)-neutral: `B = 1` for a gauge singlet, `B = δ_ab` in the adjoint
+  basis (SU(2) triplet, SU(3) octet), and antidiagonal with alternating signs in a
+  spherical (Gelfand–Tsetlin) basis, e.g. SU(2) 5 (components ordered m = 2…−2):
+  `B_{m,−m} = (−1)^{2−m}`, middle (neutral) entry `+1`. A pseudo-real (doublet) or
+  complex (SU(3) 3) representation has none; a doublet's Majorana mass comes from the
+  Weinberg operator.
 
 ## VEVs and field expansion
 - Neutral complex scalar expands with the **explicit 1/√2**:
