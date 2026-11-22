@@ -268,3 +268,96 @@ def test_u1_charge_breakdown():
     # a bar leg counts with the opposite sign: L̄ e_R alone has charge −1/2
     b = Bilinear(Ll.eLbar[FL_I], diracPR, eR.eRc[FL_I])
     assert u1_charge_breakdown(b, fields, U1Y) == [(b, -half)]
+
+
+# ------------------------------------- Majorana masses and global U(1)s
+
+def _sm_nuR(n=1):
+    from feynlag import majorana_mass
+    SU2L, U1Y, params = _groups()
+    H = Scalar("H", reps={SU2L: 2, U1Y: half}, component_names=["Gp", "H0"])
+    Ll, eR = _leptons(SU2L, U1Y, n)
+    nuR = WeylFermion("nuR", reps={}, chirality="R", nflavors=n,
+                      component_names=["nR"])
+    return SU2L, U1Y, params, H, Ll, eR, nuR, majorana_mass
+
+
+def test_coverage_recognises_the_majorana_mass():
+    """FG-10: −½ M_R ν_Rᵀ C P_L ν_R + h.c. is an invariant of the basis,
+    with coefficient M_R, not an unmatched remainder."""
+    SU2L, U1Y, params, H, Ll, eR, nuR, majorana_mass = _sm_nuR()
+    yv, MR = sp.symbols("yv MR", positive=True)
+    L = Lagrangian()
+    L.add(yukawa(yv, Ll, tilde(H), nuR), sector="yukawa")
+    L.add(majorana_mass(MR, nuR), sector="other")
+    model = Model("ss", gauge_groups=[SU2L, U1Y], fields=[H, Ll, eR, nuR],
+                  parameters=params, lagrangian=L)
+    cov = model.term_coverage()
+    assert cov.unmatched == {}
+    present = {t.label: c for t, c in cov.present}
+    assert present["½ nuRᵀCnuR [Majorana]"] == MR
+    assert present["Ll̄·H̃ nuR"] == yv
+
+
+def test_most_general_contains_the_majorana_mass():
+    from feynlag import majorana_mass
+    SU2L, U1Y, params, H, Ll, eR, nuR, _ = _sm_nuR(3)
+    general = most_general_lagrangian(
+        [H, Ll, eR, nuR], [SU2L, U1Y], kinetic=False,
+        names={"½ nuRᵀCnuR [Majorana]": "MR"})
+    by_name = {str(getattr(c, "name", c)): (c, t) for c, t in general.terms}
+    MR, term = by_name["MR"]
+    assert isinstance(MR, sp.IndexedBase) and term.dim == 3
+    built = {t.name: t.expr for t in general.lagrangian.terms}
+    assert sp.expand(expand_bilinear(
+        built[term.label] - majorana_mass(MR, nuR))) == 0
+
+
+def test_coverage_imposes_the_declared_global_u1():
+    """FG-13: with a GlobalU1 declared, no operator carrying net charge is
+    reported missing (the flavon's φ², φH†H, … are forbidden, not absent)."""
+    from feynlag import GlobalU1
+    from feynlag.invariance import check_global_invariance
+    SU2L, U1Y, params = _groups()
+    H = Scalar("H", reps={SU2L: 2, U1Y: half}, component_names=["Gp", "H0"])
+    phi = Scalar("phi", reps={}, component_names=["phi"])
+    G = GlobalU1("U1_FN").assign(1, phi)
+    m2, lam = sp.symbols("m2 lamphi", real=True)
+    V = m2 * phi.components[0] * sp.conjugate(phi.components[0]) \
+        + lam * (phi.components[0] * sp.conjugate(phi.components[0])) ** 2
+    kw = dict(gauge_groups=[SU2L, U1Y], fields=[H, phi], parameters=params,
+              lagrangian=Lagrangian().add(-V, sector="potential"))
+    blind = Model("fn0", **kw).term_coverage()
+    assert any(not check_global_invariance(t.expr, G)[0] for t in blind.missing)
+    cov = Model("fn", global_groups=[G], **kw).term_coverage()
+    assert cov.missing and all(check_global_invariance(t.expr, G)[0]
+                               for t in cov.missing)
+    assert {t.label for t, _ in cov.present} == {"phi phi†", "phi phi phi† phi†"}
+    # Model.most_general imposes it too
+    gen = Model.most_general("fng", [H, phi], [SU2L, U1Y], parameters=params,
+                             global_groups=[G])
+    assert all(check_global_invariance(t.expr, G)[0]
+               for _c, t in gen.general.terms)
+
+
+def test_coverage_keeps_flavour_dependent_global_operator():
+    """term_coverage with a GlobalU1 whose quark charges depend on the
+    flavour: the symbolic Q̄ H̃ u operator stays in the basis (here present,
+    since the model writes it at symbolic indices)."""
+    from feynlag import GlobalU1
+    SU2L, U1Y, params = _groups()
+    H = Scalar("H", reps={SU2L: 2, U1Y: half}, component_names=["Gp", "H0"])
+    QL = WeylFermion("QL", reps={SU2L: 2, U1Y: sp.Rational(1, 6)},
+                     chirality="L", nflavors=3, component_names=["uL", "dL"])
+    uR = WeylFermion("uR", reps={U1Y: sp.Rational(2, 3)}, chirality="R",
+                     nflavors=3, component_names=["uR"])
+    G = GlobalU1("U1_FN").assign((3, 2, 0), QL).assign((3, 1, 0), uR)
+    Yu = sp.IndexedBase("Yu")
+    model = Model("fnq", gauge_groups=[SU2L, U1Y], fields=[H, QL, uR],
+                  parameters=params, global_groups=[G],
+                  lagrangian=Lagrangian().add(yukawa(Yu, QL, tilde(H), uR),
+                                              sector="yukawa"))
+    cov = model.term_coverage()
+    present = {t.label: c for t, c in cov.present}
+    assert present["QL̄·H̃ uR"] == Yu[FL_I, FL_J]
+    assert cov.unmatched == {}

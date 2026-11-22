@@ -59,6 +59,10 @@ friendlier:
 **v0.5.1** fixes FG-8: `kinetic`/`add_kinetic`/`Model.most_general` give a
 real scalar the canonical `½(∂S)²`, not `(∂S)²`. See `CHANGELOG.md`.
 
+**v0.5.2** fixes FG-9 to FG-13: index rules of the term constructors, bare
+Majorana masses of real-representation fermions in the operator basis, 3+2
+seesaw mass blocks, and global U(1)s in `term_coverage`. See `CHANGELOG.md`.
+
 Completed before v0.1.0:
 
 - **Packaging & CI** — PyPI metadata, GitHub Actions test matrix + build/publish

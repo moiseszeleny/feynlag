@@ -341,7 +341,8 @@ class Model:
                 the generated couplings are appended.
             names: ``{operator label: coupling name}`` overrides.
             max_dim: ``4`` or ``5`` (Weinberg operator).
-            **kwargs: forwarded to :class:`Model` (``global_groups``).
+            **kwargs: forwarded to :class:`Model`; ``global_groups`` is also
+                imposed on the generated operators.
         """
         from .general import most_general_lagrangian
 
@@ -349,7 +350,7 @@ class Model:
 
         general = most_general_lagrangian(
             fields, gauge_groups, discrete_groups, names=names,
-            max_dim=max_dim)
+            max_dim=max_dim, global_groups=kwargs.get("global_groups", ()))
         # the kinetic terms contain the gauge bosons, which must be among the
         # model's fields for the invariance check: add any not listed
         fields = list(fields)

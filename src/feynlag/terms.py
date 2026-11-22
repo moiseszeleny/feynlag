@@ -78,8 +78,9 @@ def _is_su2_doublet(field, gauge_groups):
 
 
 def _charge_is_zero(charges, u1s):
-    total = sum((charges.get(g, sp.S.Zero) for g in u1s), sp.S.Zero)
-    return sp.simplify(total) == 0
+    """Every U(1) charge in ``charges`` vanishes, group by group (a sum over
+    the groups would accept charges (+1, −1) under two U(1)s)."""
+    return all(sp.simplify(charges.get(g, sp.S.Zero)) == 0 for g in u1s)
 
 
 def _nonabelian_reps(field, gauge_groups):
@@ -274,22 +275,36 @@ def _coupling_and_indices(coupling, indices):
     """``(coefficient, i, j)`` for a scalar or flavour-matrix coupling.
 
     An :class:`~sympy.IndexedBase` coupling becomes ``Y[i, j]`` with two
-    independent leg indices; any other coupling is flavour-universal and both
-    legs share one index.  ``indices`` overrides the canonical
-    :data:`FL_I`/:data:`FL_J` (one symbol, or a pair).
+    leg indices; any other coupling is flavour-universal and both legs share
+    one index.  ``indices`` overrides the canonical :data:`FL_I`/:data:`FL_J`
+    (one index, or a pair; symbols or integers).
+
+    Raises ``ValueError`` for an explicit pair of *different* indices on a
+    flavour-universal coupling (it would be silently put on ``(i, i)``:
+    FG-9), and for a flavour matrix with one *symbolic* index on both legs
+    (that is the diagonal term ``Y[i,i] F̄_i F_i``, not the matrix).  An
+    integer pair ``(a, a)`` is the ordinary diagonal element ``Y[a, a]``
+    (FG-11).
     """
+    explicit_pair = isinstance(indices, (tuple, list))
     if indices is None:
         i, j = FL_I, FL_J
-    elif isinstance(indices, (tuple, list)):
-        i, j = indices
+    elif explicit_pair:
+        i, j = (sp.sympify(k) for k in indices)
     else:
-        i = j = indices
+        i = j = sp.sympify(indices)
     if isinstance(coupling, sp.IndexedBase):
-        if i == j:
+        if i == j and not i.is_Integer:
             raise ValueError(
                 f"the flavour matrix {coupling} needs two distinct leg "
-                f"indices, got {i} twice")
+                f"indices, got {i} twice (an integer pair (a, a) is the "
+                f"diagonal element {coupling}[a, a])")
         return coupling[i, j], i, j
+    if explicit_pair and i != j:
+        raise ValueError(
+            f"the coupling {coupling} is flavour-universal (δ_ij), so the leg "
+            f"indices ({i}, {j}) cannot differ: pass one index, or an "
+            f"IndexedBase flavour matrix for a term with two leg indices")
     return _symbol(coupling), i, i
 
 
@@ -331,13 +346,18 @@ def yukawa(coupling, FL, S, FR, indices=None, hc=True):
             ``Y`` (the term is ``Y[i,j] F̄_{L,i} S F_{R,j}``).
         FL, FR: the left- and right-handed :class:`~feynlag.fields.WeylFermion`.
         S: a :class:`~feynlag.fields.Scalar` or ``tilde(scalar)``.
-        indices: flavour-index symbol(s); default :data:`FL_I`, :data:`FL_J`.
+        indices: flavour index or ``(bar, field)`` pair, symbols or
+            integers; default :data:`FL_I`, :data:`FL_J`.  A
+            flavour-universal coupling takes one index (a pair must repeat
+            it); a flavour matrix takes two distinct symbols, or integers
+            (``(a, a)`` is the diagonal element ``Y[a, a]``).
         hc: add the hermitian conjugate (default).  Pass ``False`` only to
             inspect the bare operator.
 
     Raises:
         ValueError: the U(1) charges do not sum to zero (the message gives
-            each sum and says when the other of ``S``/``tilde(S)`` balances).
+            each sum and says when the other of ``S``/``tilde(S)`` balances);
+            or the ``indices`` contradict the coupling (see above).
         NotImplementedError: no supported gauge contraction for these reps.
     """
     conj = isinstance(S, Tilde)
@@ -419,32 +439,116 @@ def dirac_mass(mass, FL, FR, indices=None, hc=True):
     return _with_hc(-c * contract_bare(FL, FR, i, j), hc)
 
 
+def majorana_form(F, gauge_groups=None):
+    """The invariant symmetric form ``B`` of a bare Majorana mass ``FᵀBF``.
+
+    ``Σ_ab B_ab F_aᵀ C F_b`` is invariant iff ``Tᵀ B + B T = 0`` for every
+    generator ``T`` of every non-abelian group acting on ``F``
+    (:meth:`~feynlag.fields.Field.generators`; ``δF = iαTF``).  It must be
+    symmetric, since ``F_aᵀ C P F_b`` is symmetric in ``a, b``.  Such a ``B``
+    exists iff the representation is **real**: a gauge singlet (``[[1]]``),
+    the SU(2) triplet in the adjoint basis (``δ_ab``), … — not a pseudo-real
+    doublet (its ``ε`` is antisymmetric) or a complex SU(3) triplet.
+
+    ``B`` is normalised to ``B†B = 1``, so the mass eigenvalue is the
+    coupling, with the phase making the first non-zero diagonal entry (else
+    the first non-zero entry) ``+1``.  U(1) charges are not looked at here.
+
+    Args:
+        F: the fermion.
+        gauge_groups: the groups to impose (default: those ``F`` carries).
+
+    Returns:
+        the ``dim × dim`` Matrix ``B``, or ``None`` if the representation is
+        not real.
+    """
+    groups = list(F.reps) if gauge_groups is None else list(gauge_groups)
+    n = F.dim
+    gens = [T for g in groups if not getattr(g, "abelian", False)
+            and g in F.reps for T in F.generators(g)]
+    if not gens:
+        return sp.eye(n)
+    unknowns = {}
+    B = sp.zeros(n, n)
+    for a in range(n):
+        for b in range(a, n):
+            x = sp.Dummy(f"B{a}{b}")
+            unknowns[x] = (a, b)
+            B[a, b] = B[b, a] = x
+    eqs = []
+    for T in gens:
+        eqs.extend(e for e in (T.T * B + B * T) if e != 0)
+    xs = list(unknowns)
+    A, _ = sp.linear_eq_to_matrix(eqs, xs) if eqs else (sp.zeros(0, len(xs)),
+                                                         None)
+    null = A.nullspace()
+    if not null:
+        return None
+    if len(null) > 1:
+        raise NotImplementedError(
+            f"majorana_form({F.name}): the invariant form is not unique "
+            f"({len(null)} solutions); a reducible field is not supported")
+    sol = B.xreplace(dict(zip(xs, null[0])))
+    norm = sp.sqrt(sp.simplify((sol.H * sol)[0, 0]))
+    sol = (sol / norm).applyfunc(sp.simplify)
+    ref = next((sol[k, k] for k in range(n) if sol[k, k] != 0), None)
+    if ref is None:
+        ref = next(e for e in sol if e != 0)
+    sol = (sol * (sp.Abs(ref) / ref)).applyfunc(sp.simplify)
+    return sol
+
+
+def contract_majorana(F, B, i, j, gamma):
+    """``Σ_ab B_ab F_a[i]ᵀ Γ F_b[j]`` — the bare Majorana sandwich."""
+    comps = F.components
+    return sp.Add(*[B[a, b] * MajoranaBilinear(comps[a][i], gamma, comps[b][j])
+                    for a in range(len(comps)) for b in range(len(comps))
+                    if B[a, b] != 0])
+
+
 def majorana_mass(mass, F, indices=None, gamma=None, hc=True):
-    """The Majorana mass ``−½ M FᵀC F + h.c.`` of a gauge-singlet fermion.
+    """The Majorana mass ``−½ M FᵀB C F + h.c.`` of a fermion in a real rep.
+
+    For a gauge singlet ``B = 1`` (``−½ M FᵀCF``); for a real non-singlet
+    representation (an SU(2) triplet with ``Y = 0``) ``B`` is its invariant
+    symmetric form, :func:`majorana_form` (``δ_ab`` in the adjoint basis:
+    ``−½ M Σ^aᵀ C Σ^a``).
 
     Args:
         mass: a Parameter/symbol (flavour-diagonal) or an
             :class:`~sympy.IndexedBase` symmetric matrix ``M[i,j]``.
-        F: the fermion; it must carry no gauge charge.
+        F: the fermion; U(1)-neutral, in a real representation of every
+            non-abelian group.
         gamma: the middle structure; default ``diracC*diracPL``, the
             convention :func:`~feynlag.vertices.bilinear.majorana_mass_matrix`
             and the seesaw examples use.
+
+    Raises:
+        ValueError: ``F`` carries a U(1) charge, or its representation is not
+            real (a doublet's Majorana mass comes from :func:`weinberg`).
     """
     if not isinstance(F, Fermion):
         raise TypeError(f"majorana_mass: expected a fermion, got {F!r}")
     charged = [g.name for g, r in F.reps.items()
-               if (getattr(g, "abelian", False) and sp.sympify(r) != 0)
-               or (not getattr(g, "abelian", False) and g.rep_dim(r) > 1)]
+               if getattr(g, "abelian", False) and sp.sympify(r) != 0]
     if charged:
         raise ValueError(
             f"majorana_mass({F.name}): the field is charged under "
             f"{', '.join(charged)}, so FᵀCF is not gauge invariant (a "
             f"Majorana mass for a doublet comes from the Weinberg operator)")
+    B = majorana_form(F)
+    if B is None:
+        nonsinglet = [g.name for g, r in F.reps.items()
+                      if not getattr(g, "abelian", False) and g.rep_dim(r) > 1]
+        raise ValueError(
+            f"majorana_mass({F.name}): its representation of "
+            f"{', '.join(nonsinglet)} is not real, so no FᵀCF contraction is "
+            f"gauge invariant (a Majorana mass for a doublet comes from the "
+            f"Weinberg operator)")
     c, i, j = _coupling_and_indices(mass, indices)
     if gamma is None:
         gamma = diracC * diracPL
-    comp = F.components[0]
-    op = -sp.Rational(1, 2) * c * MajoranaBilinear(comp[i], gamma, comp[j])
+    op = -sp.Rational(1, 2) * c * contract_majorana(F, B, i, j, gamma)
     return _with_hc(op, hc)
 
 

@@ -841,3 +841,55 @@ def test_left_right_neutral_block():
                  ([0, 1], [0, 2], [1, 2]))
     assert abs(D[0, 0] * D[1, 1] - minors) / minors < 1e-9
     assert {str(k) for k in model.physical.bosons} == {"Z1", "Z2", "A"}
+
+
+# ----------------------------------------- unequal flavour counts (FG-12)
+
+def _seesaw_3_2(majorana=True):
+    """SM leptons (3 generations) + 2 ν_R with a 3×2 Dirac Yukawa."""
+    from feynlag import majorana_mass, tilde
+
+    ew = electroweak_scaffold()
+    SU2L, U1Y, H = ew.SU2L, ew.U1Y, ew.H
+    Ll = WeylFermion("Ll", reps={SU2L: 2, U1Y: -half}, chirality="L",
+                     nflavors=3, component_names=["nuL", "eL"])
+    eRf = WeylFermion("eRf", reps={U1Y: -1}, chirality="R", nflavors=3,
+                      component_names=["eR"])
+    nuR = WeylFermion("nuR", reps={}, chirality="R", nflavors=2,
+                      component_names=["nR"])
+    Ye, Yv, MR = sp.IndexedBase("Ye"), sp.IndexedBase("Yv"), sp.IndexedBase("MR")
+    L = Lagrangian()
+    ew.add_higgs(L)
+    L.add(yukawa(Ye, Ll, H, eRf) + yukawa(Yv, Ll, tilde(H), nuR),
+          sector="yukawa")
+    if majorana:
+        L.add(majorana_mass(MR, nuR), sector="other")
+    model = Model("seesaw32", gauge_groups=ew.gauge_groups,
+                  fields=ew.fields + [Ll, eRf, nuR], parameters=ew.parameters,
+                  lagrangian=L)
+    model.solve_tadpoles([ew.mu2])
+    return model, ew, Ll, nuR, Yv
+
+
+def test_unequal_flavour_majorana_block_is_reported():
+    """3+2 seesaw: the (ν_L, ν_R) block is a 3×2 Dirac matrix reported as
+    not diagonalizable with the Takagi note, as for one generation; the
+    charged leptons are still reported (it used to raise and take the whole
+    fermion report with it)."""
+    model, ew, Ll, nuR, Yv = _seesaw_3_2()
+    nu, lep = model.mass_blocks(kind="fermion")
+    v = ew.v.s
+    assert lep.fields == [Ll.eL] and lep.matrix.shape == (3, 3)
+    assert nu.fields == [Ll.nuL] and nu.right == [nuR.nR]
+    assert nu.matrix == sp.Matrix(3, 2, lambda a, b: Yv[a, b] * v / sp.sqrt(2))
+    assert not nu.diagonalizable and "Majorana" in nu.note
+    assert "diagonalize_takagi" in nu.note
+    assert len(model.mass_blocks()) > 2        # a bare call no longer raises
+
+
+def test_unequal_flavour_dirac_block_is_rectangular():
+    model, ew, Ll, nuR, Yv = _seesaw_3_2(majorana=False)
+    nu = next(b for b in model.mass_blocks(kind="fermion")
+              if b.fields == [Ll.nuL])
+    assert nu.matrix.shape == (3, 2)
+    assert not nu.diagonalizable and "different numbers of flavours" in nu.note

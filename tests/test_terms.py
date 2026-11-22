@@ -406,3 +406,118 @@ class TestRealScalarKinetic:
         mom = sp.expand(to_momentum_space(expr, f))
         assert mom != 0
         assert sp.expand(mom - to_momentum_space(ref, f)) == 0
+
+
+# ------------------------------------------- flavour indices (FG-9, FG-11)
+
+class TestIndexRules:
+    """A scalar coupling is flavour-universal (δ_ij); a flavour matrix needs
+    two leg indices, which may be equal integers."""
+
+    def test_scalar_coupling_with_distinct_pair_raises(self, ew):
+        from feynlag.terms import dirac_mass as dm
+        SU2L, U1Y, H, _ = ew
+        Ll, eRf = _leptons(SU2L, U1Y, 3)
+        nuR = WeylFermion("nuRx", reps={}, chirality="R", nflavors=3,
+                          component_names=["nRx"])
+        y = sp.Symbol("y")
+        a, b = sp.symbols("a b", integer=True)
+        for pair in [(a, b), (0, 1)]:
+            with pytest.raises(ValueError, match="flavour-universal"):
+                yukawa(y, Ll, H, eRf, indices=pair)
+            with pytest.raises(ValueError, match="flavour-universal"):
+                majorana_mass(y, nuR, indices=pair)
+            with pytest.raises(ValueError, match="flavour-universal"):
+                weinberg(y, Ll, H, indices=pair)
+        PsiL = WeylFermion("PsL", reps={}, chirality="L", component_names=["PL"])
+        PsiR = WeylFermion("PsR", reps={}, chirality="R", component_names=["PR"])
+        with pytest.raises(ValueError, match="flavour-universal"):
+            dm(y, PsiL, PsiR, indices=(a, b))
+
+    def test_scalar_coupling_single_or_repeated_index_unchanged(self, ew):
+        SU2L, U1Y, H, _ = ew
+        Ll, eRf = _leptons(SU2L, U1Y, 3)
+        y = sp.Symbol("y")
+        a = sp.Symbol("a", integer=True)
+        assert _same(yukawa(y, Ll, H, eRf, indices=(a, a)),
+                     yukawa(y, Ll, H, eRf, indices=a))
+        assert _same(yukawa(y, Ll, H, eRf, indices=(1, 1)),
+                     yukawa(y, Ll, H, eRf, indices=1))
+        # the default stays the flavour-universal diagonal on FL_I
+        assert _same(yukawa(y, Ll, H, eRf), yukawa(y, Ll, H, eRf, indices=FL_I))
+
+    def test_flavour_matrix_integer_diagonal(self, ew):
+        SU2L, U1Y, H, _ = ew
+        Ll, eRf = _leptons(SU2L, U1Y, 3)
+        Y = sp.IndexedBase("Y")
+        Gp, H0 = H.components
+        nuLbar, eLbar = Ll.bar_components
+        eR = eRf.components[0]
+        half_term = -Y[0, 0] * (Bilinear(nuLbar[0], diracPR, eR[0]) * Gp
+                                + Bilinear(eLbar[0], diracPR, eR[0]) * H0)
+        term = yukawa(Y, Ll, H, eRf, indices=(0, 0))
+        assert _same(term, half_term + sp.conjugate(half_term))
+        assert not term.has(Y[0, 1])
+        with pytest.raises(ValueError, match="two distinct leg indices"):
+            yukawa(Y, Ll, H, eRf, indices=(FL_I, FL_I))
+
+
+# ---------------------------------------- real-rep Majorana masses (FG-10)
+
+class TestRealRepMajorana:
+
+    def test_singlet_form_and_term_unchanged(self):
+        from feynlag.terms import majorana_form
+        nuR = WeylFermion("nRs", reps={}, chirality="R", nflavors=1,
+                          component_names=["nRs"])
+        assert majorana_form(nuR) == sp.Matrix([[1]])
+        M = sp.Symbol("M", positive=True)
+        n = nuR.components[0]
+        op = -half * M * MajoranaBilinear(n[FL_I], diracC * diracPL, n[FL_I])
+        assert _same(majorana_mass(M, nuR, indices=FL_I), op + sp.conjugate(op))
+
+    def test_su2_triplet_y0(self, ew):
+        """Type-III Σ (3 of SU(2), Y = 0): −½M Σ^aᵀ C P_L Σ^a + h.c., gauge
+        invariant (the adjoint basis has Tᵀ = −T, so B = δ)."""
+        from feynlag.terms import majorana_form
+        SU2L, U1Y, H, params = ew
+        Sig = WeylFermion("Sig", reps={SU2L: 3, U1Y: 0}, chirality="R",
+                          component_names=["S1", "S2", "S3"])
+        assert majorana_form(Sig) == sp.eye(3)
+        M = sp.Symbol("M", positive=True)
+        i = FL_I
+        op = -half * M * sum(MajoranaBilinear(c[i], diracC * diracPL, c[i])
+                             for c in Sig.components)
+        term = majorana_mass(M, Sig, indices=i)
+        assert _same(term, op + sp.conjugate(op))
+        model = Model("sig", gauge_groups=[SU2L, U1Y],
+                      fields=[Sig, SU2L.bosons("W")], parameters=params,
+                      lagrangian=Lagrangian().add(term, sector="other"))
+        assert model.check_invariance(dimension=False).ok
+
+    def test_su2_quintet_gt_basis_form(self, ew):
+        """A real rep in the Gelfand–Tsetlin basis: B pairs m with −m with
+        alternating signs, and the neutral (middle) entry is +1."""
+        from feynlag.terms import majorana_form
+        SU2L = ew[0]
+        F = WeylFermion("F5", reps={SU2L: 5}, chirality="R")
+        B = majorana_form(F)
+        assert B.is_symmetric() and B.H * B == sp.eye(5) and B[2, 2] == 1
+        for T in F.generators(SU2L):
+            assert (T.T * B + B * T).is_zero_matrix
+
+    def test_non_real_reps_raise(self, ew):
+        from feynlag.terms import majorana_form
+        SU2L, U1Y, H, _ = ew
+        D = WeylFermion("Dd", reps={SU2L: 2}, chirality="L",
+                        component_names=["D1", "D2"])
+        Q = WeylFermion("Qq", reps={SU3("SU3c", coupling=sp.Symbol("gs")): 3},
+                        chirality="R")
+        M = sp.Symbol("M")
+        for F in (D, Q):
+            assert majorana_form(F) is None
+            with pytest.raises(ValueError, match="not real"):
+                majorana_mass(M, F)
+        E = WeylFermion("Ech", reps={U1Y: -1}, chirality="R")
+        with pytest.raises(ValueError, match="charged under U1Y"):
+            majorana_mass(M, E)

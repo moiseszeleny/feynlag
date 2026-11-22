@@ -3,7 +3,7 @@
 project = "feynlag"
 copyright = "2026, Moises Zeleny"
 author = "Moises Zeleny"
-release = "0.5.1"
+release = "0.5.2"
 
 extensions = [
     "myst_nb",

@@ -1,6 +1,6 @@
 """feynlag — tree-level Feynman rules from BSM Lagrangians in pure SymPy."""
 
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 
 from .conventions import METRIC_SIGNATURE, SQRT2, tidy
 from .dirac import (

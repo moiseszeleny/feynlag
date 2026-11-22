@@ -100,7 +100,8 @@ class GeneralLagrangian:
 
 
 def most_general_lagrangian(fields, gauge_groups, discrete_groups=(),
-                            names=None, max_dim=4, kinetic=True, verify=True):
+                            names=None, max_dim=4, kinetic=True, verify=True,
+                            global_groups=()):
     """Every invariant operator of ``fields``, each with a named coupling.
 
     The potential is ``V = Σ c_k O_k`` (so ``L ⊃ −c_k O_k``) and the Yukawa
@@ -123,6 +124,9 @@ def most_general_lagrangian(fields, gauge_groups, discrete_groups=(),
         kinetic: also add ``(D_μφ)†(D^μφ)`` (``½(D_μφ)(D^μφ)`` for a real
             scalar) and the fermion gauge currents.
         verify: run the invariance oracle on every operator (default).
+        global_groups: :class:`~feynlag.groups.GlobalU1` symmetries to
+            impose (see :func:`~feynlag.suggest.suggest_yukawa` for the
+            flavour-dependent-charge caveat).
 
     Note:
         A potential operator that needed ``+ h.c.`` gets one **real**
@@ -144,12 +148,14 @@ def most_general_lagrangian(fields, gauge_groups, discrete_groups=(),
     suggested = []
     if scalars:
         suggested += suggest_potential(scalars, gauge_groups, discrete_groups,
-                                       max_dim=min(max_dim, 4), verify=verify)
+                                       max_dim=min(max_dim, 4), verify=verify,
+                                       global_groups=global_groups)
     if fermions:
         suggested += suggest_yukawa(fermions, scalars, gauge_groups,
                                     discrete_groups,
                                     flavor_indices=(FL_I, FL_J),
-                                    max_dim=max_dim, verify=verify)
+                                    max_dim=max_dim, verify=verify,
+                                    global_groups=global_groups)
 
     L = Lagrangian()
     out = GeneralLagrangian(L)
@@ -339,7 +345,7 @@ def term_coverage(model, max_dim=4):
     (sectors ``yukawa`` and ``other``) are decomposed on the operator basis
     of :func:`~feynlag.suggest.suggest_potential` /
     :func:`~feynlag.suggest.suggest_yukawa` for the model's own fields and
-    declared symmetries.
+    declared symmetries (gauge, discrete and ``global_groups``).
 
     Fermion terms are compared on their ``P_R`` (or ``C P_L``) half with
     canonical flavour indices, so a coupling may be a scalar or a flavour
@@ -360,7 +366,8 @@ def term_coverage(model, max_dim=4):
     if scalars:
         basis = suggest_potential(scalars, model.gauge_groups,
                                   model.discrete_groups,
-                                  max_dim=min(max_dim, 4), verify=False)
+                                  max_dim=min(max_dim, 4), verify=False,
+                                  global_groups=model.global_groups)
         coeffs, rest = _decompose(model.potential, [t.expr for t in basis],
                                   field_symbols)
         for term, c in zip(basis, coeffs):
@@ -373,7 +380,8 @@ def term_coverage(model, max_dim=4):
         basis = suggest_yukawa(fermions, scalars, model.gauge_groups,
                                model.discrete_groups,
                                flavor_indices=(FL_I, FL_J), max_dim=max_dim,
-                               verify=False)
+                               verify=False,
+                               global_groups=model.global_groups)
         sector = sp.Add(*[t.expr for t in model.lagrangian.terms
                           if t.sector in ("yukawa", "other")])
         # the basis goes through the same canonical form as the model, so
